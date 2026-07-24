@@ -419,7 +419,7 @@
                 <div class="checkbox-item">
                     <input type="checkbox" id="agreeTerms" onchange="validateCheckboxes()">
                     <label for="agreeTerms">
-                        I agree to the <a href="#" onclick="alert('Terms & Conditions page coming soon.')">Terms & Conditions</a> and <a href="#" onclick="alert('Privacy Policy page coming soon.')">Privacy Policy</a>.
+                        I agree to the <a href="/terms" target="_blank">Terms & Conditions</a> and <a href="/privacy" target="_blank">Privacy Policy</a>.
                     </label>
                 </div>
                 <div id="termsError" class="checkbox-error">Please agree to the Terms & Conditions.</div>
@@ -468,10 +468,14 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Cashfree JS SDK — required to open the real hosted payment page -->
+<!-- Cashfree JS SDK -->
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 
 <script>
+    // Track if payment window was opened
+    let paymentWindowOpened = false;
+    let currentOrderId = null;
+
     function validateCheckboxes() {
         const terms = document.getElementById('agreeTerms').checked;
         const subscription = document.getElementById('agreeSubscription').checked;
@@ -488,6 +492,7 @@
         const btn = document.getElementById('payButton');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-lock-fill"></i> Pay {{ symbol }}{{ "%.2f"|format(total_price) }} with {{ gateway_name }}';
+        validateCheckboxes();
     }
 
     function startPayment() {
@@ -519,26 +524,127 @@
             document.getElementById('spinnerOverlay').classList.remove('show');
 
             if (data.success && data.gateway === 'cashfree' && data.payment_session_id) {
-                // Open Cashfree's real hosted checkout page.
-                // Cashfree itself redirects to return_url (/payment/success) after real payment.
-                const cashfree = Cashfree({ mode: "production" }); // change to "sandbox" only if testing against sandbox keys
-                cashfree.checkout({
-                    paymentSessionId: data.payment_session_id,
-                    redirectTarget: "_self"
+                // Store order ID for later use
+                currentOrderId = data.order_id;
+                
+                // Detect if we're in sandbox or production
+                const isSandbox = window.location.hostname === 'localhost' || 
+                                 window.location.hostname === '127.0.0.1' ||
+                                 '{{ config.ENV }}' === 'development';
+                
+                // Initialize Cashfree
+                const cashfree = Cashfree({ 
+                    mode: isSandbox ? "sandbox" : "production"
                 });
+                
+                // Open Cashfree checkout with proper callbacks
+                let checkoutOptions = {
+                    paymentSessionId: data.payment_session_id,
+                    redirectTarget: "_self",
+                };
+                
+                // Add callbacks if supported by Cashfree SDK version
+                if (typeof cashfree.on === 'function') {
+                    // New SDK version with event listeners
+                    cashfree.on('paymentSuccess', function(paymentData) {
+                        console.log('Payment Success:', paymentData);
+                        window.location.href = `/payment/success?order_id=${currentOrderId}`;
+                    });
+                    
+                    cashfree.on('paymentFailed', function(errorData) {
+                        console.log('Payment Failed:', errorData);
+                        window.location.href = '/payment/failed';
+                    });
+                    
+                    cashfree.on('paymentCancelled', function() {
+                        console.log('Payment Cancelled by User');
+                        window.location.href = '/payment/cancel';
+                    });
+                }
+                
+                paymentWindowOpened = true;
+                cashfree.checkout(checkoutOptions);
+                
+                // Fallback: If page doesn't redirect within 5 minutes, reset button
+                // This handles cases where user closes Cashfree window without any callback
+                setTimeout(function() {
+                    if (paymentWindowOpened) {
+                        console.log('Payment window timeout - user may have abandoned');
+                        // Don't auto-redirect, just re-enable the button
+                        paymentWindowOpened = false;
+                        resetPayButton();
+                        
+                        // Show a subtle warning
+                        const warningMsg = document.createElement('div');
+                        warningMsg.className = 'alert alert-warning mt-3';
+                        warningMsg.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Payment window was closed. If payment was completed, check your email for confirmation. Otherwise, try again.';
+                        document.querySelector('.checkout-body').appendChild(warningMsg);
+                        
+                        // Remove warning after 10 seconds
+                        setTimeout(() => warningMsg.remove(), 10000);
+                    }
+                }, 300000); // 5 minutes
+                
             } else if (data.success && data.gateway === 'stripe' && data.url) {
-                // Stripe Checkout hosted page
+                // Stripe Checkout - redirect to Stripe's hosted page
+                currentOrderId = data.order_id;
                 window.location.href = data.url;
+                
+                // Fallback for Stripe too
+                setTimeout(function() {
+                    resetPayButton();
+                }, 300000);
+                
             } else {
+                // Show error
                 alert('Failed to create payment: ' + (data.message || 'Unknown error'));
                 resetPayButton();
             }
         })
         .catch(err => {
             document.getElementById('spinnerOverlay').classList.remove('show');
-            alert('Network error. Please try again.');
+            console.error('Payment error:', err);
+            alert('Network error. Please check your connection and try again.');
             resetPayButton();
         });
     }
+
+    // Handle page visibility changes (user comes back after abandoning payment)
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && paymentWindowOpened) {
+            // User came back to this tab but didn't complete payment
+            // Check if payment was completed in another tab
+            if (currentOrderId) {
+                fetch(`/payment/check-status/${currentOrderId}`)
+                    .then(res => res.json())
+                    .then(statusData => {
+                        if (statusData.status === 'SUCCESS') {
+                            window.location.href = `/payment/success?order_id=${currentOrderId}`;
+                        } else if (statusData.status === 'FAILED') {
+                            paymentWindowOpened = false;
+                            resetPayButton();
+                        }
+                        // If still PENDING, do nothing - user may still complete payment
+                    })
+                    .catch(() => {
+                        // Ignore errors - user can manually retry
+                    });
+            }
+        }
+    });
+    
+    // Prevent accidental double-clicks
+    let paymentInProgress = false;
+    const originalStartPayment = startPayment;
+    startPayment = function() {
+        if (paymentInProgress) {
+            console.log('Payment already in progress, ignoring double-click');
+            return;
+        }
+        paymentInProgress = true;
+        originalStartPayment();
+        // Reset after 10 seconds
+        setTimeout(() => { paymentInProgress = false; }, 10000);
+    };
 </script>
 {% endblock %}

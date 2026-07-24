@@ -1,33 +1,491 @@
 {% extends "base_admin.html" %}
 {% block title %}Subscriptions - Admin{% endblock %}
-{% block page_title %}Subscriptions{% endblock %}
+{% block page_title %}Subscriptions Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card-sub {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px;
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-card-sub:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: var(--accent);
+    }
+    .stat-card-sub .stat-icon-sub {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem; margin-bottom: 10px;
+    }
+    .stat-card-sub .stat-value-sub {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.8rem; font-weight: 700;
+        color: var(--text-primary); line-height: 1;
+    }
+    .stat-card-sub .stat-label-sub {
+        font-size: 0.72rem; text-transform: uppercase;
+        letter-spacing: 0.06em; color: var(--text-muted); font-weight: 700;
+    }
+    .stat-card-sub .stat-sub-sub {
+        font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;
+    }
+
+    .filter-bar {
+        display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+        padding: 14px 16px; background: var(--bg-card);
+        border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 16px;
+    }
+    .search-input {
+        flex: 1; min-width: 200px; padding: 9px 14px;
+        background: var(--bg-input); border: 1px solid var(--border-color);
+        border-radius: 10px; color: var(--text-primary);
+        font-size: 0.84rem; font-family: 'Inter', sans-serif; outline: none;
+        transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--text-muted); }
+    .filter-select {
+        padding: 9px 12px; background: var(--bg-input);
+        border: 1px solid var(--border-color); border-radius: 10px;
+        color: var(--text-primary); font-size: 0.82rem; cursor: pointer;
+        outline: none; min-width: 130px;
+    }
+    .filter-select:focus { border-color: var(--accent); }
+    .filter-select option { background: var(--bg-card); color: var(--text-primary); }
+    .btn-filter-sm {
+        padding: 9px 16px; border-radius: 10px;
+        border: 1px solid var(--border-color); font-weight: 600;
+        font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+        white-space: nowrap; background: var(--bg-input); color: var(--text-secondary);
+    }
+    .btn-filter-sm:hover { border-color: var(--accent); color: var(--accent); }
+    .result-count {
+        font-size: 0.76rem; color: var(--text-muted);
+        padding: 4px 0; white-space: nowrap;
+    }
+
+    .table-container {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 14px; overflow: hidden;
+    }
+    table { color: var(--text-primary) !important; margin-bottom: 0; }
+    table thead th {
+        background: var(--sidebar-hover); color: var(--text-muted) !important;
+        font-weight: 700; font-size: 0.68rem; text-transform: uppercase;
+        letter-spacing: 0.07em; border-color: var(--border-color) !important;
+        padding: 12px 12px; white-space: nowrap;
+    }
+    table tbody td {
+        border-color: var(--border-color) !important; font-size: 0.8rem;
+        vertical-align: middle; padding: 11px 12px; color: var(--text-primary);
+    }
+    table tbody tr { transition: background 0.15s; }
+    table tbody tr:hover { background: var(--sidebar-hover); }
+
+    .badge-tier {
+        padding: 4px 10px; border-radius: 12px; font-size: 0.63rem;
+        font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .badge-tier.free { background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); }
+    .badge-tier.basic { background: rgba(79,142,247,0.15); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.3); }
+    .badge-tier.pro { background: rgba(38,166,154,0.15); color: #26a69a; border: 1px solid rgba(38,166,154,0.3); }
+    .badge-tier.elite { background: rgba(139,92,246,0.15); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.3); }
+    .badge-tier.enterprise { background: rgba(255,179,0,0.15); color: #ffb300; border: 1px solid rgba(255,179,0,0.3); }
+    
+    .badge-plan {
+        padding: 3px 8px; border-radius: 8px; font-size: 0.65rem; font-weight: 600;
+    }
+    .badge-plan.monthly { background: rgba(79,142,247,0.1); color: #4f8ef7; }
+    .badge-plan.yearly { background: rgba(0,200,83,0.1); color: #00c853; }
+    
+    .status-badge {
+        padding: 3px 10px; border-radius: 10px; font-size: 0.68rem; font-weight: 600;
+    }
+    .status-badge.active { background: rgba(0,200,83,0.12); color: #00c853; }
+    .status-badge.expiring { background: rgba(255,179,0,0.12); color: #ffb300; }
+    .status-badge.expired { background: rgba(255,82,82,0.12); color: #ff5252; }
+    .status-badge.cancelled { background: rgba(148,163,184,0.12); color: #94a3b8; }
+    .status-badge.free { background: rgba(148,163,184,0.12); color: #94a3b8; }
+
+    .pagination-bar {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 16px; border-top: 1px solid var(--border-color);
+        flex-wrap: wrap; gap: 10px;
+    }
+    .page-btn {
+        padding: 5px 11px; border-radius: 8px;
+        border: 1px solid var(--border-color); background: var(--bg-input);
+        color: var(--text-primary); cursor: pointer; font-size: 0.76rem;
+        font-weight: 600; transition: all 0.15s;
+    }
+    .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .page-btn.active-page { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .page-info { font-size: 0.76rem; color: var(--text-muted); }
+    .per-page-select {
+        padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border-color);
+        background: var(--bg-input); color: var(--text-primary); font-size: 0.76rem;
+    }
+
+    .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.7); z-index: 1050;
+        align-items: center; justify-content: center; padding: 20px;
+        backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content-sub {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 18px; width: 100%; max-width: 650px;
+        max-height: 85vh; overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal-header-sub {
+        padding: 18px 22px; border-bottom: 1px solid var(--border-color);
+        display: flex; justify-content: space-between; align-items: center;
+        position: sticky; top: 0; background: var(--bg-card); z-index: 1;
+        border-radius: 18px 18px 0 0;
+    }
+    .modal-header-sub h5 {
+        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+        font-size: 0.95rem; margin: 0; color: var(--text-primary);
+    }
+    .modal-close-btn {
+        background: none; border: none; color: var(--text-muted);
+        font-size: 1.4rem; cursor: pointer; width: 32px; height: 32px;
+        border-radius: 8px; display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .modal-close-btn:hover { background: var(--sidebar-hover); color: var(--text-primary); }
+    .modal-body-sub { padding: 20px 22px; }
+    .detail-row-sub {
+        display: flex; justify-content: space-between; padding: 9px 0;
+        border-bottom: 1px solid var(--border-color); font-size: 0.8rem;
+    }
+    .detail-row-sub:last-child { border-bottom: none; }
+    .detail-label-sub { color: var(--text-muted); }
+    .detail-value-sub { font-weight: 600; color: var(--text-primary); text-align: right; }
+
+    .expiring-soon { background: rgba(255,179,0,0.05); }
+    .expired-row { background: rgba(255,82,82,0.04); }
+
+    @media (max-width: 768px) {
+        .filter-bar { flex-direction: column; }
+        .search-input, .filter-select { width: 100%; }
+        .stat-value-sub { font-size: 1.4rem; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="row g-3 mb-3">
-    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Free</div><h2 class="mt-1">{{ free_count }}</h2></div></div>
-    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Basic</div><h2 class="mt-1">{{ basic_count }}</h2></div></div>
-    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Pro</div><h2 class="mt-1">{{ pro_count }}</h2></div></div>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card-sub">
+            <div class="stat-icon-sub" style="background: rgba(79,142,247,0.12); color: #4f8ef7;"><i class="bi bi-people"></i></div>
+            <div class="stat-label-sub">Total Subscribers</div>
+            <div class="stat-value-sub">{{ total_active }}</div>
+            <div class="stat-sub-sub">{{ total_users }} total users</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card-sub">
+            <div class="stat-icon-sub" style="background: rgba(0,200,83,0.12); color: #00c853;"><i class="bi bi-cash-coin"></i></div>
+            <div class="stat-label-sub">Monthly Revenue</div>
+            <div class="stat-value-sub">₹{{ monthly_revenue }}</div>
+            <div class="stat-sub-sub">{{ monthly_subs }} active monthly</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card-sub">
+            <div class="stat-icon-sub" style="background: rgba(255,179,0,0.12); color: #ffb300;"><i class="bi bi-exclamation-triangle"></i></div>
+            <div class="stat-label-sub">Expiring Soon</div>
+            <div class="stat-value-sub">{{ expiring_soon }}</div>
+            <div class="stat-sub-sub">within 7 days</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card-sub">
+            <div class="stat-icon-sub" style="background: rgba(255,82,82,0.12); color: #ff5252;"><i class="bi bi-x-circle"></i></div>
+            <div class="stat-label-sub">Expired</div>
+            <div class="stat-value-sub">{{ expired_count }}</div>
+            <div class="stat-sub-sub">needs attention</div>
+        </div>
+    </div>
 </div>
 
-<div class="card p-0">
+<div class="filter-bar">
+    <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search by name or email..." onkeyup="applyFilters()">
+    <select class="filter-select" id="tierFilter" onchange="applyFilters()">
+        <option value="all">All Plans</option>
+        <option value="free">Free</option>
+        <option value="basic">Basic</option>
+        <option value="pro">Pro</option>
+        <option value="elite">Elite</option>
+        <option value="enterprise">Enterprise</option>
+    </select>
+    <select class="filter-select" id="planTypeFilter" onchange="applyFilters()">
+        <option value="all">All Billing</option>
+        <option value="monthly">Monthly</option>
+        <option value="yearly">Yearly</option>
+    </select>
+    <select class="filter-select" id="statusFilter" onchange="applyFilters()">
+        <option value="all">All Status</option>
+        <option value="active">Active</option>
+        <option value="expiring">Expiring Soon</option>
+        <option value="expired">Expired</option>
+        <option value="cancelled">Cancelled</option>
+    </select>
+    <span class="result-count" id="resultCount">Showing all users</span>
+    <button class="btn-filter-sm" onclick="resetFilters()">🔄 Reset</button>
+</div>
+
+<div class="table-container">
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead><tr><th>User</th><th>Email</th><th>Tier</th><th>Status</th><th>Joined</th></tr></thead>
-            <tbody>
-                {% for user in users %}
+        <table class="table table-sm mb-0" id="subsTable">
+            <thead>
                 <tr>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.email }}</td>
-                    <td><span class="badge {% if user.subscription_tier=='pro' %}bg-warning text-dark{% elif user.subscription_tier=='basic' %}bg-primary{% else %}bg-secondary{% endif %}">{{ user.subscription_tier|upper }}</span></td>
-                    <td><span class="badge bg-success">Active</span></td>
-                    <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
+                    <th>User</th>
+                    <th>Plan</th>
+                    <th>Billing</th>
+                    <th>Status</th>
+                    <th>Start Date</th>
+                    <th>Expires</th>
+                    <th>Days Left</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="subsTableBody">
+                {% for sub in subscriptions %}
+                <tr class="sub-row {{ 'expiring-soon' if sub.days_left is not none and sub.days_left <= 7 and sub.days_left > 0 else 'expired-row' if sub.days_left is not none and sub.days_left <= 0 else '' }}"
+                    data-username="{{ sub.username|lower }}"
+                    data-email="{{ sub.email|lower }}"
+                    data-tier="{{ sub.tier }}"
+                    data-plan="{{ sub.plan_type }}"
+                    data-status="{{ sub.status_label }}">
+                    <td>
+                        <strong>{{ sub.username }}</strong>
+                        <div style="font-size: 0.68rem; color: var(--text-muted);">{{ sub.email }}</div>
+                    </td>
+                    <td><span class="badge-tier {{ sub.tier }}">{{ sub.tier.upper() }}</span></td>
+                    <td><span class="badge-plan {{ sub.plan_type }}">{{ sub.plan_type|title }}</span></td>
+                    <td><span class="status-badge {{ sub.status_label }}">{{ sub.status_label|title }}</span></td>
+                    <td style="font-size: 0.78rem;">{{ sub.start_date }}</td>
+                    <td style="font-size: 0.78rem;">{{ sub.end_date }}</td>
+                    <td>
+                        {% if sub.days_left is not none %}
+                            {% if sub.days_left > 30 %}
+                                <span style="color: #00c853; font-weight: 600;">{{ sub.days_left }}d</span>
+                            {% elif sub.days_left > 7 %}
+                                <span style="color: #ffb300; font-weight: 600;">{{ sub.days_left }}d</span>
+                            {% elif sub.days_left > 0 %}
+                                <span style="color: #ff9100; font-weight: 700;">⚠️ {{ sub.days_left }}d</span>
+                            {% else %}
+                                <span style="color: #ff5252; font-weight: 700;">❌ Expired</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="page-btn" onclick="openSubDetail({{ sub.user_id }})" style="font-size: 0.7rem;">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                    </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="text-center py-4 text-muted">No data yet.</td></tr>
+                <tr><td colspan="8" class="text-center py-4 text-muted">No subscriptions found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    
+    <div class="pagination-bar">
+        <div class="d-flex align-items-center gap-2">
+            <span class="page-info">Rows:</span>
+            <select class="per-page-select" id="perPage" onchange="changePerPage()">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+        <div class="d-flex align-items-center gap-1" id="paginationBtns"></div>
+    </div>
 </div>
 
+<!-- Modal -->
+<div class="modal-overlay" id="subDetailModal">
+    <div class="modal-content-sub">
+        <div class="modal-header-sub">
+            <h5>📋 Subscription Details</h5>
+            <button class="modal-close-btn" onclick="closeSubDetail()">&times;</button>
+        </div>
+        <div class="modal-body-sub" id="subDetailBody">
+            <div class="text-center py-4 text-muted">Select a user to view details.</div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    let perPage = 50;
+
+    // Helper function to capitalize
+    function capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function applyFilters() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const tier = document.getElementById('tierFilter').value;
+        const planType = document.getElementById('planTypeFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const rows = document.querySelectorAll('.sub-row');
+        let count = 0;
+
+        rows.forEach(row => {
+            let show = true;
+            const username = row.dataset.username || '';
+            const email = row.dataset.email || '';
+            
+            if (search && !username.includes(search) && !email.includes(search)) show = false;
+            if (tier !== 'all' && row.dataset.tier !== tier) show = false;
+            if (planType !== 'all' && row.dataset.plan !== planType) show = false;
+            if (status !== 'all' && row.dataset.status !== status) show = false;
+            
+            row.style.display = show ? '' : 'none';
+            if (show) count++;
+        });
+
+        document.getElementById('resultCount').textContent = 'Showing ' + count + ' subscriptions';
+        currentPage = 1;
+        paginate();
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('tierFilter').value = 'all';
+        document.getElementById('planTypeFilter').value = 'all';
+        document.getElementById('statusFilter').value = 'all';
+        applyFilters();
+    }
+
+    function changePerPage() {
+        perPage = parseInt(document.getElementById('perPage').value);
+        currentPage = 1;
+        paginate();
+    }
+
+    function paginate() {
+        const rows = Array.from(document.querySelectorAll('.sub-row')).filter(r => r.style.display !== 'none');
+        const totalPages = Math.ceil(rows.length / perPage);
+        
+        rows.forEach((row, i) => {
+            row.style.display = (Math.floor(i / perPage) + 1 === currentPage) ? '' : 'none';
+        });
+
+        const container = document.getElementById('paginationBtns');
+        let html = '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 1 ? 'disabled' : '') + '>‹</button>';
+        
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                html += '<button class="page-btn ' + (i === currentPage ? 'active-page' : '') + '" onclick="goToPage(' + i + ')">' + i + '</button>';
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                html += '<span class="page-info">...</span>';
+            }
+        }
+        
+        html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage === totalPages ? 'disabled' : '') + '>›</button>';
+        html += '<span class="page-info ms-2">' + currentPage + '/' + totalPages + '</span>';
+        container.innerHTML = html;
+    }
+
+    function goToPage(p) {
+        const rows = Array.from(document.querySelectorAll('.sub-row')).filter(r => r.style.display !== 'none');
+        const total = Math.ceil(rows.length / perPage);
+        if (p < 1 || p > total) return;
+        currentPage = p;
+        paginate();
+    }
+
+    function openSubDetail(userId) {
+        var modal = document.getElementById('subDetailModal');
+        var body = document.getElementById('subDetailBody');
+        
+        modal.classList.add('show');
+        body.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm mb-2" style="color: var(--accent);"></div><div>Loading...</div></div>';
+        
+        fetch('/admin/api/subscription-detail/' + userId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var s = data.subscription;
+                    var daysColor = s.days_left > 30 ? '#00c853' : s.days_left > 7 ? '#ffb300' : s.days_left > 0 ? '#ff9100' : '#ff5252';
+                    var daysText = s.days_left > 0 ? s.days_left + ' days' : 'Expired';
+                    var cancelHtml = '';
+                    if (s.cancelled_at) {
+                        cancelHtml += '<div class="detail-row-sub"><span class="detail-label-sub">Cancelled At</span><span class="detail-value-sub">' + s.cancelled_at + '</span></div>';
+                    }
+                    if (s.cancel_reason) {
+                        cancelHtml += '<div class="detail-row-sub"><span class="detail-label-sub">Cancel Reason</span><span class="detail-value-sub">' + s.cancel_reason + '</span></div>';
+                    }
+                    
+                    body.innerHTML = 
+                        '<div style="margin-bottom:16px;">' +
+                            '<h6 style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">👤 User Info</h6>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Username</span><span class="detail-value-sub">' + s.username + '</span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Email</span><span class="detail-value-sub">' + s.email + '</span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Joined</span><span class="detail-value-sub">' + s.joined + '</span></div>' +
+                        '</div>' +
+                        '<div style="margin-bottom:16px;">' +
+                            '<h6 style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">💳 Plan Details</h6>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Current Plan</span><span class="detail-value-sub"><span class="badge-tier ' + s.tier + '">' + s.tier.toUpperCase() + '</span></span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Billing</span><span class="detail-value-sub">' + capitalize(s.plan_type) + '</span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Status</span><span class="detail-value-sub"><span class="status-badge ' + s.status_label + '">' + capitalize(s.status_label) + '</span></span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Start Date</span><span class="detail-value-sub">' + s.start_date + '</span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">End Date</span><span class="detail-value-sub">' + s.end_date + '</span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Days Left</span><span class="detail-value-sub" style="color:' + daysColor + ';font-weight:700;">' + daysText + '</span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Auto Renew</span><span class="detail-value-sub">' + (s.auto_renew ? '✅ Yes' : '❌ No') + '</span></div>' +
+                            cancelHtml +
+                        '</div>' +
+                        '<div>' +
+                            '<h6 style="font-family:\'Space Grotesk\',sans-serif;font-weight:700;font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">💰 Payment History</h6>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Total Payments</span><span class="detail-value-sub">' + s.payment_count + '</span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Successful</span><span class="detail-value-sub" style="color:#00c853;">' + s.successful_payments + '</span></div>' +
+                            '<div class="detail-row-sub"><span class="detail-label-sub">Total Spent</span><span class="detail-value-sub" style="color:#ffb300;font-weight:700;">₹' + s.total_spent + '</span></div>' +
+                        '</div>';
+                } else {
+                    body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load details.</div>';
+                }
+            })
+            .catch(function(err) {
+                body.innerHTML = '<div class="text-center py-4 text-danger">Error: ' + err.message + '</div>';
+            });
+    }
+
+    function closeSubDetail() {
+        document.getElementById('subDetailModal').classList.remove('show');
+    }
+
+    document.getElementById('subDetailModal').addEventListener('click', function(e) {
+        if (e.target === this) closeSubDetail();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeSubDetail();
+    });
+
+    document.addEventListener('DOMContentLoaded', function() { paginate(); });
+</script>
 {% endblock %}

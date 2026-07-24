@@ -2,125 +2,618 @@
 {% set analyse_page_key = 'dashboard' %}
 {% block title %}Dashboard - Tragene Journal{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dashboard specific styles with proper dark/light mode support */
+    .stat-card {
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stat-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 8px 0;
+    }
+    
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    
+    .stat-subtitle {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    
+    .mini-chart-container {
+        position: relative;
+        height: 60px;
+        margin-top: 8px;
+    }
+    
+    .quick-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    
+    .quick-action-btn:hover {
+        transform: translateX(4px);
+    }
+    
+    .insight-card {
+        padding: 14px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .progress-mini {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--border-color);
+        overflow: hidden;
+        margin-top: 6px;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+    
+    .activity-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 2px;
+    }
+    
+    .activity-dot.active {
+        background: var(--accent);
+    }
+    
+    .activity-dot.inactive {
+        background: var(--border-color);
+    }
+    
+    .section-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .section-title i {
+        color: var(--accent);
+    }
+    
+    .mood-indicator {
+        font-size: 2rem;
+        text-align: center;
+    }
+    
+    .daily-summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-soft);
+    }
+    
+    .daily-summary-item:last-child {
+        border-bottom: none;
+    }
+    
+    .tag-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin: 2px;
+    }
+    
+    .tag-badge.green {
+        background: rgba(0,230,118,0.15);
+        color: #00e676;
+        border: 1px solid rgba(0,230,118,0.3);
+    }
+    
+    .tag-badge.red {
+        background: rgba(255,82,82,0.15);
+        color: #ff5252;
+        border: 1px solid rgba(255,82,82,0.3);
+    }
+    
+    .tag-badge.blue {
+        background: rgba(79,142,247,0.15);
+        color: #4f8ef7;
+        border: 1px solid rgba(79,142,247,0.3);
+    }
+    
+    .tag-badge.purple {
+        background: rgba(139,92,246,0.15);
+        color: #8b5cf6;
+        border: 1px solid rgba(139,92,246,0.3);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stat-value {
+            font-size: 1.4rem;
+        }
+        .section-title {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
+<!-- Quick Stats Row -->
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-4">
-        <div class="card stat-card p-3 text-center">
-            <div class="label">Total Trades</div>
-            <h2 class="mb-0 mt-1">{{ trade_count }}</h2>
-            {% if trade_count > 0 %}
-                <small class="text-muted">{{ total_wins }}W / {{ total_losses }}L</small>
-            {% else %}
-                <small class="text-muted">Start trading</small>
-            {% endif %}
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 text-center h-100">
+            <div class="stat-label">Total Trades</div>
+            <div class="stat-value">{{ analytics.total_trades }}</div>
+            <div class="stat-subtitle">
+                <span class="text-success">{{ analytics.total_wins }}W</span> / 
+                <span class="text-danger">{{ analytics.total_losses }}L</span>
+            </div>
         </div>
     </div>
-    <div class="col-6 col-md-4">
-        <div class="card stat-card p-3 text-center">
-            <div class="label">Win Rate</div>
-            <h2 class="mb-0 mt-1 {% if win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">{{ win_rate }}%</h2>
-            <small class="text-muted">{{ total_wins }} wins / {{ total_losses }} losses</small>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 text-center h-100">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value {% if analytics.win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">
+                {{ analytics.win_rate }}%
+            </div>
+            <div class="progress-mini">
+                <div class="progress-fill {% if analytics.win_rate >= 50 %}bg-success{% else %}bg-danger{% endif %}" 
+                     style="width: {{ analytics.win_rate }}%"></div>
+            </div>
         </div>
     </div>
-    <div class="col-6 col-md-4">
-        <div class="card stat-card p-3 text-center">
-            <div class="label">Total P&L</div>
-            <h2 class="mb-0 mt-1 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% endif %}">
-                {{ '+' if total_pnl > 0 else '' }}${{ '%.2f'|format(total_pnl) }}
-            </h2>
-            {% if trade_count > 0 %}
-                {% set avg_pnl = total_pnl / trade_count %}
-                <small class="text-muted">{{ '%.2f'|format(avg_pnl) }} avg per trade</small>
-            {% else %}
-                <small class="text-muted">No data</small>
-            {% endif %}
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 text-center h-100">
+            <div class="stat-label">Net P&L</div>
+            <div class="stat-value {% if analytics.net_pnl > 0 %}text-success{% elif analytics.net_pnl < 0 %}text-danger{% endif %}">
+                {{ '+' if analytics.net_pnl > 0 else '' }}${{ '%.2f'|format(analytics.net_pnl) }}
+            </div>
+            <div class="stat-subtitle">
+                {{ '%.2f'|format(analytics.avg_pnl_per_trade) }} avg/trade
+            </div>
         </div>
     </div>
-    <div class="col-6 col-md-4">
-        <div class="card stat-card p-3 text-center">
-            <div class="label">Profit Factor</div>
-            <h2 class="mb-0 mt-1 {% if profit_factor >= 1.5 %}text-success{% elif profit_factor >= 1 %}text-warning{% else %}text-danger{% endif %}">
-                {% if profit_factor == 999999 %}∞{% else %}{{ profit_factor }}{% endif %}
-            </h2>
-            <small class="text-muted">
-                +${{ '%.2f'|format(gross_profit) }} / -${{ '%.2f'|format(gross_loss) }}
-            </small>
-        </div>
-    </div>
-    <div class="col-6 col-md-4">
-        <div class="card stat-card p-3 text-center">
-            <div class="label">Avg Risk:Reward</div>
-            <h2 class="mb-0 mt-1">{{ avg_rr }}</h2>
-            <small class="text-muted">Based on SL/TP set</small>
-        </div>
-    </div>
-    <div class="col-6 col-md-4">
-        <div class="card stat-card p-3 text-center">
-            <div class="label">Best Symbol</div>
-            <h2 class="mb-0 mt-1" style="font-size: 1.3rem;">{{ best_symbol }}</h2>
-            {% if trade_count > 0 %}
-                <small class="text-success">Most profitable</small>
-            {% else %}
-                <small class="text-muted">No data</small>
-            {% endif %}
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3 text-center h-100">
+            <div class="stat-label">Profit Factor</div>
+            <div class="stat-value {% if analytics.profit_factor >= 1.5 %}text-success{% elif analytics.profit_factor >= 1 %}text-warning{% else %}text-danger{% endif %}">
+                {% if analytics.profit_factor == 999999 %}∞{% else %}{{ analytics.profit_factor }}{% endif %}
+            </div>
+            <div class="stat-subtitle">
+                +${{ '%.0f'|format(analytics.gross_profit) }} / -${{ '%.0f'|format(analytics.gross_loss) }}
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row g-3">
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h6 class="fw-bold mb-3">Quick Actions</h6>
-            <a href="{{ url_for('user.import_trades') }}" class="btn w-100 mb-2 text-white" style="background: var(--accent); border: none; border-radius: 8px;">
-                <i class="bi bi-plus-circle"></i> Add New Trade
-            </a>
-            <a href="{{ url_for('user.journal') }}" class="btn btn-outline-secondary w-100 mb-2" style="border-radius: 8px;">
-                <i class="bi bi-journal-text"></i> View Journal ({{ trade_count }})
-            </a>
-            <a href="{{ url_for('user.analytics') }}" class="btn btn-outline-secondary w-100" style="border-radius: 8px;">
-                <i class="bi bi-graph-up"></i> Analytics
-            </a>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h6 class="fw-bold mb-3">Performance Summary</h6>
-            {% if trade_count > 0 %}
-                <div class="row g-2 small">
-                    <div class="col-6">
-                        <div class="p-2 rounded" style="background: rgba(0,200,83,0.08);">
-                            <span class="text-muted">Gross Profit</span><br>
-                            <strong class="text-success">+${{ '%.2f'|format(gross_profit) }}</strong>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="p-2 rounded" style="background: rgba(255,82,82,0.08);">
-                            <span class="text-muted">Gross Loss</span><br>
-                            <strong class="text-danger">-${{ '%.2f'|format(gross_loss) }}</strong>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="p-2 rounded" style="background: rgba(79,142,247,0.08);">
-                            <span class="text-muted">Wins</span><br>
-                            <strong>{{ total_wins }}</strong>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="p-2 rounded" style="background: rgba(79,142,247,0.08);">
-                            <span class="text-muted">Losses</span><br>
-                            <strong>{{ total_losses }}</strong>
-                        </div>
+<!-- Trading Activity & Account Info -->
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card p-3 h-100">
+            <div class="section-title">
+                <i class="bi bi-graph-up"></i> Trading Activity
+            </div>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-2">
+                        <div class="stat-label">Active Days</div>
+                        <div class="stat-value" style="font-size: 1.4rem;">{{ analytics.trading_days }}</div>
+                        <div class="stat-subtitle">out of {{ analytics.total_days }} days</div>
                     </div>
                 </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-2">
+                        <div class="stat-label">Avg Trades/Day</div>
+                        <div class="stat-value" style="font-size: 1.4rem;">{{ analytics.avg_trades_per_day }}</div>
+                        <div class="stat-subtitle">on active days</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-2">
+                        <div class="stat-label">Best Streak</div>
+                        <div class="stat-value text-success" style="font-size: 1.4rem;">{{ analytics.max_win_streak }}W</div>
+                        <div class="stat-subtitle">consecutive wins</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-2">
+                        <div class="stat-label">Worst Streak</div>
+                        <div class="stat-value text-danger" style="font-size: 1.4rem;">{{ analytics.max_loss_streak }}L</div>
+                        <div class="stat-subtitle">consecutive losses</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activity Calendar (Last 30 days) -->
+            <div class="mt-3">
+                <div class="stat-label mb-2">Last 30 Days Activity</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 3px;">
+                    {% for day in analytics.daily_activity %}
+                    <div class="activity-dot {{ 'active' if day.has_trades else 'inactive' }}" 
+                         title="{{ day.date }}: {{ day.trade_count }} trades, ${{ '%.2f'|format(day.pnl) }}"
+                         style="background: {% if day.has_trades %}{% if day.pnl > 0 %}#00e676{% elif day.pnl < 0 %}#ff5252{% else %}#ffb300{% endif %}{% else %}var(--border-color){% endif %};">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card p-3 h-100">
+            <div class="section-title">
+                <i class="bi bi-folder2"></i> Account Info
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Account</span>
+                <strong>{{ account.name if account else 'Default' }}</strong>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Broker</span>
+                <strong>{{ account.broker or 'N/A' }}</strong>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Type</span>
+                <span class="tag-badge {{ 'green' if account and account.account_type == 'live' else 'blue' }}">
+                    {{ account.account_type.upper() if account else 'LIVE' }}
+                </span>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Currency</span>
+                <strong>{{ account.currency if account else 'USD' }}</strong>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Subscription</span>
+                <span class="tag-badge purple">{{ current_user.subscription_tier.upper() }}</span>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Total P&L</span>
+                <strong class="{% if analytics.net_pnl > 0 %}text-success{% elif analytics.net_pnl < 0 %}text-danger{% endif %}">
+                    {{ '+' if analytics.net_pnl > 0 else '' }}${{ '%.2f'|format(analytics.net_pnl) }}
+                </strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Details & Recent Activity -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card p-3 h-100">
+            <div class="section-title">
+                <i class="bi bi-trophy"></i> Performance Breakdown
+            </div>
+            
+            <div class="daily-summary-item">
+                <span class="text-muted">Best Trade</span>
+                <strong class="text-success">
+                    {% if analytics.best_trade %}
+                        {{ analytics.best_trade.symbol }} +${{ '%.2f'|format(analytics.best_trade.profit_loss) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </strong>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Worst Trade</span>
+                <strong class="text-danger">
+                    {% if analytics.worst_trade %}
+                        {{ analytics.worst_trade.symbol }} -${{ '%.2f'|format(analytics.worst_trade.profit_loss|abs) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </strong>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Best Symbol</span>
+                <strong class="text-success">{{ analytics.best_symbol }}</strong>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Most Traded</span>
+                <strong>{{ analytics.most_traded_symbol }}</strong>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Avg Risk:Reward</span>
+                <strong>1:{{ analytics.avg_rr }}</strong>
+            </div>
+            <div class="daily-summary-item">
+                <span class="text-muted">Max Drawdown</span>
+                <strong class="text-danger">-${{ '%.2f'|format(analytics.max_drawdown) }}</strong>
+            </div>
+            
+            <!-- Win/Loss Ratio Bar -->
+            <div class="mt-3">
+                <div class="stat-label mb-2">Win/Loss Distribution</div>
+                <div style="display: flex; height: 24px; border-radius: 12px; overflow: hidden;">
+                    {% if analytics.total_trades > 0 %}
+                    <div style="width: {{ analytics.win_rate }}%; background: linear-gradient(90deg, #00c853, #00e676); 
+                                display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #000;">
+                        {{ analytics.total_wins }}W
+                    </div>
+                    <div style="width: {{ 100 - analytics.win_rate }}%; background: linear-gradient(90deg, #ff5252, #ff1744); 
+                                display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #fff;">
+                        {{ analytics.total_losses }}L
+                    </div>
+                    {% else %}
+                    <div style="width: 100%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--text-muted);">
+                        No trades
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card p-3 h-100">
+            <div class="section-title">
+                <i class="bi bi-clock-history"></i> Recent Activity
+            </div>
+            
+            {% if analytics.recent_trades %}
+                {% for trade in analytics.recent_trades[:5] %}
+                <div class="daily-summary-item">
+                    <div>
+                        <strong>{{ trade.symbol }}</strong>
+                        <span class="text-muted ms-2">{{ trade.entry_date.strftime('%d %b %Y') }}</span>
+                    </div>
+                    <div class="text-end">
+                        <span class="{% if trade.is_win %}text-success{% else %}text-danger{% endif %} fw-bold">
+                            {{ '+' if trade.is_win else '-' }}${{ '%.2f'|format(trade.profit_loss|abs) }}
+                        </span>
+                        <br>
+                        <small class="text-muted">{{ trade.trade_type.upper() }}</small>
+                    </div>
+                </div>
+                {% endfor %}
             {% else %}
                 <div class="text-center py-4 text-muted">
-                    <i class="bi bi-clock-history display-4"></i>
-                    <p class="mt-2">No recent activity.<br>Start by adding your first trade.</p>
+                    <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                    <p>No trades yet.<br>Start your trading journey!</p>
+                </div>
+            {% endif %}
+            
+            <!-- Diary & Notes Summary -->
+            {% if analytics.has_diary or analytics.has_notes %}
+            <div class="mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
+                <div class="stat-label mb-2">📝 Content Summary</div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="insight-card">
+                            <div class="stat-label">Diary Entries</div>
+                            <div class="stat-value" style="font-size: 1.4rem;">{{ analytics.diary_count }}</div>
+                            {% if analytics.last_diary %}
+                            <div class="stat-subtitle">Last: {{ analytics.last_diary.strftime('%d %b') }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="insight-card">
+                            <div class="stat-label">Day Notes</div>
+                            <div class="stat-value" style="font-size: 1.4rem;">{{ analytics.notes_count }}</div>
+                            {% if analytics.last_note %}
+                            <div class="stat-subtitle">Last: {{ analytics.last_note.strftime('%d %b') }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Symbol Performance & Session Analysis -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card p-3 h-100">
+            <div class="section-title">
+                <i class="bi bi-pie-chart"></i> Top Symbols
+            </div>
+            {% if analytics.top_symbols %}
+                {% for sym in analytics.top_symbols[:5] %}
+                <div class="daily-summary-item">
+                    <div>
+                        <strong>{{ sym.symbol }}</strong>
+                        <small class="text-muted ms-2">{{ sym.trade_count }} trades</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="fw-bold {% if sym.pnl > 0 %}text-success{% elif sym.pnl < 0 %}text-danger{% endif %}">
+                            {{ '+' if sym.pnl > 0 else '' }}${{ '%.2f'|format(sym.pnl) }}
+                        </span>
+                        <br>
+                        <small class="text-muted">{{ sym.win_rate }}% win</small>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-3 text-muted">
+                    <p>No symbol data available</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card p-3 h-100">
+            <div class="section-title">
+                <i class="bi bi-sun"></i> Session Analysis
+            </div>
+            {% if analytics.session_breakdown %}
+                {% for session in analytics.session_breakdown %}
+                <div class="daily-summary-item">
+                    <div>
+                        <strong>{{ session.name.title() }}</strong>
+                        <small class="text-muted ms-2">{{ session.trade_count }} trades</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="fw-bold {% if session.pnl > 0 %}text-success{% elif session.pnl < 0 %}text-danger{% endif %}">
+                            {{ '+' if session.pnl > 0 else '' }}${{ '%.2f'|format(session.pnl) }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-3 text-muted">
+                    <p>No session data available</p>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
+<!-- Monthly Overview -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card p-3">
+            <div class="section-title">
+                <i class="bi bi-calendar-month"></i> Monthly Performance
+            </div>
+            {% if analytics.monthly_breakdown %}
+            <div class="table-responsive">
+                <table class="table table-sm" style="color: var(--text-primary);">
+                    <thead>
+                        <tr style="border-color: var(--border-color);">
+                            <th style="border-color: var(--border-color);">Month</th>
+                            <th style="border-color: var(--border-color);" class="text-center">Trades</th>
+                            <th style="border-color: var(--border-color);" class="text-center">Wins</th>
+                            <th style="border-color: var(--border-color);" class="text-center">Losses</th>
+                            <th style="border-color: var(--border-color);" class="text-center">Win Rate</th>
+                            <th style="border-color: var(--border-color);" class="text-end">P&L</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for month in analytics.monthly_breakdown[:6] %}
+                        <tr style="border-color: var(--border-color);">
+                            <td style="border-color: var(--border-color);"><strong>{{ month.month }}</strong></td>
+                            <td style="border-color: var(--border-color);" class="text-center">{{ month.trade_count }}</td>
+                            <td style="border-color: var(--border-color);" class="text-center text-success">{{ month.wins }}</td>
+                            <td style="border-color: var(--border-color);" class="text-center text-danger">{{ month.losses }}</td>
+                            <td style="border-color: var(--border-color);" class="text-center">{{ month.win_rate }}%</td>
+                            <td style="border-color: var(--border-color);" class="text-end">
+                                <strong class="{% if month.pnl > 0 %}text-success{% elif month.pnl < 0 %}text-danger{% endif %}">
+                                    {{ '+' if month.pnl > 0 else '' }}${{ '%.2f'|format(month.pnl) }}
+                                </strong>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-3 text-muted">
+                <p>No monthly data yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card p-3">
+            <div class="section-title">
+                <i class="bi bi-lightning-charge"></i> Quick Actions
+            </div>
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('user.add_trade') }}" class="quick-action-btn" style="background: var(--accent); color: #fff;">
+                        <i class="bi bi-plus-circle"></i> Add Trade
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('user.journal') }}" class="quick-action-btn" style="background: rgba(79,142,247,0.15); color: #4f8ef7;">
+                        <i class="bi bi-journal-text"></i> Journal
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('user.analytics') }}" class="quick-action-btn" style="background: rgba(0,230,118,0.15); color: #00e676;">
+                        <i class="bi bi-graph-up"></i> Analytics
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('user.diary') }}" class="quick-action-btn" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+                        <i class="bi bi-book"></i> Diary
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('user.insights') }}" class="quick-action-btn" style="background: rgba(255,179,0,0.15); color: #ffb300;">
+                        <i class="bi bi-lightbulb"></i> Insights
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('user.calendar') }}" class="quick-action-btn" style="background: rgba(255,82,82,0.15); color: #ff5252;">
+                        <i class="bi bi-calendar3"></i> Calendar
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('ai.ai_reports') }}" class="quick-action-btn" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+                        <i class="bi bi-robot"></i> AI Reports
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('user.settings') }}" class="quick-action-btn" style="background: rgba(158,158,158,0.15); color: var(--text-secondary);">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Any dashboard-specific JavaScript can go here
+    document.addEventListener('DOMContentLoaded', function() {
+        // Refresh data periodically (every 60 seconds)
+        setInterval(function() {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    // Could implement partial refresh here
+                    console.log('Dashboard refreshed');
+                })
+                .catch(err => console.log('Refresh error:', err));
+        }, 60000);
+    });
+</script>
 {% endblock %}

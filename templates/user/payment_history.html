@@ -1,0 +1,356 @@
+{% extends "base_user.html" %}
+{% set analyse_page_key = 'payment_history' %}
+{% block title %}Payment History - Tragene Journal{% endblock %}
+{% block page_title %}💳 Payment History{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card-mini {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px 20px;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .stat-card-mini:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .stat-value-lg {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+    .stat-label-sm {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        font-weight: 700;
+    }
+
+    .current-plan-card {
+        background: linear-gradient(135deg, rgba(38,166,154,0.1), rgba(38,166,154,0.03));
+        border: 1px solid rgba(38,166,154,0.25);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+    }
+    .current-plan-card .plan-badge-lg {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .plan-badge-lg.free { background: rgba(148,163,184,0.15); color: #94a3b8; }
+    .plan-badge-lg.basic { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+    .plan-badge-lg.pro { background: rgba(38,166,154,0.15); color: #26a69a; }
+    .plan-badge-lg.elite { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    .plan-badge-lg.enterprise { background: rgba(255,179,0,0.15); color: #ffb300; }
+
+    .payment-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-color);
+        transition: background 0.15s;
+        cursor: pointer;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .payment-row:last-child { border-bottom: none; }
+    .payment-row:hover { background: rgba(38,166,154,0.04); }
+    
+    .payment-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    .payment-icon.success { background: rgba(0,200,83,0.12); color: #00c853; }
+    .payment-icon.failed { background: rgba(255,82,82,0.12); color: #ff5252; }
+    .payment-icon.pending { background: rgba(255,179,0,0.12); color: #ffb300; }
+    .payment-icon.cancelled { background: rgba(148,163,184,0.12); color: #94a3b8; }
+
+    .payment-info { flex: 1; min-width: 150px; }
+    .payment-plan { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); }
+    .payment-date { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    
+    .payment-amount {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-align: right;
+    }
+    
+    .status-badge-sm {
+        padding: 4px 10px;
+        border-radius: 10px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    .status-badge-sm.success { background: rgba(0,200,83,0.12); color: #00c853; }
+    .status-badge-sm.failed { background: rgba(255,82,82,0.12); color: #ff5252; }
+    .status-badge-sm.pending { background: rgba(255,179,0,0.12); color: #ffb300; }
+    .status-badge-sm.cancelled { background: rgba(148,163,184,0.12); color: #94a3b8; }
+
+    /* Detail Modal */
+    .detail-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.65);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(4px);
+    }
+    .detail-modal-overlay.show { display: flex; }
+    .detail-modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        width: 100%;
+        max-width: 520px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .detail-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: var(--bg-card);
+        z-index: 1;
+        border-radius: 18px 18px 0 0;
+    }
+    .detail-modal-header h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin: 0;
+        color: var(--text-primary);
+    }
+    .detail-modal-close {
+        background: none; border: none;
+        color: var(--text-muted); font-size: 1.3rem;
+        cursor: pointer; width: 30px; height: 30px;
+        border-radius: 8px; display: flex;
+        align-items: center; justify-content: center;
+    }
+    .detail-modal-close:hover { background: rgba(38,166,154,0.1); color: var(--text-primary); }
+    .detail-modal-body { padding: 20px; }
+    .detail-row {
+        display: flex; justify-content: space-between;
+        padding: 10px 0; border-bottom: 1px solid var(--border-color);
+        font-size: 0.82rem;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: var(--text-muted); }
+    .detail-value { font-weight: 600; color: var(--text-primary); text-align: right; }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+    }
+    .empty-state .empty-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+
+    @media (max-width: 768px) {
+        .payment-row { flex-direction: column; align-items: flex-start; }
+        .payment-amount { text-align: left; }
+        .stat-value-lg { font-size: 1.4rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Current Plan -->
+{% if subscription %}
+<div class="current-plan-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+            <div class="stat-label-sm" style="margin-bottom:4px;">Current Plan</div>
+            <span class="plan-badge-lg {{ subscription.plan_tier }}">{{ subscription.plan_tier.upper() }}</span>
+            <span style="font-size:0.8rem;color:var(--text-secondary);margin-left:8px;">
+                {{ subscription.plan_type|title if subscription.plan_type else 'Monthly' }}
+            </span>
+        </div>
+        <div style="text-align:right;">
+            {% if subscription.is_active %}
+                {% if subscription.days_left is not none and subscription.days_left > 0 %}
+                    <div style="font-size:1.4rem;font-weight:700;color:#00c853;">{{ subscription.days_left }} days</div>
+                    <div style="font-size:0.72rem;color:var(--text-muted);">remaining</div>
+                {% elif subscription.days_left is not none and subscription.days_left <= 0 %}
+                    <div style="font-size:1rem;font-weight:700;color:#ff5252;">Expired</div>
+                {% else %}
+                    <div style="font-size:1rem;font-weight:700;color:#00c853;">Active</div>
+                {% endif %}
+            {% else %}
+                <div style="font-size:1rem;font-weight:700;color:#ff5252;">Cancelled</div>
+            {% endif %}
+        </div>
+    </div>
+    {% if subscription.end_date %}
+    <div style="margin-top:12px;font-size:0.78rem;color:var(--text-muted);">
+        <i class="bi bi-calendar3"></i> 
+        {{ subscription.start_date.strftime('%d %b %Y') if subscription.start_date else '—' }} 
+        → 
+        {{ subscription.end_date.strftime('%d %b %Y') if subscription.end_date else '—' }}
+        {% if subscription.auto_renew %}
+            <span style="color:#00c853;margin-left:8px;">🔄 Auto-renew ON</span>
+        {% else %}
+            <span style="color:var(--text-muted);margin-left:8px;">Auto-renew OFF</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card-mini text-center">
+            <div class="stat-label-sm">Total Spent</div>
+            <div class="stat-value-lg" style="color:#ffb300;">₹{{ '%.0f'|format(total_spent) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card-mini text-center">
+            <div class="stat-label-sm">Total Payments</div>
+            <div class="stat-value-lg">{{ total_payments }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card-mini text-center">
+            <div class="stat-label-sm">Successful</div>
+            <div class="stat-value-lg" style="color:#00c853;">{{ successful_payments }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card-mini text-center">
+            <div class="stat-label-sm">Failed</div>
+            <div class="stat-value-lg" style="color:#ff5252;">{{ failed_payments }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment History -->
+<div class="card p-0">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border-color);">
+        <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.9rem;margin:0;color:var(--text-primary);">
+            <i class="bi bi-clock-history"></i> Payment History
+        </h6>
+    </div>
+    
+    {% if payments %}
+        {% for payment in payments %}
+        <div class="payment-row" onclick="openPaymentDetail('{{ payment.order_id }}', '{{ payment.plan_tier }}', '{{ payment.plan_type }}', '{{ '%.2f'|format(payment.amount) }}', '{{ '%.2f'|format(payment.base_amount) }}', '{{ '%.2f'|format(payment.gateway_fee) }}', '{{ payment.currency }}', '{{ payment.status }}', '{{ payment.created_at.strftime('%d %b %Y, %H:%M') if payment.created_at else 'N/A' }}', '{{ payment.completed_at.strftime('%d %b %Y, %H:%M') if payment.completed_at else 'N/A' }}', '{{ payment.payment_id or 'N/A' }}', '{{ payment.error_message or '' }}')">
+            <div class="payment-icon {{ payment.status|lower }}">
+                {% if payment.status == 'SUCCESS' %}
+                    <i class="bi bi-check-circle-fill"></i>
+                {% elif payment.status == 'FAILED' %}
+                    <i class="bi bi-x-circle-fill"></i>
+                {% elif payment.status == 'PENDING' %}
+                    <i class="bi bi-clock-fill"></i>
+                {% else %}
+                    <i class="bi bi-dash-circle-fill"></i>
+                {% endif %}
+            </div>
+            <div class="payment-info">
+                <div class="payment-plan">{{ payment.plan_tier.upper() }} Plan — {{ payment.plan_type|title }}</div>
+                <div class="payment-date">{{ payment.created_at.strftime('%d %b %Y, %H:%M') if payment.created_at else 'N/A' }}</div>
+            </div>
+            <span class="status-badge-sm {{ payment.status|lower }}">{{ payment.status }}</span>
+            <div class="payment-amount" style="color: {% if payment.status == 'SUCCESS' %}#00c853{% elif payment.status == 'FAILED' %}#ff5252{% else %}#ffb300{% endif %};">
+                {{ payment.currency }} {{ '%.2f'|format(payment.amount) }}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h6 style="color:var(--text-primary);font-weight:600;">No payments yet</h6>
+            <p style="font-size:0.82rem;">Your payment history will appear here once you make a purchase.</p>
+            <a href="{{ url_for('user.subscription') }}" class="btn btn-sm mt-2" style="background:var(--accent);color:#fff;border-radius:20px;padding:8px 20px;">
+                View Plans
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Payment Detail Modal -->
+<div class="detail-modal-overlay" id="paymentDetailModal">
+    <div class="detail-modal">
+        <div class="detail-modal-header">
+            <h6>📋 Payment Details</h6>
+            <button class="detail-modal-close" onclick="closePaymentDetail()">&times;</button>
+        </div>
+        <div class="detail-modal-body" id="paymentDetailBody"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openPaymentDetail(orderId, tier, planType, amount, baseAmount, gatewayFee, currency, status, createdAt, completedAt, paymentId, errorMsg) {
+        var statusColor = status === 'SUCCESS' ? '#00c853' : status === 'FAILED' ? '#ff5252' : status === 'PENDING' ? '#ffb300' : '#94a3b8';
+        var errorHtml = errorMsg ? '<div class="detail-row"><span class="detail-label">Error</span><span class="detail-value" style="color:#ff5252;">' + errorMsg + '</span></div>' : '';
+        
+        document.getElementById('paymentDetailBody').innerHTML = 
+            '<div class="detail-row"><span class="detail-label">Order ID</span><span class="detail-value" style="font-size:0.72rem;">' + orderId + '</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Payment ID</span><span class="detail-value" style="font-size:0.72rem;">' + paymentId + '</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Plan</span><span class="detail-value">' + tier.toUpperCase() + ' — ' + capitalize(planType) + '</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Base Price</span><span class="detail-value">' + currency + ' ' + baseAmount + '</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Gateway Fee (2%)</span><span class="detail-value" style="color:var(--text-muted);">' + currency + ' ' + gatewayFee + '</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Total Amount</span><span class="detail-value" style="font-weight:700;font-size:0.9rem;">' + currency + ' ' + amount + '</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color:' + statusColor + ';font-weight:700;">' + status + '</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">' + createdAt + '</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Completed</span><span class="detail-value">' + completedAt + '</span></div>' +
+            errorHtml;
+        
+        document.getElementById('paymentDetailModal').classList.add('show');
+    }
+    
+    function closePaymentDetail() {
+        document.getElementById('paymentDetailModal').classList.remove('show');
+    }
+    
+    function capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    
+    document.getElementById('paymentDetailModal').addEventListener('click', function(e) {
+        if (e.target === this) closePaymentDetail();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePaymentDetail();
+    });
+</script>
+{% endblock %}

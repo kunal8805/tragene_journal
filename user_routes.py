@@ -180,50 +180,218 @@ def api_delete_account(account_id):
 @user_bp.route('/dashboard')
 @login_required
 def dashboard():
+    from sqlalchemy import func
+    from datetime import datetime, date, timedelta
+    
     account_id = get_active_account_id()
     if not account_id:
         flash('Please create an account first.', 'warning')
         return redirect(url_for('user.settings'))
     
+    # Get all trades with profit/loss
     trades = Trade.query.filter_by(
         user_id=current_user.id,
         account_id=account_id
-    ).all()
+    ).filter(
+        Trade.profit_loss.isnot(None)
+    ).order_by(Trade.entry_date.desc()).all()
     
-    trade_count = len(trades)
-    win_rate = 0; total_pnl = 0.0; profit_factor = 0.0
-    avg_rr = "0:0"; best_symbol = "-"
-    total_wins = 0; total_losses = 0; gross_profit = 0.0; gross_loss = 0.0
+    # Get diary entries
+    diary_entries = DiaryEntry.query.filter_by(
+        user_id=current_user.id,
+        account_id=account_id
+    ).order_by(DiaryEntry.entry_date.desc()).all()
     
-    if trade_count > 0:
-        wins = [t for t in trades if t.is_win]
-        losses = [t for t in trades if t.is_win is False and t.profit_loss is not None]
-        total_wins = len(wins); total_losses = len(losses)
-        if (total_wins + total_losses) > 0:
-            win_rate = round((total_wins / (total_wins + total_losses)) * 100, 1)
-        total_pnl = round(sum(t.profit_loss for t in trades if t.profit_loss is not None), 2)
-        gross_profit = round(sum(t.profit_loss for t in wins if t.profit_loss is not None), 2)
-        gross_loss = abs(round(sum(t.profit_loss for t in losses if t.profit_loss is not None), 2))
-        profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else 999999
-        trades_with_rr = [t for t in trades if t.risk_reward_ratio and t.risk_reward_ratio > 0]
-        if trades_with_rr:
-            avg_rr = f"1:{round(sum(t.risk_reward_ratio for t in trades_with_rr)/len(trades_with_rr),1)}"
-        symbol_pnl = {}
-        for t in trades:
-            if t.profit_loss is not None and t.symbol:
-                symbol_pnl[t.symbol] = symbol_pnl.get(t.symbol, 0) + t.profit_loss
-        if symbol_pnl:
-            best_symbol = max(symbol_pnl, key=symbol_pnl.get)
+    # Get day notes
+    day_notes = DayNote.query.filter_by(
+        user_id=current_user.id,
+        account_id=account_id
+    ).order_by(DayNote.created_at.desc()).all()
     
-    # Get active account name
+    # ── Calculate All Analytics ──
+    total_trades = len(trades)
+    wins = [t for t in trades if t.is_win]
+    losses = [t for t in trades if not t.is_win and t.profit_loss is not None]
+    total_wins = len(wins)
+    total_losses = len(losses)
+    
+    win_rate = round((total_wins / total_trades) * 100, 1) if total_trades > 0 else 0
+    net_pnl = round(sum(t.profit_loss for t in trades), 2)
+    gross_profit = round(sum(t.profit_loss for t in wins), 2)
+    gross_loss = round(abs(sum(t.profit_loss for t in losses)), 2)
+    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else (999999 if gross_profit > 0 else 0)
+    avg_pnl_per_trade = round(net_pnl / total_trades, 2) if total_trades > 0 else 0
+    
+    # Streaks (properly calculated from sorted trades)
+    sorted_trades = sorted(trades, key=lambda x: x.entry_date)
+    max_win_streak = 0
+    current_win_streak = 0
+    max_loss_streak = 0
+    current_loss_streak = 0
+    
+    for t in sorted_trades:
+        if t.is_win:
+            current_win_streak += 1
+            current_loss_streak = 0
+            max_win_streak = max(max_win_streak, current_win_streak)
+        else:
+            current_loss_streak += 1
+            current_win_streak = 0
+            max_loss_streak = max(max_loss_streak, current_loss_streak)
+    
+    # Trading days calculation
+    if trades:
+        all_dates = [t.entry_date.date() for t in trades]
+        unique_dates = list(set(all_dates))
+        trading_days = len(unique_dates)
+        first_date = min(all_dates)
+        last_date = max(all_dates)
+        total_days = (last_date - first_date).days + 1
+        avg_trades_per_day = round(total_trades / trading_days, 1) if trading_days > 0 else 0
+    else:
+        trading_days = 0
+        total_days = 0
+        avg_trades_per_day = 0
+    
+    # Best/worst trade
+    best_trade = max(trades, key=lambda t: t.profit_loss) if trades else None
+    worst_trade = min(trades, key=lambda t: t.profit_loss) if trades else None
+    
+    # Max drawdown (properly calculated)
+    peak = 0
+    running_pnl = 0
+    max_drawdown = 0
+    for t in sorted_trades:
+        running_pnl += (t.profit_loss or 0)
+        if running_pnl > peak:
+            peak = running_pnl
+        drawdown = peak - running_pnl
+        if drawdown > max_drawdown:
+            max_drawdown = drawdown
+    max_drawdown = round(max_drawdown, 2)
+    
+    # Symbol analysis
+    symbol_stats = {}
+    for t in trades:
+        sym = t.symbol or 'Unknown'
+        if sym not in symbol_stats:
+            symbol_stats[sym] = {'count': 0, 'wins': 0, 'pnl': 0}
+        symbol_stats[sym]['count'] += 1
+        symbol_stats[sym]['pnl'] += (t.profit_loss or 0)
+        if t.is_win:
+            symbol_stats[sym]['wins'] += 1
+    
+    top_symbols = sorted([
+        {
+            'symbol': sym,
+            'trade_count': stats['count'],
+            'pnl': round(stats['pnl'], 2),
+            'win_rate': round((stats['wins'] / stats['count']) * 100, 1) if stats['count'] > 0 else 0
+        }
+        for sym, stats in symbol_stats.items()
+    ], key=lambda x: x['pnl'], reverse=True)
+    
+    best_symbol = top_symbols[0]['symbol'] if top_symbols else '-'
+    most_traded_symbol = max(symbol_stats, key=lambda x: symbol_stats[x]['count']) if symbol_stats else '-'
+    
+    # Avg R:R
+    trades_with_rr = [t for t in trades if t.risk_reward_ratio and t.risk_reward_ratio > 0]
+    avg_rr = round(sum(t.risk_reward_ratio for t in trades_with_rr) / len(trades_with_rr), 1) if trades_with_rr else 0
+    
+    # Recent trades (last 5)
+    recent_trades = trades[:5] if trades else []
+    
+    # Daily activity (last 30 days)
+    today = date.today()
+    daily_activity = []
+    for i in range(30):
+        day = today - timedelta(days=29 - i)
+        day_trades = [t for t in trades if t.entry_date.date() == day]
+        daily_activity.append({
+            'date': day.strftime('%Y-%m-%d'),
+            'has_trades': len(day_trades) > 0,
+            'trade_count': len(day_trades),
+            'pnl': round(sum(t.profit_loss or 0 for t in day_trades), 2)
+        })
+    
+    # Session breakdown
+    session_stats = {}
+    for t in trades:
+        session = t.session or 'Unknown'
+        if session not in session_stats:
+            session_stats[session] = {'count': 0, 'pnl': 0}
+        session_stats[session]['count'] += 1
+        session_stats[session]['pnl'] += (t.profit_loss or 0)
+    
+    session_breakdown = [
+        {'name': name, 'trade_count': stats['count'], 'pnl': round(stats['pnl'], 2)}
+        for name, stats in sorted(session_stats.items(), key=lambda x: x[1]['pnl'], reverse=True)
+    ]
+    
+    # Monthly breakdown
+    monthly_stats = {}
+    for t in trades:
+        month_key = t.entry_date.strftime('%B %Y')
+        if month_key not in monthly_stats:
+            monthly_stats[month_key] = {'trades': 0, 'wins': 0, 'losses': 0, 'pnl': 0}
+        monthly_stats[month_key]['trades'] += 1
+        monthly_stats[month_key]['pnl'] += (t.profit_loss or 0)
+        if t.is_win:
+            monthly_stats[month_key]['wins'] += 1
+        else:
+            monthly_stats[month_key]['losses'] += 1
+    
+    monthly_breakdown = [
+        {
+            'month': month,
+            'trade_count': stats['trades'],
+            'wins': stats['wins'],
+            'losses': stats['losses'],
+            'win_rate': round((stats['wins'] / stats['trades']) * 100, 1) if stats['trades'] > 0 else 0,
+            'pnl': round(stats['pnl'], 2)
+        }
+        for month, stats in sorted(monthly_stats.items(), reverse=True)
+    ]
+    
+    # Get active account
     account = current_user.get_active_account()
     
-    return render_template('user/dashboard.html',
-        trade_count=trade_count, win_rate=win_rate, total_pnl=total_pnl,
-        profit_factor=profit_factor, avg_rr=avg_rr, best_symbol=best_symbol,
-        total_wins=total_wins, total_losses=total_losses,
-        gross_profit=gross_profit, gross_loss=gross_loss,
-        account=account)
+    # Package all analytics
+    analytics = {
+        'total_trades': total_trades,
+        'total_wins': total_wins,
+        'total_losses': total_losses,
+        'win_rate': win_rate,
+        'net_pnl': net_pnl,
+        'gross_profit': gross_profit,
+        'gross_loss': gross_loss,
+        'profit_factor': profit_factor,
+        'avg_pnl_per_trade': avg_pnl_per_trade,
+        'max_win_streak': max_win_streak,
+        'max_loss_streak': max_loss_streak,
+        'trading_days': trading_days,
+        'total_days': total_days,
+        'avg_trades_per_day': avg_trades_per_day,
+        'best_trade': best_trade,
+        'worst_trade': worst_trade,
+        'best_symbol': best_symbol,
+        'most_traded_symbol': most_traded_symbol,
+        'avg_rr': avg_rr,
+        'max_drawdown': max_drawdown,
+        'recent_trades': recent_trades,
+        'daily_activity': daily_activity,
+        'top_symbols': top_symbols,
+        'session_breakdown': session_breakdown,
+        'monthly_breakdown': monthly_breakdown,
+        'diary_count': len(diary_entries),
+        'notes_count': len(day_notes),
+        'has_diary': len(diary_entries) > 0,
+        'has_notes': len(day_notes) > 0,
+        'last_diary': diary_entries[0].entry_date if diary_entries else None,
+        'last_note': day_notes[0].note_date if day_notes else None
+    }
+    
+    return render_template('user/dashboard.html', analytics=analytics, account=account)
 
 # ─── Journal ───
 @user_bp.route('/journal')
@@ -1695,3 +1863,85 @@ def api_ticket_close(ticket_number):
 
 
 
+
+
+# ═══════════════════════════════════════════════════════════
+# 💳 PAYMENT HISTORY
+# ═══════════════════════════════════════════════════════════
+
+@user_bp.route('/payment-history')
+@login_required
+def payment_history():
+    """User payment and subscription history"""
+    from models import Payment, Subscription
+    
+    # Get all payments for this user
+    payments = Payment.query.filter_by(user_id=current_user.id)\
+        .order_by(Payment.created_at.desc()).all()
+    
+    # Get current subscription
+    subscription = Subscription.query.filter_by(user_id=current_user.id).first()
+    
+    # Build payment history with details
+    payment_history = []
+    for payment in payments:
+        # Format amount from paise to rupees/dollars
+        amount = payment.total_amount / 100 if payment.total_amount else 0
+        base_amount = payment.base_amount / 100 if payment.base_amount else 0
+        gateway_fee = payment.gateway_fee / 100 if payment.gateway_fee else 0
+        
+        payment_history.append({
+            'id': payment.id,
+            'order_id': payment.cashfree_order_id,
+            'payment_id': payment.cashfree_payment_id,
+            'plan_tier': payment.plan_tier,
+            'plan_type': payment.plan_type,
+            'amount': amount,
+            'base_amount': base_amount,
+            'gateway_fee': gateway_fee,
+            'currency': payment.currency or 'INR',
+            'status': payment.status,
+            'created_at': payment.created_at,
+            'completed_at': payment.payment_completed_at,
+            'error_message': payment.error_message
+        })
+    
+    # Subscription info
+    sub_info = None
+    if subscription:
+        today = date.today()
+        days_left = None
+        if subscription.end_date:
+            if hasattr(subscription.end_date, 'date'):
+                days_left = (subscription.end_date.date() - today).days
+            else:
+                days_left = (subscription.end_date - today).days
+        
+        sub_info = {
+            'plan_tier': subscription.plan_tier,
+            'plan_type': subscription.plan_type,
+            'is_active': subscription.is_active,
+            'auto_renew': subscription.auto_renew,
+            'start_date': subscription.start_date,
+            'end_date': subscription.end_date,
+            'days_left': days_left,
+            'cancelled_at': subscription.cancelled_at,
+            'cancel_reason': subscription.cancel_reason
+        }
+    
+    # Stats
+    total_spent = sum(p['amount'] for p in payment_history if p['status'] == 'SUCCESS')
+    total_payments = len(payment_history)
+    successful_payments = len([p for p in payment_history if p['status'] == 'SUCCESS'])
+    failed_payments = len([p for p in payment_history if p['status'] == 'FAILED'])
+    pending_payments = len([p for p in payment_history if p['status'] == 'PENDING'])
+    
+    return render_template('user/payment_history.html',
+        payments=payment_history,
+        subscription=sub_info,
+        total_spent=total_spent,
+        total_payments=total_payments,
+        successful_payments=successful_payments,
+        failed_payments=failed_payments,
+        pending_payments=pending_payments
+    )

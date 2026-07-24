@@ -1,28 +1,817 @@
 {% extends "base_admin.html" %}
 {% block title %}Users - Admin{% endblock %}
-{% block page_title %}Users ({{ users|length }}){% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Search & Filter Bar */
+    .filter-bar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 16px;
+        background: var(--stat-bg);
+        border-radius: 12px;
+        border: 1px solid var(--stat-border);
+        margin-bottom: 16px;
+    }
+    .search-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 10px 16px;
+        background: var(--bg-body);
+        border: 1px solid var(--stat-border);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-family: 'Inter', sans-serif;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .search-input:focus {
+        border-color: var(--teal);
+    }
+    .search-input::placeholder {
+        color: var(--text-muted);
+    }
+    .filter-select {
+        padding: 10px 14px;
+        background: var(--bg-body);
+        border: 1px solid var(--stat-border);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+        min-width: 140px;
+    }
+    .filter-select:focus {
+        border-color: var(--teal);
+    }
+    .filter-select option {
+        background: var(--bg-card);
+        color: var(--text-primary);
+    }
+    .btn-filter {
+        padding: 10px 18px;
+        border-radius: 10px;
+        border: 1px solid var(--teal);
+        background: var(--teal);
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .btn-filter:hover {
+        opacity: 0.9;
+    }
+    .btn-reset {
+        padding: 10px 18px;
+        border-radius: 10px;
+        border: 1px solid var(--stat-border);
+        background: var(--bg-body);
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .btn-reset:hover {
+        border-color: var(--text-muted);
+        color: var(--text-primary);
+    }
+    .result-count {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        padding: 8px 0;
+        white-space: nowrap;
+    }
+
+    /* Table */
+    .table-container {
+        background: var(--stat-bg);
+        border: 1px solid var(--stat-border);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    table {
+        color: var(--text-primary) !important;
+        margin-bottom: 0;
+    }
+    table thead th {
+        background: var(--hover-bg);
+        color: var(--text-muted) !important;
+        font-weight: 700;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border-color: var(--stat-border) !important;
+        padding: 12px 14px;
+        white-space: nowrap;
+    }
+    table tbody td {
+        border-color: var(--stat-border) !important;
+        font-size: 0.82rem;
+        vertical-align: middle;
+        padding: 12px 14px;
+    }
+    table tbody tr {
+        transition: background 0.15s;
+    }
+    table tbody tr:hover {
+        background: var(--hover-bg);
+    }
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--teal);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.8rem;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+    .badge-tier {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+    .badge-tier.free { background: rgba(158,158,158,0.15); color: #9e9e9e; border: 1px solid rgba(158,158,158,0.3); }
+    .badge-tier.basic { background: rgba(79,142,247,0.15); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.3); }
+    .badge-tier.pro { background: rgba(38,166,154,0.15); color: #26a69a; border: 1px solid rgba(38,166,154,0.3); }
+    .badge-tier.elite { background: rgba(139,92,246,0.15); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.3); }
+    .badge-tier.enterprise { background: rgba(255,179,0,0.15); color: #ffb300; border: 1px solid rgba(255,179,0,0.3); }
+    
+    .status-dot-sm {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+    }
+    .status-dot-sm.verified { background: #00e676; }
+    .status-dot-sm.unverified { background: #ff5252; }
+    .status-dot-sm.banned { background: #ff5252; }
+    .status-dot-sm.active { background: #00e676; }
+
+    .btn-action-sm {
+        padding: 5px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--stat-border);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+        font-weight: 600;
+    }
+    .btn-action-sm:hover {
+        border-color: var(--teal);
+        color: var(--teal);
+    }
+    .btn-action-sm.view:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-action-sm.ban { color: var(--red); }
+    .btn-action-sm.ban:hover { border-color: var(--red); background: rgba(255,82,82,0.1); }
+    .btn-action-sm.unban { color: var(--green); }
+    .btn-action-sm.unban:hover { border-color: var(--green); background: rgba(0,230,118,0.1); }
+
+    /* Pagination */
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 16px;
+        border-top: 1px solid var(--stat-border);
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .page-btn {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--stat-border);
+        background: var(--bg-body);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 0.78rem;
+        font-weight: 600;
+        transition: all 0.15s;
+    }
+    .page-btn:hover:not(:disabled) {
+        border-color: var(--teal);
+        color: var(--teal);
+    }
+    .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    .page-btn.active {
+        background: var(--teal);
+        color: #fff;
+        border-color: var(--teal);
+    }
+    .page-info {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+    .per-page-select {
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--stat-border);
+        background: var(--bg-body);
+        color: var(--text-primary);
+        font-size: 0.78rem;
+    }
+
+    /* User Detail Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 1050;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show {
+        display: flex;
+    }
+    .modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--stat-border);
+        border-radius: 18px;
+        width: 100%;
+        max-width: 700px;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--stat-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: var(--bg-card);
+        z-index: 1;
+        border-radius: 18px 18px 0 0;
+    }
+    .modal-header h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        margin: 0;
+        color: var(--text-primary);
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.5rem;
+        cursor: pointer;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .modal-close:hover {
+        background: var(--hover-bg);
+        color: var(--text-primary);
+    }
+    .modal-body {
+        padding: 24px;
+    }
+    .detail-section {
+        margin-bottom: 20px;
+    }
+    .detail-section:last-child {
+        margin-bottom: 0;
+    }
+    .detail-section h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 12px;
+    }
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--stat-border);
+        font-size: 0.82rem;
+    }
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    .detail-label {
+        color: var(--text-muted);
+    }
+    .detail-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: right;
+    }
+    .detail-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--stat-border);
+    }
+    .btn-detail-action {
+        padding: 10px 18px;
+        border-radius: 10px;
+        border: 1px solid var(--stat-border);
+        font-weight: 600;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-detail-action.ban-user {
+        background: rgba(255,82,82,0.1);
+        color: var(--red);
+        border-color: rgba(255,82,82,0.3);
+    }
+    .btn-detail-action.ban-user:hover {
+        background: rgba(255,82,82,0.2);
+    }
+    .btn-detail-action.unban-user {
+        background: rgba(0,230,118,0.1);
+        color: var(--green);
+        border-color: rgba(0,230,118,0.3);
+    }
+    .btn-detail-action.unban-user:hover {
+        background: rgba(0,230,118,0.2);
+    }
+    .btn-detail-action.edit-user {
+        background: var(--hover-bg);
+        color: var(--text-primary);
+    }
+    .btn-detail-action.edit-user:hover {
+        border-color: var(--teal);
+    }
+
+    /* Loading spinner in modal */
+    .modal-loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+    }
+    .modal-loading .spinner-border {
+        color: var(--teal);
+    }
+
+    @media (max-width: 768px) {
+        .filter-bar {
+            flex-direction: column;
+        }
+        .search-input, .filter-select {
+            width: 100%;
+        }
+        .modal-content {
+            max-height: 90vh;
+            border-radius: 14px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="card p-0">
+<!-- Search & Filter Bar -->
+<div class="filter-bar">
+    <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search by name, email, or ID..." onkeyup="filterUsers()">
+    <select class="filter-select" id="tierFilter" onchange="filterUsers()">
+        <option value="all">All Plans</option>
+        <option value="free">Free</option>
+        <option value="basic">Basic</option>
+        <option value="pro">Pro</option>
+        <option value="elite">Elite</option>
+        <option value="enterprise">Enterprise</option>
+    </select>
+    <select class="filter-select" id="statusFilter" onchange="filterUsers()">
+        <option value="all">All Status</option>
+        <option value="verified">Email Verified</option>
+        <option value="unverified">Email Unverified</option>
+        <option value="admin">Admin</option>
+    </select>
+    <span class="result-count" id="resultCount">Showing {{ users|length }} users</span>
+    <button class="btn-reset" onclick="resetFilters()">🔄 Reset</button>
+</div>
+
+<!-- Users Table -->
+<div class="table-container">
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Tier</th><th>Admin</th><th>Joined</th></tr></thead>
-            <tbody>
-                {% for user in users %}
+        <table class="table table-sm mb-0" id="usersTable">
+            <thead>
                 <tr>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.email }}</td>
-                    <td><span class="badge {% if user.subscription_tier=='pro' %}bg-warning text-dark{% elif user.subscription_tier=='basic' %}bg-primary{% else %}bg-secondary{% endif %}">{{ user.subscription_tier|upper }}</span></td>
-                    <td>{% if user.is_admin %}<span class="badge bg-danger">Admin</span>{% else %}<span class="badge bg-light text-dark">User</span>{% endif %}</td>
-                    <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
+                    <th>User</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Trades</th>
+                    <th>Accounts</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                {% for user in users %}
+                <tr class="user-row" 
+                    data-username="{{ user.username|lower }}" 
+                    data-email="{{ user.email|lower }}" 
+                    data-id="{{ user.id }}"
+                    data-tier="{{ user.subscription_tier }}"
+                    data-verified="{{ 'verified' if user.email_verified else 'unverified' }}"
+                    data-admin="{{ 'admin' if user.is_admin else '' }}">
+                    <td>
+                        <span class="user-avatar">{{ user.username[0]|upper }}</span>
+                        <strong>{{ user.username }}</strong>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">{{ user.email }}</div>
+                    </td>
+                    <td>
+                        <span class="badge-tier {{ user.subscription_tier }}">
+                            {{ user.subscription_tier.upper() }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if user.is_admin %}
+                            <span class="status-dot-sm active"></span> Admin
+                        {% elif user.email_verified %}
+                            <span class="status-dot-sm verified"></span> Verified
+                        {% else %}
+                            <span class="status-dot-sm unverified"></span> Unverified
+                        {% endif %}
+                    </td>
+                    <td>{{ user.trades|length }}</td>
+                    <td>{{ user.accounts|length }}</td>
+                    <td style="font-size: 0.78rem; color: var(--text-muted);">{{ user.created_at.strftime('%d %b %Y') }}</td>
+                    <td>
+                        <button class="btn-action-sm view" onclick="openUserDetail({{ user.id }})" title="View Details">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                    </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="6" class="text-center py-4 text-muted">No users yet.</td></tr>
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No users found.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination -->
+    <div class="pagination-container">
+        <div class="d-flex align-items-center gap-2">
+            <span class="page-info">Rows per page:</span>
+            <select class="per-page-select" id="perPage" onchange="changePerPage()">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+            </select>
+        </div>
+        <div class="d-flex align-items-center gap-1" id="paginationBtns">
+            <!-- Generated by JS -->
+        </div>
+    </div>
 </div>
 
+<!-- User Detail Modal -->
+<div class="modal-overlay" id="userDetailModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5>👤 User Details</h5>
+            <button class="modal-close" onclick="closeUserDetail()">&times;</button>
+        </div>
+        <div class="modal-body" id="userDetailBody">
+            <div class="modal-loading">
+                <div class="spinner-border spinner-border-sm mb-2"></div>
+                <div>Loading user details...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ─── FILTER & SEARCH ───
+    let currentPage = 1;
+    let perPage = 50;
+    
+    function filterUsers() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const tier = document.getElementById('tierFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const rows = document.querySelectorAll('.user-row');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            let show = true;
+            
+            // Search filter
+            if (search) {
+                const username = row.dataset.username || '';
+                const email = row.dataset.email || '';
+                const id = row.dataset.id || '';
+                if (!username.includes(search) && !email.includes(search) && !id.includes(search)) {
+                    show = false;
+                }
+            }
+            
+            // Tier filter
+            if (tier !== 'all' && row.dataset.tier !== tier) {
+                show = false;
+            }
+            
+            // Status filter
+            if (status === 'verified' && row.dataset.verified !== 'verified') show = false;
+            if (status === 'unverified' && row.dataset.verified !== 'unverified') show = false;
+            if (status === 'admin' && row.dataset.admin !== 'admin') show = false;
+            
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+        
+        document.getElementById('resultCount').textContent = `Showing ${visibleCount} users`;
+        currentPage = 1;
+        paginate();
+    }
+    
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('tierFilter').value = 'all';
+        document.getElementById('statusFilter').value = 'all';
+        filterUsers();
+    }
+    
+    function changePerPage() {
+        perPage = parseInt(document.getElementById('perPage').value);
+        currentPage = 1;
+        paginate();
+    }
+    
+    function paginate() {
+        const rows = Array.from(document.querySelectorAll('.user-row')).filter(r => r.style.display !== 'none');
+        const totalPages = Math.ceil(rows.length / perPage);
+        
+        rows.forEach((row, i) => {
+            const page = Math.floor(i / perPage) + 1;
+            row.style.display = (page === currentPage) ? '' : 'none';
+        });
+        
+        // Update pagination buttons
+        const container = document.getElementById('paginationBtns');
+        let html = '';
+        html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                html += `<span class="page-info">...</span>`;
+            }
+        }
+        
+        html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+        html += `<span class="page-info ms-2">Page ${currentPage} of ${totalPages}</span>`;
+        container.innerHTML = html;
+        
+        document.getElementById('resultCount').textContent = `Showing ${rows.length} users`;
+    }
+    
+    function goToPage(page) {
+        const rows = Array.from(document.querySelectorAll('.user-row')).filter(r => r.style.display !== 'none');
+        const totalPages = Math.ceil(rows.length / perPage);
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        paginate();
+    }
+    
+    // ─── USER DETAIL MODAL ───
+    function openUserDetail(userId) {
+        document.getElementById('userDetailModal').classList.add('show');
+        document.getElementById('userDetailBody').innerHTML = `
+            <div class="modal-loading">
+                <div class="spinner-border spinner-border-sm mb-2"></div>
+                <div>Loading user details...</div>
+            </div>
+        `;
+        
+        fetch(`/admin/api/user-detail/${userId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderUserDetail(data.user);
+                } else {
+                    document.getElementById('userDetailBody').innerHTML = `
+                        <div class="text-center py-4 text-danger">
+                            <p>Failed to load user details.</p>
+                            <p class="text-muted">${data.message || ''}</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => {
+                document.getElementById('userDetailBody').innerHTML = `
+                    <div class="text-center py-4 text-danger">
+                        <p>Error loading user details.</p>
+                    </div>
+                `;
+            });
+    }
+    
+    function closeUserDetail() {
+        document.getElementById('userDetailModal').classList.remove('show');
+    }
+    
+    function renderUserDetail(user) {
+        const html = `
+            <div class="detail-section">
+                <h6>👤 Basic Info</h6>
+                <div class="detail-row">
+                    <span class="detail-label">User ID</span>
+                    <span class="detail-value">#${user.id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Username</span>
+                    <span class="detail-value">${user.username}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Full Name</span>
+                    <span class="detail-value">${user.full_name || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email</span>
+                    <span class="detail-value">${user.email}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email Verified</span>
+                    <span class="detail-value" style="color: ${user.email_verified ? '#00e676' : '#ff5252'}">
+                        ${user.email_verified ? '✅ Verified' : '❌ Not Verified'}
+                        ${user.email_verified_at ? ` (${user.email_verified_at})` : ''}
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Phone</span>
+                    <span class="detail-value">${user.phone_number || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date of Birth</span>
+                    <span class="detail-value">${user.date_of_birth || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Location</span>
+                    <span class="detail-value">${[user.country, user.state].filter(Boolean).join(', ') || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Admin</span>
+                    <span class="detail-value">${user.is_admin ? '✅ Yes' : '❌ No'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Joined</span>
+                    <span class="detail-value">${user.created_at}</span>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h6>💳 Subscription</h6>
+                <div class="detail-row">
+                    <span class="detail-label">Current Plan</span>
+                    <span class="detail-value">
+                        <span class="badge-tier ${user.subscription_tier}">${user.subscription_tier.toUpperCase()}</span>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Active</span>
+                    <span class="detail-value" style="color: ${user.subscription_active ? '#00e676' : '#ff5252'}">
+                        ${user.subscription_active ? '✅ Yes' : '❌ No'}
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Payments</span>
+                    <span class="detail-value">${user.payment_count || 0}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Successful Payments</span>
+                    <span class="detail-value" style="color: #00e676;">${user.successful_payments || 0}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Spent</span>
+                    <span class="detail-value" style="color: var(--gold);">₹${(user.total_spent || 0).toLocaleString()}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Subscription Start</span>
+                    <span class="detail-value">${user.sub_start || '-'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Subscription End</span>
+                    <span class="detail-value">${user.sub_end || '-'}</span>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h6>📊 Trading Stats</h6>
+                <div class="detail-row">
+                    <span class="detail-label">Total Trades</span>
+                    <span class="detail-value">${user.trade_count || 0}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Trading Accounts</span>
+                    <span class="detail-value">${user.account_count || 0}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Diary Entries</span>
+                    <span class="detail-value">${user.diary_count || 0}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">AI Reports</span>
+                    <span class="detail-value">${user.ai_report_count || 0}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">AI Tokens Used</span>
+                    <span class="detail-value">${(user.ai_tokens_used || 0).toLocaleString()}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Support Tickets</span>
+                    <span class="detail-value">${user.ticket_count || 0}</span>
+                </div>
+            </div>
+            
+            <div class="detail-actions">
+                ${user.is_admin ? 
+                    '<span class="text-muted" style="font-size:0.8rem;">Cannot modify admin user</span>' :
+                    `
+                    ${user.is_banned ? 
+                        `<button class="btn-detail-action unban-user" onclick="toggleUserBan(${user.id}, false)">✅ Unban User</button>` :
+                        `<button class="btn-detail-action ban-user" onclick="toggleUserBan(${user.id}, true)">🚫 Ban User</button>`
+                    }
+                    <button class="btn-detail-action edit-user" onclick="alert('Edit coming soon')">✏️ Edit User</button>
+                    `
+                }
+            </div>
+        `;
+        
+        document.getElementById('userDetailBody').innerHTML = html;
+    }
+    
+    function toggleUserBan(userId, ban) {
+        if (!confirm(`Are you sure you want to ${ban ? 'BAN' : 'UNBAN'} this user?`)) return;
+        
+        fetch(`/admin/api/user-toggle-ban/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ban: ban })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                closeUserDetail();
+                location.reload();
+            } else {
+                alert(data.message || 'Failed.');
+            }
+        });
+    }
+    
+    // Close modal on overlay click
+    document.getElementById('userDetailModal').addEventListener('click', function(e) {
+        if (e.target === this) closeUserDetail();
+    });
+    
+    // Close modal on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeUserDetail();
+    });
+    
+    // Initialize pagination on load
+    document.addEventListener('DOMContentLoaded', function() {
+        paginate();
+    });
+</script>
 {% endblock %}

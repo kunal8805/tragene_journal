@@ -1,19 +1,495 @@
 {% extends "base_admin.html" %}
-{% block title %}Admin Dashboard{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Admin Dashboard - Tragene Journal{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --green: #00e676;
+        --red: #ff5252;
+        --gold: #ffb300;
+        --blue: #4f8ef7;
+        --purple: #8b5cf6;
+        --teal: #26a69a;
+    }
+
+    [data-theme="dark"] {
+        --stat-bg: #131a29;
+        --stat-border: #232e42;
+        --hover-bg: rgba(38,166,154,0.08);
+        --table-stripe: rgba(255,255,255,0.02);
+        --badge-bg: rgba(255,255,255,0.08);
+    }
+
+    [data-theme="light"] {
+        --stat-bg: #ffffff;
+        --stat-border: #e2e8f0;
+        --hover-bg: rgba(38,166,154,0.05);
+        --table-stripe: rgba(0,0,0,0.02);
+        --badge-bg: rgba(0,0,0,0.06);
+    }
+
+    .stat-card {
+        background: var(--stat-bg);
+        border: 1px solid var(--stat-border);
+        border-radius: 14px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: var(--teal);
+    }
+    .stat-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .stat-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+    .stat-subtitle {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+    }
+    .stat-icon.green { background: rgba(0,230,118,0.15); color: var(--green); }
+    .stat-icon.blue { background: rgba(79,142,247,0.15); color: var(--blue); }
+    .stat-icon.purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+    .stat-icon.gold { background: rgba(255,179,0,0.15); color: var(--gold); }
+    .stat-icon.red { background: rgba(255,82,82,0.15); color: var(--red); }
+    .stat-icon.teal { background: rgba(38,166,154,0.15); color: var(--teal); }
+
+    .section-card {
+        background: var(--stat-bg);
+        border: 1px solid var(--stat-border);
+        border-radius: 14px;
+        padding: 20px;
+        height: 100%;
+    }
+    .section-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-title i {
+        color: var(--teal);
+        font-size: 1rem;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--stat-border);
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    .info-value {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+    }
+
+    .badge-status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .badge-status.green { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+    .badge-status.red { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
+    .badge-status.gold { background: rgba(255,179,0,0.15); color: var(--gold); border: 1px solid rgba(255,179,0,0.3); }
+    .badge-status.blue { background: rgba(79,142,247,0.15); color: var(--blue); border: 1px solid rgba(79,142,247,0.3); }
+    .badge-status.purple { background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+
+    .progress-mini {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--stat-border);
+        overflow: hidden;
+        margin-top: 6px;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+
+    .quick-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: var(--hover-bg);
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 0.82rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+    .quick-link:hover {
+        border-color: var(--teal);
+        color: var(--teal);
+    }
+    .quick-link i {
+        color: var(--teal);
+    }
+
+    table {
+        color: var(--text-primary) !important;
+    }
+    table th {
+        color: var(--text-muted) !important;
+        font-weight: 600;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-color: var(--stat-border) !important;
+    }
+    table td {
+        border-color: var(--stat-border) !important;
+        font-size: 0.82rem;
+        vertical-align: middle;
+    }
+    table tbody tr:hover {
+        background: var(--hover-bg);
+    }
+
+    @media (max-width: 768px) {
+        .stat-value {
+            font-size: 1.5rem;
+        }
+        .stat-card {
+            padding: 14px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="row g-3 mb-3">
-    <div class="col-6 col-md-3"><div class="card stat-card p-3 text-center"><div class="label">Total Users</div><h2 class="mt-1">{{ total_users }}</h2></div></div>
-    <div class="col-6 col-md-3"><div class="card stat-card p-3 text-center"><div class="label">Total Trades</div><h2 class="mt-1">{{ total_trades }}</h2></div></div>
-    <div class="col-6 col-md-3"><div class="card stat-card p-3 text-center"><div class="label">Active Subs</div><h2 class="mt-1">{{ basic_users + pro_users }}</h2></div></div>
-    <div class="col-6 col-md-3"><div class="card stat-card p-3 text-center"><div class="label">Revenue</div><h2 class="mt-1">₹{{ revenue }}</h2></div></div>
+<!-- ===== TOP STATS ROW ===== -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-subtitle">{{ new_users_today }} new today</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-icon teal"><i class="bi bi-graph-up"></i></div>
+            <div class="stat-label">Total Trades</div>
+            <div class="stat-value">{{ total_trades }}</div>
+            <div class="stat-subtitle">{{ trades_today }} today</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-credit-card-2-front"></i></div>
+            <div class="stat-label">Revenue</div>
+            <div class="stat-value" style="font-size: 1.4rem;">₹{{ revenue }}</div>
+            <div class="stat-subtitle">{{ active_subs }} active subs</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-robot"></i></div>
+            <div class="stat-label">AI Reports</div>
+            <div class="stat-value">{{ total_ai_reports }}</div>
+            <div class="stat-subtitle">₹{{ '%.0f'|format(total_ai_cost) }} cost</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-icon gold"><i class="bi bi-ticket-detailed"></i></div>
+            <div class="stat-label">Open Tickets</div>
+            <div class="stat-value">{{ open_tickets }}</div>
+            <div class="stat-subtitle">{{ total_tickets }} total</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="bi bi-file-earmark-text"></i></div>
+            <div class="stat-label">Blog Posts</div>
+            <div class="stat-value">{{ total_blogs }}</div>
+            <div class="stat-subtitle">{{ published_blogs }} published</div>
+        </div>
+    </div>
 </div>
 
+<!-- ===== MAIN CONTENT ROW ===== -->
 <div class="row g-3">
-    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Free</div><h2 class="mt-1">{{ free_users }}</h2></div></div>
-    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Basic</div><h2 class="mt-1">{{ basic_users }}</h2></div></div>
-    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Pro</div><h2 class="mt-1">{{ pro_users }}</h2></div></div>
+    <!-- Left Column -->
+    <div class="col-lg-8">
+        
+        <!-- Subscription Breakdown -->
+        <div class="section-card mb-3">
+            <div class="section-title">
+                <i class="bi bi-pie-chart-fill"></i> Subscription Distribution
+            </div>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3 rounded" style="background: var(--hover-bg);">
+                        <div class="stat-label">Free</div>
+                        <div class="stat-value" style="font-size: 1.5rem;">{{ free_users }}</div>
+                        <div class="progress-mini">
+                            <div class="progress-fill" style="width: {{ (free_users / total_users * 100) if total_users > 0 else 0 }}%; background: #64748b;"></div>
+                        </div>
+                        <div class="stat-subtitle">{{ '%.0f'|format(free_users / total_users * 100) if total_users > 0 else 0 }}%</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3 rounded" style="background: var(--hover-bg);">
+                        <div class="stat-label">Basic</div>
+                        <div class="stat-value" style="font-size: 1.5rem;">{{ basic_users }}</div>
+                        <div class="progress-mini">
+                            <div class="progress-fill" style="width: {{ (basic_users / total_users * 100) if total_users > 0 else 0 }}%; background: var(--blue);"></div>
+                        </div>
+                        <div class="stat-subtitle">{{ '%.0f'|format(basic_users / total_users * 100) if total_users > 0 else 0 }}%</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3 rounded" style="background: var(--hover-bg);">
+                        <div class="stat-label">Pro</div>
+                        <div class="stat-value" style="font-size: 1.5rem;">{{ pro_users }}</div>
+                        <div class="progress-mini">
+                            <div class="progress-fill" style="width: {{ (pro_users / total_users * 100) if total_users > 0 else 0 }}%; background: var(--teal);"></div>
+                        </div>
+                        <div class="stat-subtitle">{{ '%.0f'|format(pro_users / total_users * 100) if total_users > 0 else 0 }}%</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3 rounded" style="background: var(--hover-bg);">
+                        <div class="stat-label">Elite</div>
+                        <div class="stat-value" style="font-size: 1.5rem;">{{ elite_users }}</div>
+                        <div class="progress-mini">
+                            <div class="progress-fill" style="width: {{ (elite_users / total_users * 100) if total_users > 0 else 0 }}%; background: var(--purple);"></div>
+                        </div>
+                        <div class="stat-subtitle">{{ '%.0f'|format(elite_users / total_users * 100) if total_users > 0 else 0 }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Users Table -->
+        <div class="section-card mb-3">
+            <div class="section-title">
+                <i class="bi bi-person-plus"></i> Recent Users
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Plan</th>
+                            <th>Trades</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_users %}
+                        <tr>
+                            <td><strong>{{ user.username }}</strong></td>
+                            <td style="color: var(--text-muted);">{{ user.email }}</td>
+                            <td>
+                                <span class="badge-status {{ 'purple' if user.subscription_tier == 'elite' else 'teal' if user.subscription_tier == 'pro' else 'blue' if user.subscription_tier == 'basic' else 'gold' }}">
+                                    {{ user.subscription_tier.upper() }}
+                                </span>
+                            </td>
+                            <td>{{ user.trade_count or 0 }}</td>
+                            <td style="color: var(--text-muted);">{{ user.created_at.strftime('%d %b %Y') if user.created_at else 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No users yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent Trades -->
+        <div class="section-card">
+            <div class="section-title">
+                <i class="bi bi-arrow-left-right"></i> Recent Trades
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Symbol</th>
+                            <th>Type</th>
+                            <th>P&L</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trade in recent_trades %}
+                        <tr>
+                            <td><strong>{{ trade.username }}</strong></td>
+                            <td>{{ trade.symbol }}</td>
+                            <td>
+                                <span class="badge-status {{ 'green' if trade.trade_type == 'buy' else 'red' }}">
+                                    {{ trade.trade_type.upper() }}
+                                </span>
+                            </td>
+                            <td>
+                                <span style="color: {{ '#00e676' if trade.profit_loss and trade.profit_loss > 0 else '#ff5252' if trade.profit_loss and trade.profit_loss < 0 else 'var(--text-muted)' }}; font-weight: 600;">
+                                    {{ '+' if trade.profit_loss and trade.profit_loss > 0 else '' }}${{ '%.2f'|format(trade.profit_loss) if trade.profit_loss else '0.00' }}
+                                </span>
+                            </td>
+                            <td style="color: var(--text-muted);">{{ trade.entry_date.strftime('%d %b %Y') if trade.entry_date else 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No trades yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-lg-4">
+        
+        <!-- Quick Summary -->
+        <div class="section-card mb-3">
+            <div class="section-title">
+                <i class="bi bi-lightning-charge"></i> Quick Summary
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total Accounts</span>
+                <span class="info-value">{{ total_accounts }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Active Subscriptions</span>
+                <span class="info-value" style="color: var(--teal);">{{ active_subs }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Open Support Tickets</span>
+                <span class="info-value">
+                    {% if open_tickets > 0 %}
+                        <span style="color: var(--gold);">{{ open_tickets }}</span>
+                    {% else %}
+                        <span style="color: var(--green);">0 ✓</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total AI Reports</span>
+                <span class="info-value">{{ total_ai_reports }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">AI Cost This Month</span>
+                <span class="info-value" style="color: var(--gold);">₹{{ '%.2f'|format(total_ai_cost) }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total FAQs</span>
+                <span class="info-value">{{ total_faqs }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Newsletter Subs</span>
+                <span class="info-value">{{ newsletter_count }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Contact Messages</span>
+                <span class="info-value">{{ contact_messages }}</span>
+            </div>
+        </div>
+
+        <!-- Ticket Overview -->
+        <div class="section-card mb-3">
+            <div class="section-title">
+                <i class="bi bi-ticket-detailed"></i> Ticket Overview
+            </div>
+            <div class="info-row">
+                <span class="info-label">Open</span>
+                <span class="badge-status gold">{{ open_tickets }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">In Progress</span>
+                <span class="badge-status blue">{{ in_progress_tickets }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Resolved</span>
+                <span class="badge-status green">{{ resolved_tickets }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Closed</span>
+                <span class="badge-status red">{{ closed_tickets }}</span>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="section-card">
+            <div class="section-title">
+                <i class="bi bi-link-45deg"></i> Quick Actions
+            </div>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('admin.users') }}" class="quick-link">
+                    <i class="bi bi-people"></i> Manage Users
+                </a>
+                <a href="{{ url_for('admin.subscriptions') }}" class="quick-link">
+                    <i class="bi bi-credit-card"></i> View Subscriptions
+                </a>
+                <a href="{{ url_for('admin.support_tickets') }}" class="quick-link">
+                    <i class="bi bi-ticket-detailed"></i> Support Tickets
+                </a>
+                <a href="{{ url_for('admin.ai_control') }}" class="quick-link">
+                    <i class="bi bi-robot"></i> AI Control Center
+                </a>
+                <a href="{{ url_for('admin.blog_list') }}" class="quick-link">
+                    <i class="bi bi-file-earmark-text"></i> Blog CMS
+                </a>
+                <a href="{{ url_for('admin.seo_settings') }}" class="quick-link">
+                    <i class="bi bi-search"></i> SEO Settings
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

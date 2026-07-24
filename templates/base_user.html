@@ -26,7 +26,6 @@
     {% endif %}
     
     {% if seo_settings and seo_settings.google_analytics_id %}
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ seo_settings.google_analytics_id }}"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -38,7 +37,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -47,44 +46,60 @@
         :root {
             --sidebar-width: 240px;
             --accent: #26a69a;
-            --green: #00e676;
+            --accent-hover: #2cc4b6;
+            --green: #00c853;
             --red: #ff5252;
             --gold: #ffb300;
-            --radius: 10px;
+            --blue: #4f8ef7;
+            --purple: #8b5cf6;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         [data-theme="dark"] {
-            --bg-body: #0a0e17;
-            --bg-sidebar: #0d1220;
-            --bg-card: #131a29;
-            --bg-topbar: #0d1220;
-            --border-color: #232e42;
-            --border-soft: rgba(255,255,255,0.06);
-            --text-primary: #eef1f6;
-            --text-secondary: #8a93a8;
-            --text-muted: #5c6478;
-            --input-bg: #131a29;
-            --btn-outline: #232e42;
-            --btn-outline-text: #8a93a8;
-            --badge-bg: #131a29;
-            --shadow: 0 8px 32px rgba(0,0,0,0.4);
+            --bg-body: #080c14;
+            --bg-sidebar: #0b101d;
+            --bg-card: #111827;
+            --bg-card-hover: #161e30;
+            --bg-topbar: #0b101d;
+            --bg-input: #0f1724;
+            --border-color: #1e293b;
+            --border-light: rgba(255,255,255,0.06);
+            --text-primary: #e8ecf4;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --sidebar-hover: rgba(38,166,154,0.1);
+            --btn-outline: #1e293b;
+            --btn-outline-text: #94a3b8;
+            --badge-bg: #111827;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+            --overlay: rgba(0,0,0,0.75);
         }
 
         [data-theme="light"] {
-            --bg-body: #f0f4f8;
+            --bg-body: #f1f5f9;
             --bg-sidebar: #ffffff;
             --bg-card: #ffffff;
+            --bg-card-hover: #f8fafc;
             --bg-topbar: #ffffff;
+            --bg-input: #f8fafc;
             --border-color: #e2e8f0;
-            --border-soft: rgba(0,0,0,0.06);
+            --border-light: rgba(0,0,0,0.05);
             --text-primary: #0f172a;
             --text-secondary: #475569;
             --text-muted: #94a3b8;
-            --input-bg: #ffffff;
+            --sidebar-hover: rgba(38,166,154,0.06);
             --btn-outline: #e2e8f0;
             --btn-outline-text: #475569;
-            --badge-bg: #f0f4f8;
-            --shadow: 0 8px 32px rgba(0,0,0,0.08);
+            --badge-bg: #f1f5f9;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow: 0 4px 16px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.08);
+            --overlay: rgba(0,0,0,0.5);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -93,32 +108,41 @@
             background: var(--bg-body);
             color: var(--text-primary);
             min-height: 100vh;
-            transition: background 0.3s, color 0.3s;
+            transition: background var(--transition), color var(--transition);
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.6;
         }
-        a { color: var(--text-primary); text-decoration: none; }
+        a { color: var(--text-primary); text-decoration: none; transition: color var(--transition); }
         a:hover { color: var(--accent); }
 
-        /* ===== SIDEBAR ===== */
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        /* Sidebar */
         .sidebar {
             position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width);
-            background: var(--bg-sidebar); color: var(--text-primary); z-index: 1040;
-            transition: transform 0.3s ease, background 0.3s; overflow-y: auto; 
-            border-right: 1px solid var(--border-color);
+            background: var(--bg-sidebar); z-index: 1040;
+            transition: transform var(--transition), background var(--transition);
+            overflow-y: auto; border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column;
         }
         .sidebar::-webkit-scrollbar { width: 3px; }
         .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
 
         .sidebar-header {
             padding: 18px 16px; border-bottom: 1px solid var(--border-color);
-            display: flex; align-items: center; gap: 12px;
+            display: flex; align-items: center; gap: 12px; flex-shrink: 0;
         }
         .sidebar-header .logo-img {
-            height: 32px; width: 32px;
-            border-radius: 50%; object-fit: cover; display: block;
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 12px rgba(38,166,154,0.3);
+            height: 34px; width: 34px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--accent); box-shadow: 0 0 14px rgba(38,166,154,0.3);
+            transition: all var(--transition); flex-shrink: 0;
         }
+        .sidebar-header .logo-img:hover { transform: scale(1.08); }
         .sidebar-header .brand-text {
             font-family: 'Space Grotesk', sans-serif;
             font-size: 1rem; font-weight: 700;
@@ -126,16 +150,17 @@
         }
         .sidebar-header .brand-text span { color: var(--accent); }
 
-        .sidebar nav { padding: 8px; }
+        .sidebar nav { padding: 8px; flex: 1; }
         .sidebar .nav-link {
-            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-            color: var(--text-secondary); border-radius: 8px; margin: 2px 0;
-            text-decoration: none; font-size: 0.88rem; font-weight: 500; transition: all 0.15s;
+            display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+            color: var(--text-secondary); border-radius: var(--radius-sm); margin: 1px 0;
+            text-decoration: none; font-size: 0.84rem; font-weight: 500;
+            transition: all var(--transition); white-space: nowrap;
         }
-        .sidebar .nav-link:hover { background: rgba(38,166,154,0.12); color: var(--text-primary); }
-        .sidebar .nav-link.active { background: var(--accent); color: #fff; box-shadow: 0 4px 20px rgba(38,166,154,0.3); }
-        .sidebar .nav-link i { font-size: 1.1rem; width: 20px; text-align: center; }
-        .sidebar-divider { border-color: var(--border-color); margin: 10px 14px; }
+        .sidebar .nav-link:hover { background: var(--sidebar-hover); color: var(--text-primary); }
+        .sidebar .nav-link.active { background: var(--accent); color: #fff; box-shadow: 0 4px 16px rgba(38,166,154,0.3); font-weight: 600; }
+        .sidebar .nav-link i { font-size: 1.05rem; width: 20px; text-align: center; flex-shrink: 0; }
+        .sidebar .nav-link.active i { color: #fff; }
 
         .elite-badge-sidebar {
             font-size: 0.55rem; margin-left: auto;
@@ -143,93 +168,97 @@
             padding: 2px 6px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px;
         }
 
-        .sidebar-footer { padding: 12px 14px; border-top: 1px solid var(--border-color); }
-        .sidebar-footer .nav-link.logout { color: #ef5350; }
-        .sidebar-footer .nav-link.logout:hover { background: rgba(239,83,80,0.1); color: #ef5350; }
+        .sidebar-footer { padding: 10px 12px; border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .sidebar-footer .nav-link.logout { color: var(--red); }
+        .sidebar-footer .nav-link.logout:hover { background: rgba(255,82,82,0.1); color: var(--red); }
 
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1030; backdrop-filter: blur(4px); }
-        .sidebar-overlay.show { display: block; }
+        .sidebar-overlay {
+            display: none; position: fixed; inset: 0;
+            background: var(--overlay); z-index: 1030; backdrop-filter: blur(4px);
+        }
+        .sidebar-overlay.show { display: block; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* Mobile Header */
         .mobile-header {
             display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1020;
-            background: var(--bg-sidebar); padding: 10px 16px; align-items: center; gap: 12px;
-            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-sidebar); padding: 10px 14px; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border-color); backdrop-filter: blur(20px);
         }
-        .mobile-header .mobile-logo { display: flex; align-items: center; gap: 10px; }
+        .mobile-header .mobile-logo { display: flex; align-items: center; gap: 8px; }
         .mobile-header .mobile-logo img {
-            height: 28px; width: 28px;
-            border-radius: 50%; object-fit: cover; display: block;
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 10px rgba(38,166,154,0.3);
+            height: 28px; width: 28px; border-radius: 50%; object-fit: cover;
+            border: 1.5px solid var(--accent); flex-shrink: 0;
         }
         .mobile-header .mobile-logo span {
             font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700; font-size: 0.9rem; color: var(--text-primary);
+            font-weight: 700; font-size: 0.88rem; color: var(--text-primary);
         }
-        .mobile-header .mobile-logo span i { color: var(--accent); }
+        .hamburger-btn {
+            background: none; border: none; color: var(--text-primary);
+            font-size: 1.3rem; cursor: pointer; padding: 4px 6px;
+            border-radius: var(--radius-sm); transition: all var(--transition);
+        }
+        .hamburger-btn:hover { color: var(--accent); background: var(--sidebar-hover); }
 
-        .hamburger-btn { background: none; border: none; color: var(--text-primary); font-size: 1.4rem; cursor: pointer; padding: 4px; }
-        .hamburger-btn:hover { color: var(--accent); }
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width); padding: 20px 24px;
+            min-height: 100vh; transition: margin var(--transition), padding var(--transition);
+        }
 
-        .main-content { margin-left: var(--sidebar-width); padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
-
-        /* ═══════════════════════════════════════════════
-           COMPACT TOP BAR — everything on one line
-           ═══════════════════════════════════════════════ */
+        /* Top Bar */
         .top-bar {
-            background: var(--bg-topbar); padding: 10px 18px; border-radius: var(--radius);
-            border: 1px solid var(--border-color); margin-bottom: 20px;
-            display: flex; align-items: center; gap: 12px;
-            box-shadow: var(--shadow);
+            background: var(--bg-topbar); padding: 10px 16px; border-radius: var(--radius);
+            border: 1px solid var(--border-color); margin-bottom: 18px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: var(--shadow-sm); backdrop-filter: blur(10px);
         }
         .top-bar h5 {
             margin: 0; font-weight: 600; color: var(--text-primary);
-            font-size: 0.95rem; font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.92rem; font-family: 'Space Grotesk', sans-serif;
             white-space: nowrap; flex-shrink: 0;
         }
 
-        /* Compact token display */
+        /* Token Display */
         .token-display {
             display: flex; align-items: center; gap: 5px;
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 16px; padding: 5px 10px; font-size: 0.7rem;
-            font-weight: 600; cursor: pointer; transition: all 0.2s;
-            font-family: 'IBM Plex Mono', monospace; white-space: nowrap;
-            flex-shrink: 0;
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 5px 10px; font-size: 0.68rem;
+            font-weight: 600; cursor: pointer; transition: all var(--transition);
+            font-family: 'JetBrains Mono', monospace; white-space: nowrap; flex-shrink: 0;
         }
         .token-display:hover { border-color: var(--accent); }
         .token-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .token-dot.good { background: #26a69a; box-shadow: 0 0 4px rgba(38,166,154,0.4); }
-        .token-dot.warn { background: #ffb300; box-shadow: 0 0 4px rgba(255,179,0,0.4); }
-        .token-dot.low { background: #ff5252; box-shadow: 0 0 4px rgba(255,82,82,0.4); }
+        .token-dot.good { background: var(--accent); box-shadow: 0 0 4px rgba(38,166,154,0.5); }
+        .token-dot.warn { background: var(--gold); box-shadow: 0 0 4px rgba(255,179,0,0.5); }
+        .token-dot.low { background: var(--red); box-shadow: 0 0 4px rgba(255,82,82,0.5); }
 
-        /* Compact AI trigger button */
+        /* AI Trigger Button */
         .ai-trigger-btn {
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            background: linear-gradient(135deg, var(--purple), #6d28d9);
             color: #fff; border: none; border-radius: 16px;
-            padding: 5px 12px; font-size: 0.7rem; font-weight: 700;
+            padding: 5px 12px; font-size: 0.68rem; font-weight: 700;
             cursor: pointer; display: flex; align-items: center; gap: 5px;
-            transition: all 0.3s; white-space: nowrap; flex-shrink: 0;
+            transition: all var(--transition); white-space: nowrap; flex-shrink: 0;
         }
         .ai-trigger-btn:hover { box-shadow: 0 4px 16px rgba(139,92,246,0.4); transform: translateY(-1px); }
-        .ai-trigger-btn i { font-size: 0.75rem; }
+        .ai-trigger-btn i { font-size: 0.72rem; }
 
-        /* Compact AI Analyse button */
+        /* AI Analyse Button */
         .btn-analyse-page {
             position: relative;
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9, #a855f7, #6d28d9);
+            background: linear-gradient(135deg, var(--purple), #6d28d9, #a855f7, #6d28d9);
             background-size: 300% 300%;
-            color: #fff; border: none;
-            border-radius: 16px; padding: 5px 14px;
-            font-size: 0.7rem; font-weight: 700;
+            color: #fff; border: none; border-radius: 16px; padding: 5px 14px;
+            font-size: 0.68rem; font-weight: 700;
             text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
             white-space: nowrap; cursor: pointer;
             animation: analyseGlow 2.2s ease-in-out infinite, analyseGradient 5s ease infinite;
             transition: transform 0.2s ease; flex-shrink: 0;
         }
-        .btn-analyse-page:hover { transform: translateY(-1px) scale(1.035); color: #fff; }
-        .btn-analyse-page:active { transform: translateY(0) scale(0.98); }
-        .btn-analyse-page .sparkle { display: inline-block; animation: sparkleSpin 2s linear infinite; font-size: 0.7rem; }
+        .btn-analyse-page:hover { transform: translateY(-1px) scale(1.03); color: #fff; }
+        .btn-analyse-page .sparkle { display: inline-block; animation: sparkleSpin 2s linear infinite; font-size: 0.68rem; }
         .btn-analyse-page.is-loading { opacity: 0.85; cursor: wait; }
 
         @keyframes analyseGlow {
@@ -247,52 +276,59 @@
             100% { transform: rotate(360deg) scale(1); }
         }
 
-        /* Compact account switcher */
+        /* Account Switcher */
         .account-switcher .btn {
-            background: var(--bg-card); border: 1px solid var(--accent); color: var(--accent);
-            border-radius: 16px; padding: 5px 12px; font-size: 0.72rem; font-weight: 600;
-            display: flex; align-items: center; gap: 5px; transition: all 0.2s;
-            max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            flex-shrink: 0;
+            background: var(--bg-input); border: 1px solid var(--accent); color: var(--accent);
+            border-radius: 16px; padding: 5px 10px; font-size: 0.7rem; font-weight: 600;
+            display: flex; align-items: center; gap: 5px; transition: all var(--transition);
+            max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0;
         }
-        .account-switcher .btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .account-switcher .btn i { font-size: 0.75rem; }
-        .account-switcher .dropdown-menu { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: 0 8px 24px rgba(0,0,0,0.4); min-width: 260px; max-height: 400px; overflow-y: auto; }
-        .account-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid var(--border-color); }
+        .account-switcher .btn:hover { background: var(--accent); color: #fff; }
+        .account-switcher .dropdown-menu {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg); min-width: 260px; max-height: 400px; overflow-y: auto;
+        }
+        .account-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+            border-bottom: 1px solid var(--border-color);
+        }
         .account-item:last-child { border-bottom: none; }
-        .account-item:hover { background: rgba(38,166,154,0.08); }
-        .account-item.active { background: rgba(38,166,154,0.12); border-left: 3px solid var(--accent); }
-        .account-item .acc-info { display: flex; flex-direction: column; gap: 2px; }
-        .account-item .acc-name { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); }
-        .account-item .acc-meta { font-size: 0.68rem; color: var(--text-muted); display: flex; gap: 8px; }
-        .account-item .acc-badge { font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-        .acc-badge.live { background: rgba(0,230,118,0.15); color: #00e676; }
-        .acc-badge.demo { background: rgba(255,179,0,0.15); color: #ffb300; }
+        .account-item:hover { background: var(--sidebar-hover); }
+        .account-item.active { background: rgba(38,166,154,0.1); border-left: 3px solid var(--accent); }
+        .acc-badge.live { background: rgba(0,200,83,0.12); color: var(--green); font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+        .acc-badge.demo { background: rgba(255,179,0,0.12); color: var(--gold); font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
         .account-dropdown-footer { padding: 8px 12px; border-top: 1px solid var(--border-color); text-align: center; }
-        .account-dropdown-footer a { font-size: 0.78rem; color: var(--accent); text-decoration: none; font-weight: 600; }
+        .account-dropdown-footer a { font-size: 0.76rem; color: var(--accent); font-weight: 600; }
 
-        /* Compact theme toggle */
+        /* Theme Toggle */
         .theme-toggle {
             background: none; border: 1px solid var(--border-color); color: var(--text-secondary);
             width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1rem; transition: all 0.2s; flex-shrink: 0;
+            font-size: 0.95rem; transition: all var(--transition); flex-shrink: 0;
         }
-        .theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: rgba(38,166,154,0.1); }
+        .theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--sidebar-hover); transform: rotate(25deg); }
 
-        /* Compact user dropdown */
+        /* User Dropdown */
         .user-dropdown .btn {
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            color: var(--text-primary); border-radius: 16px; padding: 5px 12px;
-            font-size: 0.72rem; flex-shrink: 0;
+            background: var(--bg-input); border: 1px solid var(--border-color);
+            color: var(--text-primary); border-radius: 16px; padding: 5px 10px;
+            font-size: 0.7rem; flex-shrink: 0;
         }
         .user-dropdown .btn:hover { border-color: var(--accent); }
-        .user-dropdown .btn i { font-size: 0.75rem; }
-        .dropdown-menu { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-        .dropdown-item { color: var(--text-primary); font-size: 0.85rem; padding: 8px 16px; }
-        .dropdown-item:hover { background: rgba(38,166,154,0.1); color: var(--accent); }
+        .dropdown-menu { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); }
+        .dropdown-item { color: var(--text-primary); font-size: 0.82rem; padding: 8px 14px; }
+        .dropdown-item:hover { background: var(--sidebar-hover); color: var(--accent); }
 
-        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow); }
+        /* Cards */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: var(--radius); box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+        }
+        .card:hover { border-color: rgba(38,166,154,0.2); box-shadow: var(--shadow); }
+
         .text-muted { color: var(--text-muted) !important; }
         small { color: var(--text-muted); }
         strong { color: var(--text-primary); }
@@ -300,7 +336,7 @@
         .text-danger { color: var(--red) !important; }
         .text-warning { color: var(--gold) !important; }
 
-        /* ===== AI LOADING OVERLAY ===== */
+        /* AI Loading Overlay */
         .analyse-loading-overlay {
             display: none; position: fixed; inset: 0;
             background: radial-gradient(circle at 50% 40%, rgba(109,40,217,0.25), rgba(8,10,16,0.96) 70%);
@@ -309,10 +345,9 @@
         }
         .analyse-loading-overlay.show { display: flex; animation: overlayFadeIn 0.25s ease; }
         @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
-
         .analyse-loading-card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px; max-width: 420px; }
         .analyse-orb { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 28px; }
-        .orb-core { position: relative; z-index: 3; width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #6d28d9); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 0 30px rgba(139,92,246,0.8), 0 0 60px rgba(109,40,217,0.5); animation: corePulse 1.6s ease-in-out infinite; }
+        .orb-core { position: relative; z-index: 3; width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--purple), #6d28d9); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 0 30px rgba(139,92,246,0.8), 0 0 60px rgba(109,40,217,0.5); animation: corePulse 1.6s ease-in-out infinite; }
         @keyframes corePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
         .orb-ring { position: absolute; border-radius: 50%; border: 2px solid rgba(139,92,246,0.55); animation: ringSpin linear infinite; }
         .orb-ring.r1 { width: 90px; height: 90px; border-top-color: #a855f7; animation-duration: 2.4s; }
@@ -326,22 +361,22 @@
         .orb-particle:nth-child(7) { top: 45%; left: 2%; animation-delay: 2.1s; }
         @keyframes particleFloat { 0%, 100% { opacity: 0; transform: scale(0.5); } 50% { opacity: 1; transform: scale(1.3); } }
         .analyse-loading-card h5 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.15rem; color: #f0eefc; margin-bottom: 8px; }
-        .analyse-loading-card p { color: #a7a3c9; font-size: 0.88rem; min-height: 20px; margin-bottom: 22px; transition: opacity 0.3s ease; }
-        .analyse-progress-bar { width: 240px; height: 5px; border-radius: 6px; background: rgba(139,92,246,0.15); overflow: hidden; }
-        .analyse-progress-fill { position: absolute; top: 0; bottom: 0; left: -40%; width: 40%; border-radius: 6px; background: linear-gradient(90deg, transparent, #a855f7, #8b5cf6, transparent); animation: progressSlide 1.3s ease-in-out infinite; }
+        .analyse-loading-card p { color: #a7a3c9; font-size: 0.88rem; min-height: 20px; margin-bottom: 22px; }
+        .analyse-progress-bar { width: 240px; height: 5px; border-radius: 6px; background: rgba(139,92,246,0.15); overflow: hidden; position: relative; }
+        .analyse-progress-fill { position: absolute; top: 0; bottom: 0; left: -40%; width: 40%; border-radius: 6px; background: linear-gradient(90deg, transparent, #a855f7, var(--purple), transparent); animation: progressSlide 1.3s ease-in-out infinite; }
         @keyframes progressSlide { 0% { left: -40%; } 100% { left: 100%; } }
         .analyse-loading-hint { margin-top: 18px; font-size: 0.72rem; color: #6e6a8f; }
 
-        /* ===== VERIFICATION BANNER ===== */
+        /* Verification Banner */
         #btnResendVerify {
-            background: #ffb300; color: #000; border: none;
+            background: var(--gold); color: #000; border: none;
             padding: 8px 18px; border-radius: 20px; font-weight: 700;
-            font-size: 0.8rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+            font-size: 0.78rem; cursor: pointer; transition: all var(--transition); white-space: nowrap;
         }
         #btnResendVerify:hover { background: #ffc107; transform: translateY(-1px); }
         #btnResendVerify:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* ===== AI WIDGET ===== */
+        /* AI Widget */
         .ai-widget-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9998; }
         .ai-widget-overlay.show { display: block; }
         .ai-widget {
@@ -353,11 +388,11 @@
         }
         .ai-widget.show { display: flex; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .ai-widget-header { padding: 12px 16px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .ai-widget-header { padding: 12px 16px; background: linear-gradient(135deg, var(--purple), #6d28d9); color: #fff; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .ai-widget-header-left { display: flex; align-items: center; gap: 8px; }
         .ai-widget-header h6 { margin: 0; font-weight: 700; font-size: 0.85rem; font-family: 'Space Grotesk', sans-serif; color: #fff; }
         .ai-widget-header-actions { display: flex; gap: 8px; align-items: center; }
-        .btn-widget-action { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 0.7rem; font-weight: 600; transition: all 0.2s; white-space: nowrap; font-family: 'Space Grotesk', sans-serif; display: flex; align-items: center; gap: 4px; }
+        .btn-widget-action { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 0.68rem; font-weight: 600; transition: all 0.2s; white-space: nowrap; font-family: 'Space Grotesk', sans-serif; display: flex; align-items: center; gap: 4px; }
         .btn-widget-action:hover { background: rgba(255,255,255,0.28); }
         .btn-widget-close { background: rgba(255,255,255,0.12); border: none; color: #fff; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
         .btn-widget-close:hover { background: rgba(255,82,82,0.4); }
@@ -366,28 +401,28 @@
         .ai-widget-empty .empty-icon { font-size: 2.5rem; opacity: 0.3; margin-bottom: 8px; }
         .ai-widget-empty p { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
         .ai-widget-input-row { padding: 10px 14px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; flex-shrink: 0; background: var(--bg-card); }
-        .ai-widget-input-row input { flex: 1; padding: 10px 16px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 22px; color: var(--text-primary); font-size: 0.82rem; font-family: 'Inter', sans-serif; outline: none; }
-        .ai-widget-input-row input:focus { border-color: #8b5cf6; }
-        .btn-widget-send { width: 38px; height: 38px; border-radius: 50%; background: #8b5cf6; color: #fff; border: none; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+        .ai-widget-input-row input { flex: 1; padding: 10px 16px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 22px; color: var(--text-primary); font-size: 0.8rem; font-family: 'Inter', sans-serif; outline: none; }
+        .ai-widget-input-row input:focus { border-color: var(--purple); }
+        .btn-widget-send { width: 38px; height: 38px; border-radius: 50%; background: var(--purple); color: #fff; border: none; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
         .btn-widget-send:hover { background: #6d28d9; }
         .btn-widget-send:disabled { opacity: 0.5; cursor: not-allowed; }
-        .widget-msg { display: flex; gap: 8px; max-width: 85%; animation: fadeIn 0.25s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .widget-msg { display: flex; gap: 8px; max-width: 85%; animation: msgFadeIn 0.25s ease; }
+        @keyframes msgFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         .widget-msg.ai { align-self: flex-start; }
         .widget-msg.user { align-self: flex-end; flex-direction: row-reverse; }
         .widget-msg .wm-avatar { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; }
-        .wm-avatar.ai-av { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; }
+        .wm-avatar.ai-av { background: linear-gradient(135deg, var(--purple), #6d28d9); color: #fff; }
         .wm-avatar.user-av { background: var(--bg-body); border: 1px solid var(--border-color); }
         .widget-msg .wm-bubble { padding: 9px 14px; border-radius: 16px; font-size: 0.8rem; line-height: 1.5; word-wrap: break-word; }
         .widget-msg.ai .wm-bubble { background: var(--bg-body); color: var(--text-primary); border: 1px solid var(--border-color); border-bottom-left-radius: 4px; }
-        .widget-msg.user .wm-bubble { background: #8b5cf6; color: #fff; border-bottom-right-radius: 4px; }
+        .widget-msg.user .wm-bubble { background: var(--purple); color: #fff; border-bottom-right-radius: 4px; }
         .typing-dots { display: flex; gap: 4px; padding: 6px 0; }
         .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s infinite; }
         .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
         .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
 
-        /* ===== HISTORY MODAL ===== */
+        /* History Modal */
         .history-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 10000; justify-content: center; align-items: center; padding: 16px; }
         .history-modal-overlay.show { display: flex; }
         .history-modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 18px; width: 440px; max-width: 100%; max-height: 70vh; overflow-y: auto; padding: 20px; box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
@@ -401,25 +436,41 @@
         .history-item-info { flex: 1; min-width: 0; }
         .history-item-title { font-weight: 600; font-size: 0.82rem; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .history-item-meta { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
-        .history-item-delete { color: #ff5252; cursor: pointer; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; flex-shrink: 0; }
+        .history-item-delete { color: var(--red); cursor: pointer; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; flex-shrink: 0; }
         .history-item-delete:hover { background: rgba(255,82,82,0.12); }
         .history-empty { text-align: center; padding: 30px; color: var(--text-muted); font-size: 0.82rem; }
 
-        /* ===== RESPONSIVE ===== */
+        /* Flash Messages */
+        .flash-container {
+            position: fixed; top: 16px; right: 16px; z-index: 3000;
+            display: flex; flex-direction: column; gap: 8px; max-width: 380px;
+        }
+        .flash-msg {
+            padding: 12px 16px; border-radius: var(--radius); font-size: 0.8rem;
+            font-weight: 500; animation: slideInRight 0.3s ease;
+            box-shadow: var(--shadow); border: 1px solid;
+        }
+        .flash-msg.success { background: rgba(0,200,83,0.1); border-color: rgba(0,200,83,0.3); color: var(--green); }
+        .flash-msg.danger { background: rgba(255,82,82,0.1); border-color: rgba(255,82,82,0.3); color: var(--red); }
+        .flash-msg.warning { background: rgba(255,179,0,0.1); border-color: rgba(255,179,0,0.3); color: var(--gold); }
+        .flash-msg.info { background: rgba(79,142,247,0.1); border-color: rgba(79,142,247,0.3); color: var(--blue); }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Responsive */
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
             .mobile-header { display: flex; }
             .sidebar-overlay.show { display: block; }
-            .main-content { margin-left: 0; padding: 70px 12px 16px; }
-            .top-bar { border-radius: 10px; padding: 8px 12px; gap: 8px; }
-            .top-bar h5 { font-size: 0.85rem; }
-            .account-switcher .btn { max-width: 110px; font-size: 0.68rem; padding: 4px 8px; }
-            .ai-trigger-btn { padding: 4px 10px; font-size: 0.65rem; }
-            .btn-analyse-page { padding: 4px 10px; font-size: 0.65rem; }
-            .token-display { font-size: 0.65rem; padding: 4px 8px; }
-            .theme-toggle { width: 28px; height: 28px; font-size: 0.9rem; }
-            .user-dropdown .btn { font-size: 0.68rem; padding: 4px 8px; }
+            .main-content { margin-left: 0; padding: 68px 12px 16px; }
+            .top-bar { border-radius: var(--radius-sm); padding: 8px 10px; gap: 6px; }
+            .top-bar h5 { font-size: 0.82rem; }
+            .account-switcher .btn { max-width: 100px; font-size: 0.65rem; padding: 4px 8px; }
+            .ai-trigger-btn { padding: 4px 8px; font-size: 0.62rem; }
+            .btn-analyse-page { padding: 4px 8px; font-size: 0.62rem; }
+            .token-display { font-size: 0.62rem; padding: 4px 8px; }
+            .theme-toggle { width: 28px; height: 28px; font-size: 0.85rem; }
+            .user-dropdown .btn { font-size: 0.65rem; padding: 4px 8px; }
             .ai-widget { width: 100% !important; height: 100% !important; max-height: 100vh !important; bottom: 0 !important; right: 0 !important; border-radius: 0 !important; }
             .ai-widget-overlay { display: none !important; }
             .history-modal { width: 100%; max-height: 80vh; border-radius: 16px 16px 0 0; margin-top: auto; }
@@ -427,43 +478,55 @@
         }
 
         @media (max-width: 576px) {
-            .top-bar { flex-wrap: wrap; gap: 6px; }
-            .top-bar h5 { font-size: 0.8rem; }
+            .top-bar { flex-wrap: wrap; gap: 5px; }
+            .top-bar h5 { font-size: 0.78rem; }
             .btn-widget-action span.full-text { display: none; }
             .btn-widget-action span.short-text { display: inline; }
-            .mobile-header .mobile-logo img { height: 24px; width: 24px; }
-            .mobile-header .mobile-logo span { font-size: 0.8rem; }
-            .analyse-orb { width: 110px; height: 110px; }
-            .orb-core { width: 52px; height: 52px; font-size: 1.4rem; }
-            .orb-ring.r1 { width: 74px; height: 74px; }
-            .orb-ring.r2 { width: 92px; height: 92px; }
-            .orb-ring.r3 { width: 110px; height: 110px; }
-            .analyse-loading-card { padding: 24px; }
-            .analyse-progress-bar { width: 200px; }
+            .main-content { padding: 64px 8px 12px; }
         }
 
-        @media (min-width: 577px) { .btn-widget-action span.short-text { display: none; } .btn-widget-action span.full-text { display: inline; } }
+        @media (min-width: 577px) {
+            .btn-widget-action span.short-text { display: none; }
+            .btn-widget-action span.full-text { display: inline; }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
 
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-container" id="flashContainer">
+    {% for category, message in messages %}
+    <div class="flash-msg {{ category }}">
+        <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'x-circle' if category == 'danger' else 'info-circle' }} me-1"></i>
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- Mobile Header -->
 <header class="mobile-header">
     <button class="hamburger-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
     <div class="mobile-logo">
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tragene Journal">
-        <span>Tragene<span>Journal</span></span>
+        <span>Tragene<span style="color:var(--accent);">Journal</span></span>
     </div>
-    <div class="dropdown account-switcher mobile-account-switcher" style="display: inline-flex; margin-left: auto;">
-        <button class="btn dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown" id="mobileAccountBtn" style="font-size: 0.7rem; padding: 4px 8px;">
+    <div class="dropdown account-switcher mobile-account-switcher" style="display:inline-flex;margin-left:auto;">
+        <button class="btn dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown" id="mobileAccountBtn" style="font-size:0.68rem;padding:4px 8px;">
             <i class="bi bi-folder2"></i> <span id="mobileAccountName">Account</span>
         </button>
         <ul class="dropdown-menu dropdown-menu-end" id="mobileAccountList"></ul>
     </div>
 </header>
 
+<!-- Sidebar Overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
+<!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tragene Journal" class="logo-img">
@@ -481,6 +544,7 @@
         <a href="{{ url_for('user.insights') }}" class="nav-link {% if request.endpoint == 'user.insights' %}active{% endif %}"><i class="bi bi-lightbulb"></i> Insights</a>
         <a href="{{ url_for('user.diary') }}" class="nav-link {% if request.endpoint == 'user.diary' %}active{% endif %}"><i class="bi bi-book"></i> Trading Diary</a>
         <a href="{{ url_for('tools.index') }}" class="nav-link {% if 'tools' in request.endpoint %}active{% endif %}"><i class="bi bi-tools"></i> Tools</a>
+        <a href="{{ url_for('user.payment_history') }}" class="nav-link {% if request.endpoint == 'user.payment_history' %}active{% endif %}"><i class="bi bi-receipt"></i> Payment History</a>
         <a href="{{ url_for('user.support') }}" class="nav-link {% if request.endpoint == 'user.support' %}active{% endif %}"><i class="bi bi-headset"></i> Help & Support</a>
         <a href="{{ url_for('user.settings') }}" class="nav-link {% if request.endpoint == 'user.settings' %}active{% endif %}"><i class="bi bi-gear"></i> Settings</a>
         <a href="{{ url_for('user.subscription') }}" class="nav-link {% if request.endpoint == 'user.subscription' %}active{% endif %}"><i class="bi bi-credit-card"></i> Subscription</a>
@@ -490,6 +554,7 @@
     </div>
 </aside>
 
+<!-- Main Content -->
 <div class="main-content">
     <div class="top-bar">
         <h5>{% block page_title %}Dashboard{% endblock %}</h5>
@@ -501,13 +566,14 @@
         <button class="ai-trigger-btn" onclick="toggleAIAssistant()" title="AI Assistant"><i class="bi bi-robot"></i> AI</button>
         <div class="dropdown account-switcher">
             <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" id="accountSwitcherBtn"><i class="bi bi-folder2"></i> <span id="currentAccountName">...</span></button>
-            <ul class="dropdown-menu dropdown-menu-end" id="accountDropdownList"><li><div class="text-center py-3"><div class="spinner-border spinner-border-sm" style="color: var(--accent);"></div></div></li></ul>
+            <ul class="dropdown-menu dropdown-menu-end" id="accountDropdownList"><li><div class="text-center py-3"><div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div></div></li></ul>
         </div>
         <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-moon-stars" id="themeIcon"></i></button>
         <div class="dropdown user-dropdown">
             <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-person-circle"></i> {{ current_user.username }}</button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="{{ url_for('user.settings') }}"><i class="bi bi-gear"></i> Settings</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('user.payment_history') }}"><i class="bi bi-receipt"></i> Payment History</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
             </ul>
@@ -516,30 +582,15 @@
 
     {% if current_user.is_authenticated and not current_user.email_verified %}
     <div id="verifyBanner" style="background:rgba(255,179,0,0.1);border:1px solid rgba(255,179,0,0.3);border-radius:12px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <span style="font-size:0.82rem;color:#ffb300;font-weight:600;"><i class="bi bi-exclamation-triangle-fill"></i> Your email (<strong style="color:#ffb300;">{{ current_user.email }}</strong>) is not verified. Verify to unlock all features.</span>
+        <span style="font-size:0.8rem;color:var(--gold);font-weight:600;"><i class="bi bi-exclamation-triangle-fill"></i> Your email (<strong style="color:var(--gold);">{{ current_user.email }}</strong>) is not verified. Verify to unlock all features.</span>
         <button onclick="resendVerification()" id="btnResendVerify"><span id="resendText">📧 Resend Verification Email</span><span id="resendSpinner" style="display:none;" class="spinner-border spinner-border-sm"></span></button>
     </div>
-    <script>
-        async function resendVerification() {
-            const btn = document.getElementById('btnResendVerify'), text = document.getElementById('resendText'), spinner = document.getElementById('resendSpinner'), banner = document.getElementById('verifyBanner');
-            if (!btn || !text || !banner) return;
-            btn.disabled = true; text.textContent = 'Sending...'; spinner.style.display = 'inline-block';
-            try {
-                const r = await fetch('/resend-verification', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                const d = await r.json();
-                if (d.success) {
-                    banner.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%;"><span style="font-size:0.82rem;color:#00e676;font-weight:600;"><i class="bi bi-check-circle-fill"></i> ${d.message}</span></div>`;
-                    banner.style.background = 'rgba(0,230,118,0.08)'; banner.style.borderColor = 'rgba(0,230,118,0.25)'; banner.style.transition = 'all 0.4s ease';
-                    setTimeout(() => { banner.style.opacity = '0'; banner.style.maxHeight = '0'; banner.style.marginBottom = '0'; banner.style.padding = '0'; banner.style.borderWidth = '0'; banner.style.overflow = 'hidden'; setTimeout(() => { if (banner.parentNode) banner.remove(); }, 500); }, 5000);
-                } else { text.textContent = '📧 Resend Verification Email'; spinner.style.display = 'none'; btn.disabled = false; alert(d.message || 'Failed.'); }
-            } catch (e) { text.textContent = '📧 Resend Verification Email'; spinner.style.display = 'none'; btn.disabled = false; alert('Connection error.'); }
-        }
-    </script>
     {% endif %}
 
     {% block content %}{% endblock %}
 </div>
 
+<!-- AI Loading Overlay -->
 <div class="analyse-loading-overlay" id="analyseLoadingOverlay">
     <div class="analyse-loading-card">
         <div class="analyse-orb"><div class="orb-ring r1"></div><div class="orb-ring r2"></div><div class="orb-ring r3"></div><div class="orb-particle"></div><div class="orb-particle"></div><div class="orb-particle"></div><div class="orb-particle"></div><div class="orb-core">🧠</div></div>
@@ -550,41 +601,179 @@
     </div>
 </div>
 
+<!-- AI Widget -->
 <div class="ai-widget-overlay" id="aiWidgetOverlay" onclick="toggleAIAssistant()"></div>
 <div class="ai-widget" id="aiWidget">
-    <div class="ai-widget-header"><div class="ai-widget-header-left"><span class="ai-icon">🧠</span><h6>TRAGENE AI</h6></div><div class="ai-widget-header-actions"><button class="btn-widget-action" onclick="newChat()"><span class="full-text">+ New Chat</span><span class="short-text">+ New</span></button><button class="btn-widget-action" onclick="openHistoryModal()"><span class="full-text">📜 History</span><span class="short-text">📜</span></button><button class="btn-widget-close" onclick="toggleAIAssistant()">✕</button></div></div>
+    <div class="ai-widget-header"><div class="ai-widget-header-left"><span>🧠</span><h6>TRAGENE AI</h6></div><div class="ai-widget-header-actions"><button class="btn-widget-action" onclick="newChat()"><span class="full-text">+ New Chat</span><span class="short-text">+ New</span></button><button class="btn-widget-action" onclick="openHistoryModal()"><span class="full-text">📜 History</span><span class="short-text">📜</span></button><button class="btn-widget-close" onclick="toggleAIAssistant()">✕</button></div></div>
     <div class="ai-widget-messages" id="widgetMessages"><div class="ai-widget-empty"><div class="empty-icon">🧠</div><p>Hey <strong>{{ current_user.username }}</strong>! 👋<br>I'm <strong>TRAGENE AI</strong>. Ask me anything about your trades!</p></div></div>
     <div class="ai-widget-input-row"><input type="text" id="widgetInput" placeholder="Ask about your trades..." autocomplete="off" onkeypress="if(event.key==='Enter')sendWidgetMessage()"><button class="btn-widget-send" id="widgetSendBtn" onclick="sendWidgetMessage()">➤</button></div>
 </div>
 
+<!-- History Modal -->
 <div class="history-modal-overlay" id="historyModal"><div class="history-modal"><div class="history-modal-header"><h5>📜 Chat History</h5><button class="history-modal-close" onclick="closeHistoryModal()">&times;</button></div><div id="historyList"><div class="history-empty">Loading...</div></div></div></div>
 
 <script>
     let currentSessionId = null;
+    
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('show'); }
     document.querySelectorAll('.sidebar .nav-link').forEach(l => l.addEventListener('click', () => { if (window.innerWidth <= 992) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); } }));
-    function toggleTheme() { const h = document.documentElement, i = document.getElementById('themeIcon'); if (h.getAttribute('data-theme') === 'dark') { h.setAttribute('data-theme', 'light'); i.className = 'bi bi-sun-fill'; localStorage.setItem('theme', 'light'); } else { h.setAttribute('data-theme', 'dark'); i.className = 'bi bi-moon-stars'; localStorage.setItem('theme', 'dark'); } }
-    const st = localStorage.getItem('theme') || 'dark'; document.documentElement.setAttribute('data-theme', st); document.getElementById('themeIcon').className = st === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun-fill';
-    function loadAccounts() { fetch('/user/api/accounts').then(r => r.json()).then(a => { const l = document.getElementById('accountDropdownList'), n = document.getElementById('currentAccountName'), ml = document.getElementById('mobileAccountList'), mn = document.getElementById('mobileAccountName'); let h = ''; a.forEach(acc => { if (acc.is_current) { n.textContent = acc.name; mn.textContent = acc.name; } h += `<div class="account-item ${acc.is_current?'active':''}" onclick="switchAccount(${acc.id})"><div class="acc-info"><span class="acc-name">${acc.is_current?'<i class="bi bi-check-circle-fill me-1"></i>':''}${acc.name}</span><span class="acc-meta"><span>${acc.trade_count} trades</span><span class="acc-badge ${acc.account_type}">${acc.account_type.toUpperCase()}</span></span></div></div>`; }); h += '<div class="account-dropdown-footer"><a href="/user/settings#accounts"><i class="bi bi-gear"></i> Manage Accounts</a></div>'; l.innerHTML = h; ml.innerHTML = a.map(acc => `<li><div class="account-item ${acc.is_current?'active':''}" onclick="switchAccount(${acc.id})"><div class="acc-info"><span class="acc-name">${acc.name}</span><span class="acc-meta"><span class="acc-badge ${acc.account_type}">${acc.account_type.toUpperCase()}</span></span></div></div></li>`).join(''); }); }
-    function switchAccount(id) { fetch('/user/switch-account/'+id,{method:'POST'}).then(r=>{if(r.ok)location.reload();}); }
-    function loadTokens() { fetch('/ai/token-info').then(r => r.json()).then(d => { const dot = document.getElementById('tokenDot'), text = document.getElementById('tokenText'), pct = d.limit > 0 ? (d.used/d.limit)*100 : 0; dot.className = 'token-dot ' + (pct > 80 ? 'low' : pct > 50 ? 'warn' : 'good'); text.textContent = d.is_banned ? '🚫 Banned' : '🪙 ' + d.remaining.toLocaleString(); }); }
-    function showUpgradeAlert(f) { if (confirm(`🔒 ${f} is an Elite plan feature.\n\nUpgrade to Elite (₹799/mo) to unlock:\n• AI Coach\n• Goals & Planner\n• Strategy Builder\n• Unlimited AI tokens\n\nGo to Subscription page?`)) window.location.href = '/user/subscription'; }
+    
+    function toggleTheme() {
+        const h = document.documentElement, i = document.getElementById('themeIcon');
+        const next = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        h.setAttribute('data-theme', next);
+        i.className = next === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun-fill';
+        localStorage.setItem('theme', next);
+    }
+    
+    (function() {
+        const st = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', st);
+        document.addEventListener('DOMContentLoaded', () => {
+            const icon = document.getElementById('themeIcon');
+            if (icon) icon.className = st === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun-fill';
+        });
+    })();
+    
+    function loadAccounts() {
+        fetch('/user/api/accounts').then(r => r.json()).then(a => {
+            const l = document.getElementById('accountDropdownList'), n = document.getElementById('currentAccountName'),
+                  ml = document.getElementById('mobileAccountList'), mn = document.getElementById('mobileAccountName');
+            let h = '';
+            a.forEach(acc => {
+                if (acc.is_current) { n.textContent = acc.name; mn.textContent = acc.name; }
+                h += '<div class="account-item ' + (acc.is_current ? 'active' : '') + '" onclick="switchAccount(' + acc.id + ')"><div class="acc-info"><span class="acc-name">' + (acc.is_current ? '<i class="bi bi-check-circle-fill me-1"></i>' : '') + acc.name + '</span><span class="acc-meta"><span>' + acc.trade_count + ' trades</span><span class="acc-badge ' + acc.account_type + '">' + acc.account_type.toUpperCase() + '</span></span></div></div>';
+            });
+            h += '<div class="account-dropdown-footer"><a href="/user/settings#accounts"><i class="bi bi-gear"></i> Manage Accounts</a></div>';
+            l.innerHTML = h;
+            ml.innerHTML = a.map(acc => '<li><div class="account-item ' + (acc.is_current ? 'active' : '') + '" onclick="switchAccount(' + acc.id + ')"><div class="acc-info"><span class="acc-name">' + acc.name + '</span><span class="acc-meta"><span class="acc-badge ' + acc.account_type + '">' + acc.account_type.toUpperCase() + '</span></span></div></div></li>').join('');
+        });
+    }
+    
+    function switchAccount(id) { fetch('/user/switch-account/' + id, { method: 'POST' }).then(r => { if (r.ok) location.reload(); }); }
+    
+    function loadTokens() {
+        fetch('/ai/token-info').then(r => r.json()).then(d => {
+            const dot = document.getElementById('tokenDot'), text = document.getElementById('tokenText');
+            const pct = d.limit > 0 ? (d.used / d.limit) * 100 : 0;
+            dot.className = 'token-dot ' + (pct > 80 ? 'low' : pct > 50 ? 'warn' : 'good');
+            text.textContent = d.is_banned ? '🚫 Banned' : '🪙 ' + d.remaining.toLocaleString();
+        });
+    }
+    
+    function showUpgradeAlert(f) {
+        if (confirm('🔒 ' + f + ' is an Elite plan feature.\n\nUpgrade to Elite (₹799/mo) to unlock:\n• AI Coach\n• Goals & Planner\n• Strategy Builder\n• Unlimited AI tokens\n\nGo to Subscription page?')) {
+            window.location.href = '/user/subscription';
+        }
+    }
+    
+    async function resendVerification() {
+        const btn = document.getElementById('btnResendVerify'), text = document.getElementById('resendText'),
+              spinner = document.getElementById('resendSpinner'), banner = document.getElementById('verifyBanner');
+        if (!btn || !text || !banner) return;
+        btn.disabled = true; text.textContent = 'Sending...'; spinner.style.display = 'inline-block';
+        try {
+            const r = await fetch('/resend-verification', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const d = await r.json();
+            if (d.success) {
+                banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;width:100%;"><span style="font-size:0.8rem;color:var(--green);font-weight:600;"><i class="bi bi-check-circle-fill"></i> ' + d.message + '</span></div>';
+                banner.style.background = 'rgba(0,200,83,0.08)'; banner.style.borderColor = 'rgba(0,200,83,0.25)';
+                setTimeout(() => { banner.style.opacity = '0'; banner.style.maxHeight = '0'; banner.style.margin = '0'; banner.style.padding = '0'; banner.style.border = '0'; banner.style.overflow = 'hidden'; setTimeout(() => { if (banner.parentNode) banner.remove(); }, 500); }, 5000);
+            } else { text.textContent = '📧 Resend Verification Email'; spinner.style.display = 'none'; btn.disabled = false; alert(d.message || 'Failed.'); }
+        } catch (e) { text.textContent = '📧 Resend Verification Email'; spinner.style.display = 'none'; btn.disabled = false; alert('Connection error.'); }
+    }
+    
     function toggleAIAssistant() { document.getElementById('aiWidget').classList.toggle('show'); document.getElementById('aiWidgetOverlay').classList.toggle('show'); if (document.getElementById('aiWidget').classList.contains('show')) document.getElementById('widgetInput').focus(); }
     function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-    function appendWidgetMessage(c, r) { const m = document.getElementById('widgetMessages'), e = m.querySelector('.ai-widget-empty'); if (e) m.innerHTML = ''; const d = document.createElement('div'); d.className = `widget-msg ${r}`; d.innerHTML = `<div class="wm-avatar ${r==='user'?'user-av':'ai-av'}">${r==='user'?'👤':'🧠'}</div><div class="wm-bubble">${escapeHtml(c)}</div>`; m.appendChild(d); m.scrollTop = m.scrollHeight; }
-    function timeAgo(d) { const n = new Date(), diff = Math.floor((n - d) / 1000); if (diff < 60) return 'just now'; if (diff < 3600) return `${Math.floor(diff/60)}m ago`; if (diff < 86400) return `${Math.floor(diff/3600)}h ago`; if (diff < 604800) return `${Math.floor(diff/86400)}d ago`; return d.toLocaleDateString(); }
+    
+    function appendWidgetMessage(c, r) {
+        const m = document.getElementById('widgetMessages'), e = m.querySelector('.ai-widget-empty');
+        if (e) m.innerHTML = '';
+        const d = document.createElement('div');
+        d.className = 'widget-msg ' + r;
+        d.innerHTML = '<div class="wm-avatar ' + (r === 'user' ? 'user-av' : 'ai-av') + '">' + (r === 'user' ? '👤' : '🧠') + '</div><div class="wm-bubble">' + escapeHtml(c) + '</div>';
+        m.appendChild(d); m.scrollTop = m.scrollHeight;
+    }
+    
+    function timeAgo(d) { const n = new Date(), diff = Math.floor((n - d) / 1000); if (diff < 60) return 'just now'; if (diff < 3600) return Math.floor(diff / 60) + 'm ago'; if (diff < 86400) return Math.floor(diff / 3600) + 'h ago'; if (diff < 604800) return Math.floor(diff / 86400) + 'd ago'; return d.toLocaleDateString(); }
     function openHistoryModal() { document.getElementById('historyModal').classList.add('show'); loadHistoryList(); }
     function closeHistoryModal() { document.getElementById('historyModal').classList.remove('show'); }
-    function loadHistoryList() { const l = document.getElementById('historyList'); l.innerHTML = '<div class="history-empty">Loading...</div>'; fetch('/ai/chat/sessions').then(r => r.json()).then(d => { if (!d.sessions || d.sessions.length === 0) { l.innerHTML = '<div class="history-empty"><div class="empty-icon">📭</div>No chats yet.<br><small>Start a new chat!</small></div>'; return; } l.innerHTML = d.sessions.map(s => `<div class="history-item ${s.id===currentSessionId?'active':''}"><div class="history-item-info" onclick="loadSessionFromHistory(${s.id})"><div class="history-item-title">${s.id===currentSessionId?'🟢 ':'💬 '}${escapeHtml(s.title)}</div><div class="history-item-meta">${s.message_count} messages · ${timeAgo(new Date(s.updated_at || s.created_at))}</div></div><span class="history-item-delete" onclick="event.stopPropagation();deleteSession(${s.id})">🗑️</span></div>`).join(''); }); }
+    
+    function loadHistoryList() {
+        const l = document.getElementById('historyList');
+        l.innerHTML = '<div class="history-empty">Loading...</div>';
+        fetch('/ai/chat/sessions').then(r => r.json()).then(d => {
+            if (!d.sessions || d.sessions.length === 0) { l.innerHTML = '<div class="history-empty"><div class="empty-icon">📭</div>No chats yet.<br><small>Start a new chat!</small></div>'; return; }
+            l.innerHTML = d.sessions.map(s => '<div class="history-item ' + (s.id === currentSessionId ? 'active' : '') + '"><div class="history-item-info" onclick="loadSessionFromHistory(' + s.id + ')"><div class="history-item-title">' + (s.id === currentSessionId ? '🟢 ' : '💬 ') + escapeHtml(s.title) + '</div><div class="history-item-meta">' + s.message_count + ' messages · ' + timeAgo(new Date(s.updated_at || s.created_at)) + '</div></div><span class="history-item-delete" onclick="event.stopPropagation();deleteSession(' + s.id + ')">🗑️</span></div>').join('');
+        });
+    }
+    
     function loadSessionFromHistory(id) { closeHistoryModal(); loadSession(id); }
-    function loadSession(sid) { currentSessionId = sid; const m = document.getElementById('widgetMessages'); m.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">Loading...</div>'; fetch('/ai/chat/sessions/'+sid+'/messages').then(r => r.json()).then(d => { m.innerHTML = ''; if (d.messages && d.messages.length > 0) d.messages.forEach(msg => appendWidgetMessage(msg.content, msg.role)); else m.innerHTML = '<div class="ai-widget-empty"><div class="empty-icon">💬</div><p>No messages yet.</p></div>'; m.scrollTop = m.scrollHeight; }).catch(() => { m.innerHTML = '<div class="ai-widget-empty"><p style="color:var(--text-muted);">Failed to load.</p></div>'; }); }
+    
+    function loadSession(sid) {
+        currentSessionId = sid;
+        const m = document.getElementById('widgetMessages');
+        m.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">Loading...</div>';
+        fetch('/ai/chat/sessions/' + sid + '/messages').then(r => r.json()).then(d => {
+            m.innerHTML = '';
+            if (d.messages && d.messages.length > 0) d.messages.forEach(msg => appendWidgetMessage(msg.content, msg.role));
+            else m.innerHTML = '<div class="ai-widget-empty"><div class="empty-icon">💬</div><p>No messages yet.</p></div>';
+            m.scrollTop = m.scrollHeight;
+        }).catch(() => { m.innerHTML = '<div class="ai-widget-empty"><p style="color:var(--text-muted);">Failed to load.</p></div>'; });
+    }
+    
     function newChat() { currentSessionId = null; document.getElementById('widgetMessages').innerHTML = '<div class="ai-widget-empty"><div class="empty-icon">🧠</div><p>New chat! Ask me anything about your trading.</p></div>'; document.getElementById('widgetInput').focus(); }
-    function deleteSession(sid) { if (!confirm('Delete this chat permanently?')) return; fetch('/ai/chat/sessions/'+sid+'/delete',{method:'POST'}).then(r => r.json()).then(d => { if (d.success) { if (currentSessionId === sid) newChat(); loadHistoryList(); loadTokens(); } }); }
-    function sendWidgetMessage() { const i = document.getElementById('widgetInput'), q = i.value.trim(); if (!q) return; const m = document.getElementById('widgetMessages'); appendWidgetMessage(q, 'user'); i.value = ''; const tid = 'typing-'+Date.now(), td = document.createElement('div'); td.className = 'widget-msg ai'; td.id = tid; td.innerHTML = '<div class="wm-avatar ai-av">🧠</div><div class="wm-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>'; m.appendChild(td); m.scrollTop = m.scrollHeight; const b = document.getElementById('widgetSendBtn'); b.disabled = true; i.disabled = true; fetch('/ai/chat/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,session_id:currentSessionId})}).then(r => r.json()).then(d => { const el = document.getElementById(tid); if (el) el.remove(); if (d.success) { currentSessionId = d.session_id; appendWidgetMessage(d.response, 'ai'); loadTokens(); } else appendWidgetMessage(d.message || 'Sorry, something went wrong.', 'ai'); }).catch(() => { const el = document.getElementById(tid); if (el) el.remove(); appendWidgetMessage('Connection error.', 'ai'); }).finally(() => { b.disabled = false; i.disabled = false; m.scrollTop = m.scrollHeight; i.focus(); }); }
-    const ANALYSE_LOADING_MESSAGES = ["Reading your trades...","Crunching your win rate...","Spotting risk patterns...","Checking stop-loss discipline...","Finding your biggest wins & losses...","Writing up your report..."];
-    function startAnalyseLoading(el) { const o = document.getElementById('analyseLoadingOverlay'), s = document.getElementById('analyseLoadingSub'); if (el) el.classList.add('is-loading'); o.classList.add('show'); let i = 0; const iv = setInterval(() => { i = (i + 1) % ANALYSE_LOADING_MESSAGES.length; s.style.opacity = 0; setTimeout(() => { s.textContent = ANALYSE_LOADING_MESSAGES[i]; s.style.opacity = 1; }, 200); }, 1600); window._analyseLoadingInterval = iv; window._analyseLoadingTimeout = setTimeout(() => { clearInterval(window._analyseLoadingInterval); o.classList.remove('show'); if (el) el.classList.remove('is-loading'); alert('This is taking longer than expected.'); }, 30000); return true; }
+    
+    function deleteSession(sid) {
+        if (!confirm('Delete this chat permanently?')) return;
+        fetch('/ai/chat/sessions/' + sid + '/delete', { method: 'POST' }).then(r => r.json()).then(d => {
+            if (d.success) { if (currentSessionId === sid) newChat(); loadHistoryList(); loadTokens(); }
+        });
+    }
+    
+    function sendWidgetMessage() {
+        const i = document.getElementById('widgetInput'), q = i.value.trim();
+        if (!q) return;
+        const m = document.getElementById('widgetMessages');
+        appendWidgetMessage(q, 'user'); i.value = '';
+        const tid = 'typing-' + Date.now(), td = document.createElement('div');
+        td.className = 'widget-msg ai'; td.id = tid;
+        td.innerHTML = '<div class="wm-avatar ai-av">🧠</div><div class="wm-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+        m.appendChild(td); m.scrollTop = m.scrollHeight;
+        const b = document.getElementById('widgetSendBtn'); b.disabled = true; i.disabled = true;
+        fetch('/ai/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: q, session_id: currentSessionId }) })
+            .then(r => r.json()).then(d => {
+                const el = document.getElementById(tid); if (el) el.remove();
+                if (d.success) { currentSessionId = d.session_id; appendWidgetMessage(d.response, 'ai'); loadTokens(); }
+                else appendWidgetMessage(d.message || 'Sorry, something went wrong.', 'ai');
+            }).catch(() => { const el = document.getElementById(tid); if (el) el.remove(); appendWidgetMessage('Connection error.', 'ai'); })
+            .finally(() => { b.disabled = false; i.disabled = false; m.scrollTop = m.scrollHeight; i.focus(); });
+    }
+    
+    const ANALYSE_LOADING_MESSAGES = ["Reading your trades...", "Crunching your win rate...", "Spotting risk patterns...", "Checking stop-loss discipline...", "Finding your biggest wins & losses...", "Writing up your report..."];
+    
+    function startAnalyseLoading(el) {
+        const o = document.getElementById('analyseLoadingOverlay'), s = document.getElementById('analyseLoadingSub');
+        if (el) el.classList.add('is-loading');
+        o.classList.add('show');
+        let i = 0;
+        const iv = setInterval(() => {
+            i = (i + 1) % ANALYSE_LOADING_MESSAGES.length;
+            s.style.opacity = 0;
+            setTimeout(() => { s.textContent = ANALYSE_LOADING_MESSAGES[i]; s.style.opacity = 1; }, 200);
+        }, 1600);
+        window._analyseLoadingTimeout = setTimeout(() => { clearInterval(iv); o.classList.remove('show'); if (el) el.classList.remove('is-loading'); }, 30000);
+        return true;
+    }
+    
+    // Auto-hide flash messages
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAccounts(); loadTokens();
+        const flashes = document.getElementById('flashContainer');
+        if (flashes) { setTimeout(() => { flashes.style.transition = 'opacity 0.5s ease'; flashes.style.opacity = '0'; setTimeout(() => { if (flashes.parentNode) flashes.remove(); }, 500); }, 4000); }
+    });
+    
     document.getElementById('historyModal').addEventListener('click', function(e) { if (e.target === this) closeHistoryModal(); });
-    document.addEventListener('DOMContentLoaded', function() { loadAccounts(); loadTokens(); });
     document.getElementById('accountSwitcherBtn').addEventListener('click', loadAccounts);
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && window.innerWidth <= 992) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); } });
 </script>

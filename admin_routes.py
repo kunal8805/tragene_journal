@@ -6,11 +6,13 @@ from models import (
     User, Trade, TradingAccount,
     AIReport, AIUsageLog, AIPlanDefaults, AIUserOverride,
     FAQ, SupportTicket, TicketReply,
-    Blog, Category, Tag, SEOSettings, Redirect, NewsletterSubscriber, PageMetadata
+    Blog, Category, Tag, SEOSettings, Redirect, NewsletterSubscriber, PageMetadata,
+    Subscription, Payment, DiaryEntry  # ← ADDED THESE IMPORTS
 )
 from ai_service import estimate_tokens, estimate_cost
 from datetime import datetime, date, timedelta
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 import os
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -31,6 +33,9 @@ def admin_required(f):
 @login_required
 @admin_required
 def dashboard():
+    from models import FAQ, SupportTicket, Blog, NewsletterSubscriber, ContactMessage
+    
+    # User stats
     total_users = User.query.count()
     total_trades = Trade.query.count()
     total_accounts = TradingAccount.query.count()
@@ -38,12 +43,70 @@ def dashboard():
     free_users = User.query.filter_by(subscription_tier='free').count()
     basic_users = User.query.filter_by(subscription_tier='basic').count()
     pro_users = User.query.filter_by(subscription_tier='pro').count()
+    elite_users = User.query.filter_by(subscription_tier='elite').count()
     enterprise_users = User.query.filter_by(subscription_tier='enterprise').count()
     
-    revenue = (basic_users * 499) + (pro_users * 999) + (enterprise_users * 799)
+    active_subs = basic_users + pro_users + elite_users + enterprise_users
     
+    # Revenue
+    revenue = (basic_users * 499) + (pro_users * 999) + (elite_users * 799) + (enterprise_users * 799)
+    
+    # New users today
+    today = date.today()
+    new_users_today = User.query.filter(func.date(User.created_at) == today).count()
+    
+    # Trades today
+    trades_today = Trade.query.filter(func.date(Trade.entry_date) == today).count()
+    
+    # AI stats
     total_ai_reports = AIReport.query.count()
     total_ai_cost = db.session.query(func.sum(AIUsageLog.api_cost)).scalar() or 0
+    
+    # Support tickets
+    open_tickets = SupportTicket.query.filter_by(status='open').count()
+    in_progress_tickets = SupportTicket.query.filter_by(status='in_progress').count()
+    resolved_tickets = SupportTicket.query.filter_by(status='resolved').count()
+    closed_tickets = SupportTicket.query.filter_by(status='closed').count()
+    total_tickets = open_tickets + in_progress_tickets + resolved_tickets + closed_tickets
+    
+    # Blog stats
+    total_blogs = Blog.query.count()
+    published_blogs = Blog.query.filter_by(status='published').count()
+    
+    # FAQ count
+    total_faqs = FAQ.query.filter_by(is_active=True).count()
+    
+    # Newsletter
+    newsletter_count = NewsletterSubscriber.query.count()
+    
+    # Contact messages
+    contact_messages = ContactMessage.query.count()
+    
+    # Recent users (last 10)
+    recent_users_list = []
+    recent_users_query = User.query.order_by(User.created_at.desc()).limit(10).all()
+    for user in recent_users_query:
+        trade_count = Trade.query.filter_by(user_id=user.id).count()
+        recent_users_list.append({
+            'username': user.username,
+            'email': user.email,
+            'subscription_tier': user.subscription_tier,
+            'trade_count': trade_count,
+            'created_at': user.created_at
+        })
+    
+    # Recent trades (last 10) - build manually with username
+    recent_trades_data = []
+    raw_trades = Trade.query.order_by(Trade.entry_date.desc()).limit(10).all()
+    for trade in raw_trades:
+        trade_user = User.query.get(trade.user_id)
+        recent_trades_data.append({
+            'username': trade_user.username if trade_user else 'Unknown',
+            'symbol': trade.symbol or 'N/A',
+            'trade_type': trade.trade_type or 'buy',
+            'profit_loss': trade.profit_loss,
+            'entry_date': trade.entry_date
+        })
     
     return render_template('admin/dashboard.html',
         total_users=total_users,
@@ -52,10 +115,26 @@ def dashboard():
         free_users=free_users,
         basic_users=basic_users,
         pro_users=pro_users,
+        elite_users=elite_users,
         enterprise_users=enterprise_users,
+        active_subs=active_subs,
         revenue=revenue,
+        new_users_today=new_users_today,
+        trades_today=trades_today,
         total_ai_reports=total_ai_reports,
-        total_ai_cost=round(total_ai_cost, 2)
+        total_ai_cost=round(total_ai_cost, 2),
+        open_tickets=open_tickets,
+        in_progress_tickets=in_progress_tickets,
+        resolved_tickets=resolved_tickets,
+        closed_tickets=closed_tickets,
+        total_tickets=total_tickets,
+        total_blogs=total_blogs,
+        published_blogs=published_blogs,
+        total_faqs=total_faqs,
+        newsletter_count=newsletter_count,
+        contact_messages=contact_messages,
+        recent_users=recent_users_list,
+        recent_trades=recent_trades_data
     )
 
 
@@ -72,6 +151,115 @@ def users():
 
 
 # ═══════════════════════════════════════════════════════════
+# 👥 USER DETAIL API
+# ═══════════════════════════════════════════════════════════
+
+@admin_bp.route('/api/user-detail/<int:user_id>')
+@login_required
+@admin_required
+def api_user_detail(user_id):
+    """Get full user details for modal"""
+    user = User.query.get_or_404(user_id)
+    
+    # Get subscription info
+    sub = Subscription.query.filter_by(user_id=user.id).first()
+    
+    # Get payment stats
+    payment_count = Payment.query.filter_by(user_id=user.id).count()
+    successful_payments = Payment.query.filter_by(user_id=user.id, status='SUCCESS').count()
+    total_spent = db.session.query(func.sum(Payment.total_amount)).filter(
+        Payment.user_id == user.id, 
+        Payment.status == 'SUCCESS'
+    ).scalar() or 0
+    
+    # Trading stats
+    trade_count = Trade.query.filter_by(user_id=user.id).count()
+    account_count = TradingAccount.query.filter_by(user_id=user.id, is_active=True).count()
+    diary_count = DiaryEntry.query.filter_by(user_id=user.id).count()
+    ai_report_count = AIReport.query.filter_by(user_id=user.id).count()
+    ticket_count = SupportTicket.query.filter_by(user_id=user.id).count()
+    
+    # AI tokens
+    ai_tokens_used = user.get_used_tokens()
+    
+    # Ban status
+    is_banned = False
+    override = AIUserOverride.query.filter_by(user_id=user.id).first()
+    if override:
+        is_banned = override.is_banned
+    
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'full_name': user.full_name,
+            'phone_number': user.phone_number or '',
+            'date_of_birth': user.date_of_birth.strftime('%d %b %Y') if user.date_of_birth else '',
+            'country': user.country or '',
+            'state': user.state or '',
+            'is_admin': user.is_admin,
+            'email_verified': user.email_verified,
+            'email_verified_at': user.email_verified_at.strftime('%d %b %Y %H:%M') if user.email_verified_at else '',
+            'subscription_tier': user.subscription_tier,
+            'subscription_active': user.subscription_active,
+            'created_at': user.created_at.strftime('%d %b %Y'),
+            'payment_count': payment_count,
+            'successful_payments': successful_payments,
+            'total_spent': round(total_spent / 100, 2) if total_spent else 0,
+            'sub_start': sub.start_date.strftime('%d %b %Y') if sub and sub.start_date else '',
+            'sub_end': sub.end_date.strftime('%d %b %Y') if sub and sub.end_date else '',
+            'trade_count': trade_count,
+            'account_count': account_count,
+            'diary_count': diary_count,
+            'ai_report_count': ai_report_count,
+            'ai_tokens_used': ai_tokens_used,
+            'ticket_count': ticket_count,
+            'is_banned': is_banned
+        }
+    })
+
+
+@admin_bp.route('/api/user-toggle-ban/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def api_user_toggle_ban(user_id):
+    """Ban or unban a user"""
+    user = User.query.get_or_404(user_id)
+    
+    if user.is_admin:
+        return jsonify({'success': False, 'message': 'Cannot ban admin users.'})
+    
+    data = request.get_json()
+    ban = data.get('ban', True)
+    
+    override = AIUserOverride.query.filter_by(user_id=user.id).first()
+    if ban:
+        if not override:
+            override = AIUserOverride(
+                user_id=user.id, 
+                is_banned=True, 
+                reason='Banned by admin',
+                set_by_admin_id=current_user.id
+            )
+            db.session.add(override)
+        else:
+            override.is_banned = True
+            override.reason = 'Banned by admin'
+            override.set_by_admin_id = current_user.id
+        message = f'User {user.username} has been banned.'
+    else:
+        if override:
+            override.is_banned = False
+            override.reason = None
+        message = f'User {user.username} has been unbanned.'
+    
+    db.session.commit()
+    return jsonify({'success': True, 'message': message})
+
+
+# ═══════════════════════════════════════════════════════════
 # 💳 SUBSCRIPTIONS
 # ═══════════════════════════════════════════════════════════
 
@@ -79,19 +267,150 @@ def users():
 @login_required
 @admin_required
 def subscriptions():
-    all_users = User.query.order_by(User.subscription_tier, User.created_at.desc()).all()
+    from datetime import date
+    
+    today = date.today()
+    week_later = today + timedelta(days=7)
+    
+    # Counts
     free_count = User.query.filter_by(subscription_tier='free').count()
     basic_count = User.query.filter_by(subscription_tier='basic').count()
     pro_count = User.query.filter_by(subscription_tier='pro').count()
+    elite_count = User.query.filter_by(subscription_tier='elite').count()
     enterprise_count = User.query.filter_by(subscription_tier='enterprise').count()
     
+    total_users = User.query.count()
+    total_active = basic_count + pro_count + elite_count + enterprise_count
+    
+    # Build subscription data
+    all_users = User.query.order_by(User.subscription_tier, User.created_at.desc()).all()
+    subscriptions = []
+    
+    monthly_revenue = 0
+    monthly_subs = 0
+    expiring_soon = 0
+    expired_count = 0
+    
+    for user in all_users:
+        sub = Subscription.query.filter_by(user_id=user.id).first()
+        
+        # Default values
+        days_left = None
+        status_label = 'free'
+        plan_type = '—'
+        start_date = '—'
+        end_date = '—'
+        
+        # Only show subscription details if user has a PAID subscription record
+        if sub and user.subscription_tier != 'free':
+            plan_type = sub.plan_type or 'monthly'
+            start_date = sub.start_date.strftime('%d %b %Y') if sub.start_date else '—'
+            end_date = sub.end_date.strftime('%d %b %Y') if sub.end_date else '—'
+            
+            if sub.is_active and sub.end_date:
+                if hasattr(sub.end_date, 'date'):
+                    days_left = (sub.end_date.date() - today).days
+                else:
+                    days_left = (sub.end_date - today).days
+                
+                if days_left > 0:
+                    if days_left <= 7:
+                        status_label = 'expiring'
+                        expiring_soon += 1
+                    else:
+                        status_label = 'active'
+                    
+                    # Calculate monthly revenue
+                    if plan_type == 'monthly':
+                        tier_prices = {'basic': 499, 'pro': 999, 'elite': 799, 'enterprise': 799}
+                        monthly_revenue += tier_prices.get(user.subscription_tier, 0)
+                        monthly_subs += 1
+                else:
+                    status_label = 'expired'
+                    expired_count += 1
+            elif sub.is_active:
+                status_label = 'active'
+            elif not sub.is_active:
+                status_label = 'cancelled'
+        
+        subscriptions.append({
+            'user_id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'tier': user.subscription_tier,
+            'plan_type': plan_type,
+            'status_label': status_label,
+            'start_date': start_date,
+            'end_date': end_date,
+            'days_left': days_left,
+        })
+    
     return render_template('admin/subscriptions.html',
-        users=all_users,
+        subscriptions=subscriptions,
         free_count=free_count,
         basic_count=basic_count,
         pro_count=pro_count,
-        enterprise_count=enterprise_count
+        elite_count=elite_count,
+        enterprise_count=enterprise_count,
+        total_users=total_users,
+        total_active=total_active,
+        monthly_revenue=monthly_revenue,
+        monthly_subs=monthly_subs,
+        expiring_soon=expiring_soon,
+        expired_count=expired_count
     )
+
+
+
+
+@admin_bp.route('/api/subscription-detail/<int:user_id>')
+@login_required
+@admin_required
+def api_subscription_detail(user_id):
+    """Get subscription details for modal"""
+    user = User.query.get_or_404(user_id)
+    sub = Subscription.query.filter_by(user_id=user.id).first()
+    
+    today = date.today()
+    days_left = None
+    status_label = 'free'
+    
+    if sub:
+        if sub.end_date:
+            days_left = (sub.end_date.date() - today).days if hasattr(sub.end_date, 'date') else (sub.end_date - today).days
+            if days_left > 0:
+                status_label = 'expiring' if days_left <= 7 else 'active'
+            else:
+                status_label = 'expired'
+        if not sub.is_active:
+            status_label = 'cancelled'
+    
+    payment_count = Payment.query.filter_by(user_id=user.id).count()
+    successful_payments = Payment.query.filter_by(user_id=user.id, status='SUCCESS').count()
+    total_spent = db.session.query(func.sum(Payment.total_amount)).filter(
+        Payment.user_id == user.id, Payment.status == 'SUCCESS'
+    ).scalar() or 0
+    
+    return jsonify({
+        'success': True,
+        'subscription': {
+            'username': user.username,
+            'email': user.email,
+            'joined': user.created_at.strftime('%d %b %Y'),
+            'tier': user.subscription_tier,
+            'plan_type': sub.plan_type if sub else 'monthly',
+            'status_label': status_label,
+            'start_date': sub.start_date.strftime('%d %b %Y') if sub and sub.start_date else '—',
+            'end_date': sub.end_date.strftime('%d %b %Y') if sub and sub.end_date else '—',
+            'days_left': days_left if days_left is not None else 0,
+            'auto_renew': sub.auto_renew if sub else False,
+            'cancelled_at': sub.cancelled_at.strftime('%d %b %Y') if sub and sub.cancelled_at else None,
+            'cancel_reason': sub.cancel_reason if sub else None,
+            'payment_count': payment_count,
+            'successful_payments': successful_payments,
+            'total_spent': round(total_spent / 100, 2) if total_spent else 0
+        }
+    })
 
 
 # ═══════════════════════════════════════════════════════════
@@ -406,7 +725,6 @@ def support_ticket_detail(ticket_number):
 def api_admin_ticket_reply(ticket_number):
     ticket = SupportTicket.query.filter_by(ticket_number=ticket_number).first_or_404()
     
-    # Accept both JSON and form data
     if request.is_json:
         data = request.get_json()
         message = data.get('message', '').strip()
@@ -429,7 +747,6 @@ def api_admin_ticket_reply(ticket_number):
     db.session.add(reply)
     db.session.flush()
     
-    # Handle attachment
     if 'attachment' in request.files:
         file = request.files['attachment']
         if file and file.filename:
@@ -439,7 +756,7 @@ def api_admin_ticket_reply(ticket_number):
                 filename, filepath = compress_image(file, upload_dir, f"ticket_{ticket.id}_admin")
                 reply.attachment_url = filepath
             except ImportError:
-                pass  # compress_image not available, skip attachment
+                pass
     
     ticket.status = 'in_progress'
     ticket.updated_at = datetime.utcnow()
