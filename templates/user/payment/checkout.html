@@ -334,13 +334,13 @@
 {% block content %}
 
 <div class="checkout-container">
-    
+
     <a href="{{ url_for('user.subscription') }}" class="back-link">
         <i class="bi bi-arrow-left"></i> Back to Plans
     </a>
 
     <div class="checkout-card">
-        
+
         <!-- Header -->
         <div class="checkout-header">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
@@ -351,36 +351,36 @@
 
         <!-- Body -->
         <div class="checkout-body">
-            
+
             <!-- Order Summary -->
             <div class="summary-section">
                 <h6><i class="bi bi-receipt"></i> Billing Details</h6>
-                
+
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-person"></i> Account</span>
                     <span class="value">{{ current_user.email }}</span>
                 </div>
-                
+
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-star"></i> Plan</span>
                     <span class="value">{{ plan_name }} — {{ plan_label }}</span>
                 </div>
-                
+
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-cash"></i> Base Price</span>
-                    <span class="value">₹{{ '%.2f'|format(base_price) }}</span>
+                    <span class="value">{{ symbol }}{{ '%.2f'|format(base_price) }}</span>
                 </div>
-                
+
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-credit-card"></i> Gateway Fee (2%)</span>
-                    <span class="value" style="color:var(--text-muted);">₹{{ '%.2f'|format(gateway_fee) }}</span>
+                    <span class="value" style="color:var(--text-muted);">{{ symbol }}{{ '%.2f'|format(gateway_fee) }}</span>
                 </div>
-                
+
                 <div class="summary-row total">
                     <span class="label">💳 Total Amount</span>
-                    <span class="value">₹{{ '%.2f'|format(total_price) }}</span>
+                    <span class="value">{{ symbol }}{{ '%.2f'|format(total_price) }}</span>
                 </div>
-                
+
                 <div class="gateway-fee-note">
                     * 2% gateway processing fee included. This is charged by the payment provider.
                 </div>
@@ -423,7 +423,7 @@
                     </label>
                 </div>
                 <div id="termsError" class="checkbox-error">Please agree to the Terms & Conditions.</div>
-                
+
                 <div class="checkbox-item">
                     <input type="checkbox" id="agreeSubscription" onchange="validateCheckboxes()">
                     <label for="agreeSubscription">
@@ -431,11 +431,11 @@
                     </label>
                 </div>
                 <div id="subscriptionError" class="checkbox-error">Please confirm you understand this is a subscription.</div>
-                
+
                 <div class="checkbox-item">
                     <input type="checkbox" id="agreePayment" onchange="validateCheckboxes()">
                     <label for="agreePayment">
-                        I confirm that I am authorized to make this payment and the amount of <strong>₹{{ '%.2f'|format(total_price) }}</strong> is correct.
+                        I confirm that I am authorized to make this payment and the amount of <strong>{{ symbol }}{{ '%.2f'|format(total_price) }}</strong> is correct.
                     </label>
                 </div>
                 <div id="paymentError" class="checkbox-error">Please confirm the payment amount.</div>
@@ -443,14 +443,14 @@
 
             <!-- Pay Button -->
             <button class="btn-pay {{ plan_tier }}" id="payButton" onclick="startPayment()" disabled>
-                <i class="bi bi-lock-fill"></i> Pay ₹{{ '%.2f'|format(total_price) }} with Cashfree
+                <i class="bi bi-lock-fill"></i> Pay {{ symbol }}{{ '%.2f'|format(total_price) }} with {{ gateway_name }}
             </button>
 
             <!-- Security Info -->
             <div class="security-row">
                 <span><i class="bi bi-shield-check"></i> PCI Compliant</span>
                 <span><i class="bi bi-lock"></i> 256-bit SSL</span>
-                <span><i class="bi bi-cashfree"></i> Powered by Cashfree</span>
+                <span><i class="bi bi-cashfree"></i> Powered by {{ gateway_name }}</span>
             </div>
 
         </div>
@@ -468,35 +468,44 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Cashfree JS SDK — required to open the real hosted payment page -->
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+
 <script>
     function validateCheckboxes() {
         const terms = document.getElementById('agreeTerms').checked;
         const subscription = document.getElementById('agreeSubscription').checked;
         const payment = document.getElementById('agreePayment').checked;
-        
+
         document.getElementById('termsError').classList.toggle('show', !terms);
         document.getElementById('subscriptionError').classList.toggle('show', !subscription);
         document.getElementById('paymentError').classList.toggle('show', !payment);
-        
+
         document.getElementById('payButton').disabled = !(terms && subscription && payment);
+    }
+
+    function resetPayButton() {
+        const btn = document.getElementById('payButton');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lock-fill"></i> Pay {{ symbol }}{{ "%.2f"|format(total_price) }} with {{ gateway_name }}';
     }
 
     function startPayment() {
         const terms = document.getElementById('agreeTerms').checked;
         const subscription = document.getElementById('agreeSubscription').checked;
         const payment = document.getElementById('agreePayment').checked;
-        
+
         if (!terms || !subscription || !payment) {
             validateCheckboxes();
             return;
         }
-        
+
         const btn = document.getElementById('payButton');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
-        
+
         document.getElementById('spinnerOverlay').classList.add('show');
-        
+
         fetch('/payment/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -508,23 +517,27 @@
         .then(res => res.json())
         .then(data => {
             document.getElementById('spinnerOverlay').classList.remove('show');
-            
-            if (data.success && data.payment_session_id) {
-                // Redirect to Cashfree payment page
-                // In production, use Cashfree's Drop-In SDK here
-                // For now, redirect to mock success
-                window.location.href = '/payment/success?order_id=' + data.order_id;
+
+            if (data.success && data.gateway === 'cashfree' && data.payment_session_id) {
+                // Open Cashfree's real hosted checkout page.
+                // Cashfree itself redirects to return_url (/payment/success) after real payment.
+                const cashfree = Cashfree({ mode: "production" }); // change to "sandbox" only if testing against sandbox keys
+                cashfree.checkout({
+                    paymentSessionId: data.payment_session_id,
+                    redirectTarget: "_self"
+                });
+            } else if (data.success && data.gateway === 'stripe' && data.url) {
+                // Stripe Checkout hosted page
+                window.location.href = data.url;
             } else {
                 alert('Failed to create payment: ' + (data.message || 'Unknown error'));
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-lock-fill"></i> Pay ₹{{ "%.2f"|format(total_price) }} with Cashfree';
+                resetPayButton();
             }
         })
         .catch(err => {
             document.getElementById('spinnerOverlay').classList.remove('show');
             alert('Network error. Please try again.');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-lock-fill"></i> Pay ₹{{ "%.2f"|format(total_price) }} with Cashfree';
+            resetPayButton();
         });
     }
 </script>

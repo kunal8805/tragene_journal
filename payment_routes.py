@@ -14,6 +14,7 @@ import json
 import os
 import hashlib
 import hmac
+import base64
 import requests
 
 payment_bp = Blueprint('payment', __name__, url_prefix='/payment')
@@ -70,7 +71,7 @@ GATEWAY_FEE_PERCENT = 2
 # Cashfree config
 CASHFREE_APP_ID = os.getenv('CASHFREE_APP_ID', '')
 CASHFREE_SECRET_KEY = os.getenv('CASHFREE_SECRET_KEY', '')
-CASHFREE_API_URL = 'https://sandbox.cashfree.com/pg'
+CASHFREE_API_URL = 'https://api.cashfree.com/pg'
 
 # Stripe config
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
@@ -204,11 +205,14 @@ def create_order():
 
 @payment_bp.route('/webhook', methods=['POST'])
 def webhook():
-    webhook_data = request.get_json()
-    signature = request.headers.get('X-Cashfree-Signature')
-    
-    if not _verify_webhook_signature(webhook_data, signature):
+    raw_body = request.get_data(as_text=True)
+    signature = request.headers.get('x-webhook-signature')
+    timestamp = request.headers.get('x-webhook-timestamp')
+
+    if not _verify_webhook_signature(raw_body, timestamp, signature):
         return jsonify({'status': 'error', 'message': 'Invalid signature'}), 401
+
+    webhook_data = request.get_json()
     
     order_id = webhook_data.get('data', {}).get('order', {}).get('order_id')
     payment_status = webhook_data.get('data', {}).get('payment', {}).get('payment_status')
@@ -278,6 +282,15 @@ def stripe_webhook():
 def success():
     order_id = request.args.get('order_id', '')
     payment = Payment.query.filter_by(user_id=current_user.id, cashfree_order_id=order_id).first()
+
+    if payment and payment.status != 'SUCCESS' and payment.cashfree_session_id:
+        status_data = _get_cashfree_order_status(order_id)
+        if status_data and status_data.get('order_status') == 'PAID':
+            payment.status = 'SUCCESS'
+            payment.payment_completed_at = datetime.utcnow()
+            db.session.commit()
+            _activate_subscription(payment.user_id, payment.plan_tier, payment.plan_type)
+
     return render_template('user/payment/success.html', payment=payment, plan_name=payment.plan_tier.upper() if payment else 'N/A')
 
 
@@ -380,14 +393,31 @@ def _create_stripe_session(order_id, amount, currency, plan_tier, plan_type, use
         return None
 
 
-def _verify_webhook_signature(data, signature):
+def _verify_webhook_signature(raw_body, timestamp, signature):
     if not CASHFREE_SECRET_KEY:
         return True
-    if not signature:
+    if not signature or not timestamp:
         return False
-    payload = json.dumps(data, separators=(',', ':'))
-    expected = hmac.new(CASHFREE_SECRET_KEY.encode(), payload.encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature)
+    payload = timestamp + raw_body
+    computed = hmac.new(CASHFREE_SECRET_KEY.encode(), payload.encode(), hashlib.sha256).digest()
+    computed_b64 = base64.b64encode(computed).decode()
+    return hmac.compare_digest(computed_b64, signature)
+
+
+def _get_cashfree_order_status(order_id):
+    if not CASHFREE_APP_ID or not CASHFREE_SECRET_KEY:
+        return None
+    headers = {
+        'x-api-version': '2023-08-01',
+        'x-client-id': CASHFREE_APP_ID,
+        'x-client-secret': CASHFREE_SECRET_KEY
+    }
+    try:
+        response = requests.get(f"{CASHFREE_API_URL}/orders/{order_id}", headers=headers, timeout=10)
+        return response.json()
+    except Exception as e:
+        print(f"❌ Cashfree Order Status Error: {e}")
+        return None
 
 
 def _activate_subscription(user_id, plan_tier, plan_type):

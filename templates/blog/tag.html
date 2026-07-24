@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:900px;margin:40px auto;">
+    <h2>Tag: {{ tag.name if tag else '' }}</h2>
+    {% for blog in blogs %}
+        <div style="margin-bottom:20px;">
+            <a href="{{ url_for('blog.post', slug=blog.slug) }}"><h3>{{ blog.title }}</h3></a>
+        </div>
+    {% else %}
+        <p>No posts with this tag yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}

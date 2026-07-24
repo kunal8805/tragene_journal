@@ -514,7 +514,7 @@
             if (!btn || !text || !banner) return;
             btn.disabled = true; text.textContent = 'Sending...'; spinner.style.display = 'inline-block';
             try {
-                const r = await fetch('/auth/resend-verification', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const r = await fetch('/resend-verification', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const d = await r.json();
                 if (d.success) {
                     banner.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%;"><span style="font-size:0.82rem;color:#00e676;font-weight:600;"><i class="bi bi-check-circle-fill"></i> ${d.message}</span></div>`;

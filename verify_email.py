@@ -122,9 +122,6 @@ def _send_resend_email(to_email, username, verify_link):
     
     import requests
     
-    # TEMP: Override to your verified Resend email for testing
-    # Remove this line after verifying your domain on Resend
-    to_email = 'dhadekunal11@gmail.com'
     
     try:
         response = requests.post(
