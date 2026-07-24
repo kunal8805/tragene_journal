@@ -1,0 +1,994 @@
+{% extends "base.html" %}
+
+{% block title %}Tragene Journal — Trade Like a Pro{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root{
+        --bg: #0a0e17;
+        --bg-soft: #0d1220;
+        --surface: #131a29;
+        --surface-2: #1a2335;
+        --border: #232e42;
+        --border-soft: rgba(255,255,255,0.08);
+        --text: #eef1f6;
+        --text-dim: #8a93a8;
+        --text-faint: #5c6478;
+        --bull: #26a69a;
+        --bull-glow: rgba(38,166,154,0.35);
+        --bear: #ef5350;
+        --bear-glow: rgba(239,83,80,0.35);
+        --gold: #f2b544;
+        --gold-glow: rgba(242,181,68,0.35);
+        --glass-bg: rgba(255,255,255,0.06);
+        --glass-border: rgba(255,255,255,0.14);
+        --font-display: 'Space Grotesk', sans-serif;
+        --font-body: 'Inter', sans-serif;
+        --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    #tj-page{
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        overflow-x: hidden;
+    }
+    #tj-page h1, #tj-page h2, #tj-page h3, #tj-page h4, #tj-page .tj-display{
+        font-family: var(--font-display);
+        letter-spacing: -0.01em;
+    }
+    #tj-page .tj-mono{ font-family: var(--font-mono); }
+    #tj-page a{ text-decoration: none; }
+    #tj-page ::selection{ background: var(--bull); color: #06110f; }
+
+    @media (prefers-reduced-motion: reduce){
+        #tj-page *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+        #tj-page .tj-reveal{ opacity: 1 !important; transform: none !important; }
+    }
+
+    /* ===== Scroll reveal ===== */
+    #tj-page .tj-reveal{
+        opacity: 0;
+        transform: translateY(28px);
+        transition: opacity 0.75s cubic-bezier(.2,.8,.2,1), transform 0.75s cubic-bezier(.2,.8,.2,1);
+        will-change: opacity, transform;
+    }
+    #tj-page .tj-reveal.tj-in{ opacity: 1; transform: translateY(0); }
+    #tj-page .tj-reveal-scale{ opacity: 0; transform: scale(0.94); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(.2,.8,.2,1); }
+    #tj-page .tj-reveal-scale.tj-in{ opacity: 1; transform: scale(1); }
+    #tj-page .tj-d1{ transition-delay: .06s; } #tj-page .tj-d2{ transition-delay: .12s; }
+    #tj-page .tj-d3{ transition-delay: .18s; } #tj-page .tj-d4{ transition-delay: .24s; }
+    #tj-page .tj-d5{ transition-delay: .3s; } #tj-page .tj-d6{ transition-delay: .36s; }
+
+    /* ===== Liquid glass buttons ===== */
+    #tj-page .tj-btn{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px 30px;
+        border-radius: 100px;
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 0.98rem;
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.14);
+        color: var(--text);
+        transition: transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s, background 0.25s, border-color 0.25s;
+    }
+    #tj-page .tj-btn:hover{
+        transform: translateY(-2px);
+        background: rgba(255,255,255,0.1);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+        color: var(--text);
+    }
+    #tj-page .tj-btn:active{ transform: translateY(0) scale(0.98); }
+    #tj-page .tj-btn:focus-visible{ outline: 2px solid var(--bull); outline-offset: 3px; }
+    #tj-page .tj-btn-primary{
+        border-color: rgba(38,166,154,0.4);
+        background: linear-gradient(180deg, rgba(38,166,154,0.28), rgba(38,166,154,0.1));
+        box-shadow: 0 8px 28px var(--bull-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    #tj-page .tj-btn-primary:hover{
+        background: linear-gradient(180deg, rgba(38,166,154,0.4), rgba(38,166,154,0.16));
+        box-shadow: 0 12px 36px var(--bull-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    #tj-page .tj-btn-gold{
+        border-color: rgba(242,181,68,0.45);
+        background: linear-gradient(180deg, rgba(242,181,68,0.26), rgba(242,181,68,0.08));
+        box-shadow: 0 8px 28px var(--gold-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+        color: #ffe9bd;
+    }
+    #tj-page .tj-btn-gold:hover{ color: #fff3d6; box-shadow: 0 12px 36px var(--gold-glow); }
+    #tj-page .tj-btn-sm{ padding: 9px 20px; font-size: 0.88rem; }
+    #tj-page .tj-btn-block{ width: 100%; }
+
+    /* ===== Hero ===== */
+    #tj-hero{
+        position: relative;
+        padding: 168px 0 110px;
+        background:
+            radial-gradient(ellipse 900px 500px at 78% -10%, rgba(38,166,154,0.14), transparent 60%),
+            radial-gradient(ellipse 700px 500px at 5% 20%, rgba(239,83,80,0.08), transparent 60%),
+            var(--bg);
+    }
+    #tj-hero .tj-eyebrow{
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--bull);
+        background: rgba(38,166,154,0.1);
+        border: 1px solid rgba(38,166,154,0.3);
+        padding: 6px 14px;
+        border-radius: 100px;
+        margin-bottom: 22px;
+        letter-spacing: 0.02em;
+    }
+    #tj-hero .tj-eyebrow .tj-dot{
+        width: 6px; height: 6px; border-radius: 50%; background: var(--bull);
+        box-shadow: 0 0 8px var(--bull);
+        animation: tj-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes tj-pulse{ 0%,100%{ opacity: 1; } 50%{ opacity: 0.35; } }
+
+    #tj-hero h1{
+        font-size: 3.3rem;
+        font-weight: 700;
+        line-height: 1.14;
+        margin-bottom: 22px;
+        color: var(--text);
+    }
+    #tj-hero h1 .tj-accent{
+        background: linear-gradient(100deg, var(--bull) 20%, #6fe0d1 50%, var(--bull) 80%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: tj-shine 5s linear infinite;
+    }
+    @keyframes tj-shine{ to{ background-position: -200% center; } }
+    #tj-hero p.tj-lede{
+        font-size: 1.14rem;
+        color: var(--text-dim);
+        max-width: 480px;
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+    #tj-hero .tj-hero-note{
+        margin-top: 22px;
+        font-size: 0.86rem;
+        color: var(--text-faint);
+        display: flex; gap: 18px; flex-wrap: wrap;
+    }
+    #tj-hero .tj-hero-note span{ display: inline-flex; align-items: center; gap: 6px; }
+    #tj-hero .tj-hero-note i{ color: var(--bull); }
+
+    /* Candlestick signature panel */
+    #tj-chart-card{
+        background: linear-gradient(180deg, var(--surface), var(--surface-2));
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 22px;
+        position: relative;
+        box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+        animation: tj-card-in 0.9s cubic-bezier(.2,.8,.2,1) both, tj-card-drift 7s ease-in-out 0.9s infinite;
+    }
+    @keyframes tj-card-in{ from{ opacity: 0; transform: translateY(18px) scale(0.98); } to{ opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes tj-card-drift{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-6px); } }
+    #tj-chart-card .tj-window-dots{ display: flex; gap: 7px; margin-bottom: 18px; }
+    #tj-chart-card .tj-window-dots span{ width: 11px; height: 11px; border-radius: 50%; opacity: 0.5; }
+    #tj-chart-card .tj-window-dots span:nth-child(1){ background: var(--bear); }
+    #tj-chart-card .tj-window-dots span:nth-child(2){ background: var(--gold); }
+    #tj-chart-card .tj-window-dots span:nth-child(3){ background: var(--bull); }
+
+    #tj-chart-card .tj-pair{
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin-bottom: 14px; font-family: var(--font-mono);
+    }
+    #tj-chart-card .tj-pair-name{ color: var(--text); font-weight: 600; font-size: 0.95rem; }
+    #tj-chart-card .tj-pair-price{ color: var(--bull); font-weight: 600; font-size: 1.05rem; }
+
+    .tj-candles{
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        gap: 7px;
+        height: 190px;
+        padding: 6px 4px 0;
+        border-bottom: 1px dashed var(--border);
+        overflow: hidden;
+    }
+    .tj-candles::after{
+        content: '';
+        position: absolute; top: 0; bottom: 0; width: 2px;
+        background: linear-gradient(180deg, transparent, var(--bull), transparent);
+        box-shadow: 0 0 12px var(--bull);
+        animation: tj-scan 4.5s linear infinite;
+        opacity: 0.85;
+    }
+    @keyframes tj-scan{ 0%{ left: -2%; } 100%{ left: 102%; } }
+
+    .tj-candle{
+        position: relative;
+        flex: 1;
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: flex-end;
+        height: 100%;
+        transform-origin: bottom;
+        animation: tj-grow 0.6s cubic-bezier(.2,.9,.3,1) both;
+    }
+    .tj-candle .tj-wick{ width: 2px; background: currentColor; opacity: 0.55; }
+    .tj-candle .tj-body{ width: 100%; border-radius: 2px; }
+    .tj-candle.tj-up{ color: var(--bull); }
+    .tj-candle.tj-up .tj-body{ background: var(--bull); box-shadow: 0 0 10px var(--bull-glow); }
+    .tj-candle.tj-down{ color: var(--bear); }
+    .tj-candle.tj-down .tj-body{ background: var(--bear); box-shadow: 0 0 10px var(--bear-glow); }
+    @keyframes tj-grow{ from{ transform: scaleY(0); opacity: 0; } to{ transform: scaleY(1); opacity: 1; } }
+    .tj-candle:nth-child(1){ animation-delay: 0.02s; } .tj-candle:nth-child(2){ animation-delay: 0.08s; }
+    .tj-candle:nth-child(3){ animation-delay: 0.14s; } .tj-candle:nth-child(4){ animation-delay: 0.2s; }
+    .tj-candle:nth-child(5){ animation-delay: 0.26s; } .tj-candle:nth-child(6){ animation-delay: 0.32s; }
+    .tj-candle:nth-child(7){ animation-delay: 0.38s; } .tj-candle:nth-child(8){ animation-delay: 0.44s; }
+    .tj-candle:nth-child(9){ animation-delay: 0.5s; } .tj-candle:nth-child(10){ animation-delay: 0.56s; }
+    .tj-candle:nth-child(11){ animation-delay: 0.62s; } .tj-candle:nth-child(12){ animation-delay: 0.68s; }
+    .tj-candle:nth-child(13){ animation-delay: 0.74s; } .tj-candle:nth-child(14){ animation-delay: 0.8s; }
+
+    .tj-chip-row{ display: flex; gap: 10px; margin-top: 18px; }
+    .tj-chip{
+        flex: 1;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(14px);
+        border-radius: 14px;
+        padding: 12px 14px;
+        animation: tj-float 4s ease-in-out infinite;
+    }
+    .tj-chip:nth-child(2){ animation-delay: 0.6s; }
+    .tj-chip:nth-child(3){ animation-delay: 1.2s; }
+    @keyframes tj-float{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-5px); } }
+    .tj-chip .tj-chip-label{ font-size: 0.72rem; color: var(--text-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tj-chip .tj-chip-value{ font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+    .tj-chip.tj-bull-chip .tj-chip-value{ color: var(--bull); }
+    .tj-chip.tj-gold-chip .tj-chip-value{ color: var(--gold); }
+
+    /* ===== Ticker strip ===== */
+    #tj-ticker-strip{
+        border-top: 1px solid var(--border-soft);
+        border-bottom: 1px solid var(--border-soft);
+        background: var(--bg-soft);
+        padding: 14px 0;
+        overflow: hidden;
+    }
+    .tj-ticker-track{
+        display: flex;
+        width: max-content;
+        gap: 40px;
+        animation: tj-ticker 28s linear infinite;
+    }
+    @keyframes tj-ticker{ from{ transform: translateX(0); } to{ transform: translateX(-50%); } }
+    .tj-ticker-item{
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: var(--font-mono); font-size: 0.86rem; color: var(--text-dim);
+        white-space: nowrap;
+    }
+    .tj-ticker-item strong{ color: var(--text); font-weight: 600; }
+    .tj-ticker-item.tj-up-t{ color: var(--bull); }
+    .tj-ticker-item.tj-down-t{ color: var(--bear); }
+
+    /* ===== Section shell ===== */
+    #tj-page section{ padding: 100px 0; position: relative; }
+    #tj-page .tj-section-eyebrow{
+        font-family: var(--font-mono); font-size: 0.78rem; color: var(--bull);
+        letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; display: block;
+    }
+    #tj-page .tj-section-title{ font-size: 2.3rem; font-weight: 700; color: var(--text); margin-bottom: 14px; }
+    #tj-page .tj-section-sub{ color: var(--text-dim); font-size: 1.05rem; max-width: 560px; margin-bottom: 54px; }
+
+    /* ===== Stats ===== */
+    #tj-stats{ padding: 80px 0; }
+    .tj-stat-card{
+        text-align: center;
+        padding: 10px 8px;
+    }
+    .tj-stat-value{
+        font-family: var(--font-mono);
+        font-size: 2.4rem;
+        font-weight: 600;
+        color: var(--bull);
+        text-shadow: 0 0 24px var(--bull-glow);
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+    .tj-stat-label{ color: var(--text-dim); font-size: 0.88rem; }
+
+    /* ===== Features ===== */
+    #tj-features{ background: var(--bg-soft); border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
+    .tj-feature-card{
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 32px 26px;
+        height: 100%;
+        transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .tj-feature-card:hover{
+        transform: translateY(-6px);
+        border-color: rgba(38,166,154,0.35);
+        box-shadow: 0 20px 45px rgba(0,0,0,0.4);
+    }
+    .tj-feature-icon{
+        width: 50px; height: 50px; border-radius: 13px;
+        background: rgba(38,166,154,0.12);
+        border: 1px solid rgba(38,166,154,0.25);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--bull); font-size: 1.3rem; margin-bottom: 20px;
+        transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
+    }
+    .tj-feature-card:hover .tj-feature-icon{ transform: scale(1.1) rotate(-6deg); }
+    .tj-feature-card.tj-ai .tj-feature-icon{
+        background: rgba(242,181,68,0.12); border-color: rgba(242,181,68,0.3); color: var(--gold);
+    }
+    .tj-feature-card h3{ font-size: 1.12rem; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+    .tj-feature-card p{ color: var(--text-dim); font-size: 0.94rem; line-height: 1.6; margin: 0; }
+    .tj-ai-badge{
+        font-family: var(--font-mono); font-size: 0.66rem; color: var(--gold);
+        border: 1px solid rgba(242,181,68,0.35); border-radius: 6px;
+        padding: 2px 7px; margin-left: 8px; vertical-align: middle;
+    }
+
+    /* ===== Article / editorial cards ===== */
+    #tj-articles{ background: var(--bg); }
+    .tj-article-card{
+        background: linear-gradient(180deg, var(--surface), var(--surface-2));
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 38px 34px;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.3s, transform 0.3s;
+    }
+    .tj-article-card:hover{ transform: translateY(-4px); border-color: rgba(38,166,154,0.3); }
+    .tj-article-card::before{
+        content: '';
+        position: absolute; top: -40%; right: -20%;
+        width: 260px; height: 260px; border-radius: 50%;
+        background: radial-gradient(circle, var(--bull-glow), transparent 70%);
+        opacity: 0.5; pointer-events: none;
+    }
+    .tj-article-card.tj-gold-glow::before{ background: radial-gradient(circle, var(--gold-glow), transparent 70%); }
+    .tj-article-icon{
+        width: 46px; height: 46px; border-radius: 12px;
+        background: rgba(38,166,154,0.12); border: 1px solid rgba(38,166,154,0.28);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--bull); font-size: 1.15rem; margin-bottom: 20px;
+    }
+    .tj-article-card.tj-gold-glow .tj-article-icon{
+        background: rgba(242,181,68,0.12); border-color: rgba(242,181,68,0.3); color: var(--gold);
+    }
+    .tj-article-card h3{
+        font-size: 1.5rem; font-weight: 700; margin-bottom: 16px; color: var(--text);
+        text-shadow: 0 0 22px rgba(238,241,246,0.18);
+        position: relative;
+    }
+    .tj-article-card p{ color: var(--text-dim); font-size: 0.95rem; line-height: 1.75; margin-bottom: 14px; position: relative; }
+    .tj-article-card p:last-child{ margin-bottom: 0; }
+    .tj-article-card p strong{ color: var(--text); font-weight: 600; }
+
+    .tj-article-wide{
+        background: linear-gradient(135deg, var(--surface), #101725);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 44px 40px;
+        margin-top: 28px;
+        position: relative;
+        overflow: hidden;
+    }
+    .tj-article-wide::before{
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse 500px 260px at 15% 0%, rgba(38,166,154,0.12), transparent 70%);
+        pointer-events: none;
+    }
+    .tj-article-wide h3{
+        font-size: 1.7rem; font-weight: 700; margin-bottom: 26px; color: var(--text);
+        text-shadow: 0 0 24px rgba(38,166,154,0.25);
+    }
+    .tj-article-wide .row p{ color: var(--text-dim); font-size: 0.95rem; line-height: 1.75; margin-bottom: 14px; }
+    .tj-article-wide .row p:last-child{ margin-bottom: 0; }
+    .tj-article-wide p strong{ color: var(--text); font-weight: 600; }
+
+    /* ===== Screenshot Showcase ===== */
+    .tj-screenshot-card{
+        position: relative;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        background: var(--surface);
+        transition: all 0.4s cubic-bezier(.2,.8,.2,1);
+        cursor: pointer;
+    }
+    .tj-screenshot-card:hover{
+        transform: translateY(-8px);
+        border-color: rgba(38,166,154,0.4);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 2px rgba(38,166,154,0.15);
+    }
+    .tj-screenshot-card:hover .tj-screenshot-overlay{
+        opacity: 1;
+    }
+    .tj-screenshot-card img{
+        width: 100%;
+        height: auto;
+        display: block;
+        transition: transform 0.4s ease;
+    }
+    .tj-screenshot-card:hover img{
+        transform: scale(1.03);
+    }
+    .tj-screenshot-overlay{
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(10,14,23,0.1) 0%, rgba(10,14,23,0.8) 100%);
+        display: flex;
+        align-items: flex-end;
+        padding: 24px;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        pointer-events: none;
+    }
+    .tj-screenshot-label{
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #fff;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    }
+    .tj-screenshot-badge{
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.12);
+        padding: 5px 12px;
+        border-radius: 100px;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        color: var(--text);
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    /* ===== How it works ===== */
+    #tj-how .tj-step{ position: relative; padding-left: 0; }
+    .tj-step-mark{
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        color: var(--bull);
+        border: 1px solid rgba(38,166,154,0.35);
+        background: rgba(38,166,154,0.08);
+        width: 44px; height: 44px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 18px;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    #tj-how .tj-step:hover .tj-step-mark{ transform: scale(1.08); box-shadow: 0 0 22px var(--bull-glow); }
+    #tj-how .tj-step h5{ color: var(--text); font-weight: 600; margin-bottom: 8px; }
+    #tj-how .tj-step p{ color: var(--text-dim); font-size: 0.92rem; }
+    #tj-how .tj-step-line{
+        position: absolute; top: 22px; left: 44px; right: -20px; height: 1px;
+        background: linear-gradient(90deg, var(--border), transparent);
+        display: none;
+    }
+    @media (min-width: 992px){ #tj-how .tj-step-line{ display: block; } }
+
+    /* ===== Trader voices / testimonials ===== */
+    #tj-voices{ background: var(--bg-soft); border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
+    .tj-voice-card{
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 28px 26px;
+        height: 100%;
+        transition: transform 0.3s, border-color 0.3s;
+    }
+    .tj-voice-card:hover{ transform: translateY(-5px); border-color: rgba(242,181,68,0.3); }
+    .tj-voice-stars{ color: var(--gold); font-size: 0.85rem; margin-bottom: 14px; letter-spacing: 2px; }
+    .tj-voice-card p.tj-voice-quote{ color: var(--text-dim); font-size: 0.94rem; line-height: 1.7; margin-bottom: 22px; }
+    .tj-voice-person{ display: flex; align-items: center; gap: 12px; }
+    .tj-voice-avatar{
+        width: 42px; height: 42px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-display); font-weight: 700; font-size: 0.92rem;
+        color: #06110f;
+        background: linear-gradient(135deg, var(--bull), #6fe0d1);
+        flex-shrink: 0;
+    }
+    .tj-voice-card:nth-child(2) .tj-voice-avatar{ background: linear-gradient(135deg, var(--gold), #ffd98a); }
+    .tj-voice-card:nth-child(3) .tj-voice-avatar{ background: linear-gradient(135deg, #7c8cf8, #b7c0ff); }
+    .tj-voice-name{ font-weight: 600; color: var(--text); font-size: 0.92rem; }
+    .tj-voice-role{ font-family: var(--font-mono); color: var(--text-faint); font-size: 0.78rem; }
+
+    /* ===== Pricing ===== */
+    #tj-pricing{ background: var(--bg-soft); border-top: 1px solid var(--border-soft); }
+    .tj-price-card{
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px 28px;
+        height: 100%;
+        display: flex; flex-direction: column;
+        position: relative;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .tj-price-card:hover{ transform: translateY(-6px); }
+    .tj-price-card.tj-popular{
+        border-color: rgba(38,166,154,0.5);
+        box-shadow: 0 0 0 1px rgba(38,166,154,0.25), 0 25px 60px rgba(38,166,154,0.12);
+    }
+    .tj-price-card.tj-elite{
+        border-color: rgba(242,181,68,0.4);
+        background: linear-gradient(180deg, var(--surface), #1c1710);
+    }
+    .tj-price-badge{
+        position: absolute; top: -13px; left: 28px;
+        font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600;
+        padding: 5px 14px; border-radius: 100px;
+    }
+    .tj-price-badge.tj-badge-bull{ background: var(--bull); color: #06110f; }
+    .tj-price-badge.tj-badge-gold{ background: var(--gold); color: #241a04; }
+    .tj-price-card .tj-plan-name{ font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .tj-price-card .tj-plan-tag{ color: var(--text-dim); font-size: 0.88rem; margin-bottom: 22px; }
+    .tj-price-card .tj-price{ font-family: var(--font-mono); font-size: 2.5rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .tj-price-card .tj-price sup{ font-size: 1.1rem; top: -1em; }
+    .tj-price-card .tj-price small{ font-size: 0.95rem; font-weight: 400; color: var(--text-faint); }
+    .tj-price-card ul{ list-style: none; padding: 0; margin: 24px 0 28px; flex: 1; }
+    .tj-price-card li{ display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; font-size: 0.9rem; color: var(--text-dim); }
+    .tj-price-card li i{ margin-top: 3px; flex-shrink: 0; }
+    .tj-price-card li.tj-yes i{ color: var(--bull); }
+    .tj-price-card li.tj-no{ color: var(--text-faint); }
+    .tj-price-card li.tj-no i{ color: var(--text-faint); }
+    .tj-price-card li strong{ color: var(--text); }
+
+    .tj-compare-wrap{ overflow-x: auto; margin-top: 60px; border: 1px solid var(--border); border-radius: 18px; }
+    table.tj-compare{ width: 100%; border-collapse: collapse; min-width: 640px; background: var(--surface); }
+    table.tj-compare th, table.tj-compare td{ padding: 15px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; text-align: center; }
+    table.tj-compare th{ font-family: var(--font-display); color: var(--text); font-weight: 600; }
+    table.tj-compare td:first-child, table.tj-compare th:first-child{ text-align: left; color: var(--text-dim); }
+    table.tj-compare tr:last-child td{ border-bottom: none; }
+    table.tj-compare tr{ transition: background 0.2s; }
+    table.tj-compare tbody tr:hover{ background: rgba(38,166,154,0.05); }
+    table.tj-compare td i.bi-check-circle-fill{ color: var(--bull); }
+    table.tj-compare td i.bi-x-circle{ color: var(--text-faint); }
+    table.tj-compare td .tj-sparkle{ color: var(--gold); }
+    .tj-token-note{ font-size: 0.82rem; color: var(--text-faint); margin-top: 16px; display: flex; gap: 8px; }
+
+    /* ===== FAQ ===== */
+    #tj-faq {
+        background: var(--bg-soft);
+        border-top: 1px solid var(--border-soft);
+        border-bottom: 1px solid var(--border-soft);
+    }
+    #tj-faq .accordion {
+        --bs-accordion-bg: transparent;
+        --bs-accordion-border-color: var(--border);
+        --bs-accordion-btn-bg: var(--surface);
+        --bs-accordion-btn-color: var(--text);
+        --bs-accordion-body-color: var(--text-dim);
+        --bs-accordion-active-color: var(--bull);
+        --bs-accordion-active-bg: rgba(38,166,154,0.06);
+        --bs-accordion-btn-focus-border-color: var(--bull);
+        --bs-accordion-btn-focus-box-shadow: 0 0 0 4px rgba(38,166,154,0.1);
+        --bs-accordion-border-radius: 14px;
+        --bs-accordion-inner-border-radius: 14px;
+    }
+    #tj-faq .accordion-item {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px !important;
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+    #tj-faq .accordion-button {
+        background: var(--surface);
+        color: var(--text);
+        font-weight: 600;
+        font-size: 0.98rem;
+        box-shadow: none !important;
+        padding: 20px 22px;
+        border: none;
+        font-family: var(--font-body);
+    }
+    #tj-faq .accordion-button:not(.collapsed) {
+        color: var(--bull);
+        background: rgba(38,166,154,0.06);
+    }
+    #tj-faq .accordion-button::after {
+        filter: invert(1) brightness(2);
+        background-size: 1.2rem;
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+    #tj-faq .accordion-body {
+        color: var(--text-dim);
+        font-size: 0.92rem;
+        line-height: 1.65;
+        padding: 20px 22px 22px;
+        background: var(--surface);
+    }
+
+    /* ===== Final CTA ===== */
+    #tj-cta{
+        text-align: center;
+        background: radial-gradient(ellipse 700px 300px at 50% 0%, rgba(38,166,154,0.14), transparent 70%), var(--bg);
+        border-top: 1px solid var(--border-soft);
+    }
+    #tj-cta h2{ font-size: 2rem; margin-bottom: 14px; }
+    #tj-cta p{ color: var(--text-dim); margin-bottom: 30px; }
+
+    @media (max-width: 991px){
+        #tj-hero h1{ font-size: 2.4rem; }
+        #tj-hero{ padding-top: 130px; }
+        #tj-chart-card{ margin-top: 40px; }
+        .tj-article-wide{ padding: 32px 26px; }
+    }
+    @media (max-width: 768px) {
+        #tj-faq .accordion-button { font-size: 0.88rem; padding: 16px 18px; }
+        #tj-faq .accordion-body { font-size: 0.85rem; padding: 16px 18px 18px; }
+        .tj-stat-value{ font-size: 1.9rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="tj-page">
+
+<!-- Hero -->
+<section id="tj-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <span class="tj-eyebrow"><span class="tj-dot"></span> AI-Powered Journal</span>
+                <h1>Journal every trade.<br>Let the <span class="tj-accent">AI</span> find your edge.</h1>
+                <p class="tj-lede">Log entries in seconds, sync straight from MT4/MT5, and let your AI coach flag the mistakes that are actually costing you money — before they become a pattern.</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-primary">Start Free — No Card Needed</a>
+                    <a href="#showcase" class="tj-btn">See The App</a>
+                </div>
+                <div class="tj-hero-note">
+                    <span><i class="bi bi-check-circle-fill"></i> Free plan forever</span>
+                    <span><i class="bi bi-check-circle-fill"></i> MT4/MT5 auto sync</span>
+                    <span><i class="bi bi-check-circle-fill"></i> AI diary & coach</span>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div id="tj-chart-card">
+                    <div class="tj-window-dots"><span></span><span></span><span></span></div>
+                    <div class="tj-pair">
+                        <span class="tj-pair-name">XAUUSD · 1H</span>
+                        <span class="tj-pair-price">2,451.80 <i class="bi bi-caret-up-fill" style="font-size:0.7rem;"></i></span>
+                    </div>
+                    <div class="tj-candles" aria-hidden="true">
+                        <div class="tj-candle tj-up" style="height:52%"><div class="tj-wick" style="height:30%"></div><div class="tj-body" style="height:70%"></div></div>
+                        <div class="tj-candle tj-down" style="height:38%"><div class="tj-wick" style="height:40%"></div><div class="tj-body" style="height:60%"></div></div>
+                        <div class="tj-candle tj-up" style="height:64%"><div class="tj-wick" style="height:22%"></div><div class="tj-body" style="height:78%"></div></div>
+                        <div class="tj-candle tj-up" style="height:48%"><div class="tj-wick" style="height:35%"></div><div class="tj-body" style="height:65%"></div></div>
+                        <div class="tj-candle tj-down" style="height:70%"><div class="tj-wick" style="height:18%"></div><div class="tj-body" style="height:82%"></div></div>
+                        <div class="tj-candle tj-down" style="height:44%"><div class="tj-wick" style="height:32%"></div><div class="tj-body" style="height:68%"></div></div>
+                        <div class="tj-candle tj-up" style="height:58%"><div class="tj-wick" style="height:26%"></div><div class="tj-body" style="height:74%"></div></div>
+                        <div class="tj-candle tj-up" style="height:80%"><div class="tj-wick" style="height:14%"></div><div class="tj-body" style="height:86%"></div></div>
+                        <div class="tj-candle tj-down" style="height:36%"><div class="tj-wick" style="height:42%"></div><div class="tj-body" style="height:58%"></div></div>
+                        <div class="tj-candle tj-up" style="height:66%"><div class="tj-wick" style="height:20%"></div><div class="tj-body" style="height:80%"></div></div>
+                        <div class="tj-candle tj-up" style="height:88%"><div class="tj-wick" style="height:10%"></div><div class="tj-body" style="height:90%"></div></div>
+                        <div class="tj-candle tj-down" style="height:54%"><div class="tj-wick" style="height:28%"></div><div class="tj-body" style="height:72%"></div></div>
+                        <div class="tj-candle tj-up" style="height:74%"><div class="tj-wick" style="height:16%"></div><div class="tj-body" style="height:84%"></div></div>
+                        <div class="tj-candle tj-up" style="height:92%"><div class="tj-wick" style="height:8%"></div><div class="tj-body" style="height:92%"></div></div>
+                    </div>
+                    <div class="tj-chip-row">
+                        <div class="tj-chip tj-bull-chip"><div class="tj-chip-label">Win Rate</div><div class="tj-chip-value tj-mono">68.4%</div></div>
+                        <div class="tj-chip tj-bull-chip"><div class="tj-chip-label">Net P&amp;L</div><div class="tj-chip-value tj-mono">+$2,450</div></div>
+                        <div class="tj-chip tj-gold-chip"><div class="tj-chip-label">AI Signal</div><div class="tj-chip-value tj-mono">Reduce risk</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Ticker strip -->
+<section id="tj-ticker-strip" style="padding-top:14px;padding-bottom:14px;">
+    <div class="tj-ticker-track">
+        <span class="tj-ticker-item tj-up-t"><strong>XAUUSD</strong> 2,451.80 ▲ 0.42%</span>
+        <span class="tj-ticker-item tj-down-t"><strong>EURUSD</strong> 1.0862 ▼ 0.11%</span>
+        <span class="tj-ticker-item tj-up-t"><strong>NAS100</strong> 19,842 ▲ 0.88%</span>
+        <span class="tj-ticker-item tj-up-t"><strong>BTCUSD</strong> 67,210 ▲ 1.35%</span>
+        <span class="tj-ticker-item tj-down-t"><strong>GBPUSD</strong> 1.2734 ▼ 0.24%</span>
+        <span class="tj-ticker-item tj-up-t"><strong>USDJPY</strong> 156.02 ▲ 0.19%</span>
+        <span class="tj-ticker-item"><strong>MT4</strong> Sync connected</span>
+        <span class="tj-ticker-item"><strong>MT5</strong> Sync connected</span>
+        <!-- duplicate set for seamless loop -->
+        <span class="tj-ticker-item tj-up-t"><strong>XAUUSD</strong> 2,451.80 ▲ 0.42%</span>
+        <span class="tj-ticker-item tj-down-t"><strong>EURUSD</strong> 1.0862 ▼ 0.11%</span>
+        <span class="tj-ticker-item tj-up-t"><strong>NAS100</strong> 19,842 ▲ 0.88%</span>
+        <span class="tj-ticker-item tj-up-t"><strong>BTCUSD</strong> 67,210 ▲ 1.35%</span>
+        <span class="tj-ticker-item tj-down-t"><strong>GBPUSD</strong> 1.2734 ▼ 0.24%</span>
+        <span class="tj-ticker-item tj-up-t"><strong>USDJPY</strong> 156.02 ▲ 0.19%</span>
+        <span class="tj-ticker-item"><strong>MT4</strong> Sync connected</span>
+        <span class="tj-ticker-item"><strong>MT5</strong> Sync connected</span>
+    </div>
+</section>
+
+<!-- Stats -->
+<section id="tj-stats">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-6 col-lg-3 tj-reveal"><div class="tj-stat-card"><div class="tj-stat-value tj-counter" data-target="50000" data-suffix="+">0</div><div class="tj-stat-label">Trades logged by traders</div></div></div>
+            <div class="col-6 col-lg-3 tj-reveal tj-d1"><div class="tj-stat-card"><div class="tj-stat-value tj-counter" data-target="24000" data-suffix="+">0</div><div class="tj-stat-label">AI diary entries written</div></div></div>
+            <div class="col-6 col-lg-3 tj-reveal tj-d2"><div class="tj-stat-card"><div class="tj-stat-value tj-counter" data-target="98" data-suffix="%">0</div><div class="tj-stat-label">MT4/MT5 sync reliability</div></div></div>
+            <div class="col-6 col-lg-3 tj-reveal tj-d3"><div class="tj-stat-card"><div class="tj-stat-value tj-counter" data-target="0" data-suffix="/mo">₹0</div><div class="tj-stat-label">AI included on the Free plan</div></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+    <div class="container">
+        <span class="tj-section-eyebrow tj-reveal">Features</span>
+        <h2 class="tj-section-title tj-reveal tj-d1">Everything a serious journal needs</h2>
+        <p class="tj-section-sub tj-reveal tj-d2">Manual logging when you want control, automatic sync when you don't, and an AI layer that actually reads your trades.</p>
+        <div class="row g-4">
+            <div class="col-md-4 tj-reveal"><div class="tj-feature-card"><div class="tj-feature-icon"><i class="bi bi-journal-text"></i></div><h3>Trade Journal</h3><p>Log entries, exits, stop losses, and notes for every position. Your full history, organized and searchable.</p></div></div>
+            <div class="col-md-4 tj-reveal tj-d1"><div class="tj-feature-card"><div class="tj-feature-icon"><i class="bi bi-arrow-repeat"></i></div><h3>MT4/MT5 Auto Sync</h3><p>Connect your account once and every trade lands in your journal automatically — no copy-pasting from a broker report.</p></div></div>
+            <div class="col-md-4 tj-reveal tj-d2"><div class="tj-feature-card"><div class="tj-feature-icon"><i class="bi bi-graph-up"></i></div><h3>Advanced Analytics</h3><p>Win rate, profit factor, drawdown, and equity curve — updated the moment a trade closes.</p></div></div>
+            <div class="col-md-4 tj-reveal"><div class="tj-feature-card tj-ai"><div class="tj-feature-icon"><i class="bi bi-stars"></i></div><h3>AI Analysis<span class="tj-ai-badge">AI</span></h3><p>The model reads your trade history and calls out overtrading, revenge trading, and sizing mistakes before they repeat.</p></div></div>
+            <div class="col-md-4 tj-reveal tj-d1"><div class="tj-feature-card tj-ai"><div class="tj-feature-icon"><i class="bi bi-pencil-square"></i></div><h3>AI Diary Writer<span class="tj-ai-badge">AI</span></h3><p>One click turns your day's trades into a written diary entry — mood, reasoning, and lessons included.</p></div></div>
+            <div class="col-md-4 tj-reveal tj-d2"><div class="tj-feature-card tj-ai"><div class="tj-feature-icon"><i class="bi bi-compass"></i></div><h3>AI Coach &amp; Goals<span class="tj-ai-badge">AI</span></h3><p>Set a goal, get a plan. Your coach checks in against real performance data, not generic advice.</p></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- Showcase: 4 Screenshots (Badge text removed) -->
+<section id="showcase">
+    <div class="container">
+        <span class="tj-section-eyebrow tj-reveal">Product Tour</span>
+        <h2 class="tj-section-title tj-reveal tj-d1">See it in action</h2>
+        <p class="tj-section-sub tj-reveal tj-d2">Hover over any screenshot to see the label. Click to open full size.</p>
+        <div class="row g-4">
+            <div class="col-lg-6 tj-reveal tj-reveal-scale">
+                <div class="tj-screenshot-card" onclick="window.open('{{ url_for('static', filename='screenshots/dashboard.png') }}')">
+                    <img src="{{ url_for('static', filename='screenshots/dashboard.png') }}" alt="Performance dashboard screenshot" loading="lazy">
+                    <div class="tj-screenshot-overlay">
+                        <span class="tj-screenshot-label">Performance Dashboard</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 tj-reveal tj-reveal-scale tj-d1">
+                <div class="tj-screenshot-card" onclick="window.open('{{ url_for('static', filename='screenshots/calendar.png') }}')">
+                    <img src="{{ url_for('static', filename='screenshots/calendar.png') }}" alt="Trade calendar screenshot" loading="lazy">
+                    <div class="tj-screenshot-overlay">
+                        <span class="tj-screenshot-label">Trade Calendar</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 tj-reveal tj-reveal-scale tj-d2">
+                <div class="tj-screenshot-card" onclick="window.open('{{ url_for('static', filename='screenshots/journal.png') }}')">
+                    <img src="{{ url_for('static', filename='screenshots/journal.png') }}" alt="Trade journal screenshot" loading="lazy">
+                    <div class="tj-screenshot-overlay">
+                        <span class="tj-screenshot-label">Trade Journal</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 tj-reveal tj-reveal-scale tj-d3">
+                <div class="tj-screenshot-card" onclick="window.open('{{ url_for('static', filename='screenshots/ai-coach.png') }}')">
+                    <img src="{{ url_for('static', filename='screenshots/ai-coach.png') }}" alt="AI coach screenshot" loading="lazy">
+                    <div class="tj-screenshot-overlay">
+                        <span class="tj-screenshot-label">AI Coach &amp; Insights</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How it works -->
+<section id="tj-how">
+    <div class="container">
+        <span class="tj-section-eyebrow tj-reveal">Workflow</span>
+        <h2 class="tj-section-title tj-reveal tj-d1">From trade to insight in four steps</h2>
+        <div class="row g-4 mt-2">
+            <div class="col-lg-3 col-6 tj-reveal"><div class="tj-step"><div class="tj-step-line"></div><div class="tj-step-mark">01</div><h5>Log the trade</h5><p>Enter it manually or let MT4/MT5 sync do it for you.</p></div></div>
+            <div class="col-lg-3 col-6 tj-reveal tj-d1"><div class="tj-step"><div class="tj-step-line"></div><div class="tj-step-mark">02</div><h5>System crunches it</h5><p>Win rate, R-multiple, and session data update instantly.</p></div></div>
+            <div class="col-lg-3 col-6 tj-reveal tj-d2"><div class="tj-step"><div class="tj-step-line"></div><div class="tj-step-mark">03</div><h5>AI flags the pattern</h5><p>Overtrading, revenge entries, oversized risk — named, not guessed at.</p></div></div>
+            <div class="col-lg-3 col-6 tj-reveal tj-d3"><div class="tj-step"><h5>04</h5><h5>You adjust and improve</h5><p>Turn the insight into a rule in your playbook.</p></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing">
+    <div class="container">
+        <span class="tj-section-eyebrow tj-reveal">Pricing</span>
+        <h2 class="tj-section-title tj-reveal tj-d1">Start free. Add AI when you're ready.</h2>
+        <p class="tj-section-sub tj-reveal tj-d2">Every plan includes the full manual journal, and every plan — including Free — includes real AI usage.</p>
+        <div class="row g-4 justify-content-center align-items-stretch">
+            <div class="col-lg-4 col-md-6 tj-reveal"><div class="tj-price-card"><div class="tj-plan-name">Free</div><div class="tj-plan-tag">Start your Tragene Journal</div><div class="tj-price">₹0<small>/forever</small></div><ul><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited manual journal</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> CSV import — 1 / week</li><li class="tj-no"><i class="bi bi-x-circle"></i> MT4/MT5 auto sync</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 2 trading accounts</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Standard analytics</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Export PDF/CSV reports</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Ad-free</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 3,000 AI tokens / week <span class="tj-ai-badge">Basic model</span></li><li class="tj-no"><i class="bi bi-x-circle"></i> AI diary writer &amp; coach</li></ul><a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-block">Get Started</a></div></div>
+            <div class="col-lg-4 col-md-6 tj-reveal tj-d1"><div class="tj-price-card tj-popular"><span class="tj-price-badge tj-badge-bull">🔥 Most Popular</span><div class="tj-plan-name">Pro</div><div class="tj-plan-tag">AI-powered trading insights</div><div class="tj-price"><sup>₹</sup>399<small>/month</small></div><ul><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> <strong>Everything in Free</strong></li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited CSV import</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> MT4/MT5 auto sync</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 10 trading accounts</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 200,000 AI tokens / month <span class="tj-ai-badge">Advanced model</span></li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> AI analysis &amp; diary writer</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> AI coach &amp; goals</li></ul><a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-primary tj-btn-block">Start Free Trial</a></div></div>
+            <div class="col-lg-4 col-md-6 tj-reveal tj-d2"><div class="tj-price-card tj-elite"><span class="tj-price-badge tj-badge-gold">👑 Premium</span><div class="tj-plan-name">Elite</div><div class="tj-plan-tag">Complete AI coaching suite</div><div class="tj-price"><sup>₹</sup>799<small>/month</small></div><ul><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> <strong>Everything in Pro</strong></li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited trading accounts</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Advanced analytics</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 1,000,000 AI tokens / month <span class="tj-ai-badge">Premium model</span></li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> ✨ AI diary — auto-write</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Personalized AI coach &amp; planner</li></ul><a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-gold tj-btn-block">Start Free Trial</a></div></div>
+        </div>
+        <div class="tj-compare-wrap tj-reveal"><table class="tj-compare"><thead><tr><th>Feature</th><th>Free</th><th>Pro · ₹399/mo</th><th>Elite · ₹799/mo</th></tr></thead><tbody><tr><td>Manual trade journal</td><td><i class="bi bi-check-circle-fill"></i> Unlimited</td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>CSV import</td><td>1 / week</td><td><i class="bi bi-check-circle-fill"></i> Unlimited</td><td><i class="bi bi-check-circle-fill"></i> Unlimited</td></tr><tr><td>MT4/MT5 auto sync</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>Trading accounts</td><td>2</td><td>10</td><td><i class="bi bi-check-circle-fill"></i> Unlimited</td></tr><tr><td>Analytics</td><td>Standard</td><td>Standard</td><td><span class="tj-sparkle">✨</span> Advanced</td></tr><tr><td>Export reports</td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>Ad-free</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>AI tokens</td><td>3,000 / week</td><td>200,000 / month</td><td>1,000,000 / month</td></tr><tr><td>AI model</td><td>Basic</td><td>Advanced</td><td>Premium</td></tr><tr><td>AI analysis</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>AI diary writer</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><span class="tj-sparkle">✨</span> Auto-write</td></tr><tr><td>AI coach</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>Goals &amp; planner</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr></tbody></table></div>
+        <p class="tj-token-note"><i class="bi bi-info-circle"></i> Each AI request consumes tokens based on complexity. Tokens reset weekly on Free, monthly on Pro and Elite.</p>
+    </div>
+</section>
+
+<!-- Editorial / article content (Moved after Pricing) -->
+<section id="tj-articles">
+    <div class="container">
+        <span class="tj-section-eyebrow tj-reveal">Why Traders Switch</span>
+        <h2 class="tj-section-title tj-reveal tj-d1">Built the way serious traders actually work</h2>
+        <p class="tj-section-sub tj-reveal tj-d2">Two things separate a real Tragene Journal from a glorified spreadsheet: an AI that's actually usable without paying first, and sync that doesn't force you to pick a side between MT4 and MT5.</p>
+
+        <div class="row g-4">
+            <div class="col-lg-6 tj-reveal">
+                <div class="tj-article-card tj-gold-glow">
+                    <div class="tj-article-icon"><i class="bi bi-stars"></i></div>
+                    <h3>AI Coaching, Even On The Free Plan</h3>
+                    <p>Most Tragene Journals lock every AI feature behind a paywall, so you never actually find out if the analysis is any good before you pay for it. Tragene Journal takes a different approach: <strong>every Free account gets a real weekly AI token allowance</strong>, enough to run an AI diary entry or a quick analysis pass without touching a card.</p>
+                    <p>That makes it one of the few AI-powered journals where the AI isn't a locked demo — it's a genuine part of the free product, upgraded to an advanced model and much higher limits once you move to Pro or Elite.</p>
+                </div>
+            </div>
+            <div class="col-lg-6 tj-reveal tj-d1">
+                <div class="tj-article-card">
+                    <div class="tj-article-icon"><i class="bi bi-arrow-repeat"></i></div>
+                    <h3>MT4 And MT5 Sync, Not Just One</h3>
+                    <p>A lot of traders run more than one terminal — an MT4 account with an old broker, an MT5 account for everything else. Tragene Journal's auto sync is <strong>fully compatible with both MetaTrader 4 and MetaTrader 5</strong>, so switching platforms never means switching journals.</p>
+                    <p>Connect an account once and every closed trade lands in your journal automatically, with entries, exits, size, and P&amp;L already filled in — nothing to retype from a broker statement.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tj-article-wide tj-reveal">
+            <h3>One Journal, Every Session</h3>
+            <div class="row">
+                <div class="col-lg-6">
+                    <p>Whether you trade gold during the London open, indices through New York, or crypto around the clock, Tragene Journal is built to sit underneath all of it. Manual logging stays instant for traders who like typing their own notes, while MT4/MT5 auto sync handles the accounts you'd rather not babysit.</p>
+                    <p>The result is a single, unified history — not four spreadsheets and a broker export you forgot to update.</p>
+                </div>
+                <div class="col-lg-6">
+                    <p>The AI layer is designed to be genuinely useful rather than decorative: it reads your actual entries and notes, not just your P&amp;L, and calls out things like oversized risk after a loss or a string of trades taken outside your usual session.</p>
+                    <p>Free traders get a real taste of that with a weekly AI allowance. Pro and Elite traders get the advanced models, higher limits, and the full AI coach and goals planner on top.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section id="tj-faq">
+    <div class="container">
+        <span class="tj-section-eyebrow tj-reveal">FAQ</span>
+        <h2 class="tj-section-title tj-reveal tj-d1">Tragene Journal questions, answered</h2>
+        <div class="row justify-content-center"><div class="col-lg-9 tj-reveal tj-d2">
+            <div class="accordion" id="tjFaqAccordion">
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq1">What is a Tragene Journal and why do I actually need one?</button></h2><div id="tjFaq1" class="accordion-collapse collapse show" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">A Tragene Journal is a structured record of every trade you take — entry, exit, size, reasoning, and outcome. Without one, you're relying on memory to spot patterns in your own behavior, which is exactly where most traders lose the most money without realizing it.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq2">How does the AI analysis actually work?</button></h2><div id="tjFaq2" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">It reads your logged trades — entries, exits, sizing, timing, and your own notes — and looks for recurring patterns like overtrading, revenge trading after a loss, or oversized risk on losing setups. You get plain-language insights, not a black-box score.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq3">Can I import trades automatically from MT4 or MT5?</button></h2><div id="tjFaq3" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Yes, on Pro and Elite. Connect your account once and closed trades sync into your journal automatically — the sync works with both MT4 and MT5, so it doesn't matter which platform your broker runs. Free plan users can still bring trades in with a weekly CSV import.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq4">Is AI really available on the free plan?</button></h2><div id="tjFaq4" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Yes. Free accounts get 3,000 AI tokens every week on our basic model — enough to try AI analysis or write a diary entry without adding a card. Pro and Elite raise that ceiling with more tokens and stronger models.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq5">Is my trading data private and secure?</button></h2><div id="tjFaq5" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Your trades and account data are yours and are never sold or shared with third parties. Broker credentials used for auto sync are stored securely and only used to pull your trade history.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq6">What happens to my journal if I downgrade or cancel?</button></h2><div id="tjFaq6" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Your trade history is never deleted when you downgrade. You'll simply lose access to plan-specific features like auto sync or the AI coach until you upgrade again, and any account limits will apply going forward.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq7">How are AI tokens counted, and what happens when they run out?</button></h2><div id="tjFaq7" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Each AI action — an analysis, a diary entry, a coaching reply — uses tokens based on how much it has to process. If you run out before your reset date, AI features pause until the next cycle, but your manual journal keeps working normally.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq8">Can I switch between Free, Pro, and Elite anytime?</button></h2><div id="tjFaq8" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Yes. Upgrades apply immediately, and downgrades take effect at the end of your current billing period so you keep what you already paid for.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq9">Do you offer refunds?</button></h2><div id="tjFaq9" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Yes — see our refund policy for the full window and eligibility details. If something's not working as expected, reach out first and we'll usually sort it out directly.</div></div></div>
+            </div>
+        </div></div>
+    </div>
+</section>
+
+<!-- Trader voices (Moved to end) -->
+<section id="tj-voices">
+    <div class="container">
+        <span class="tj-section-eyebrow tj-reveal">Trader Voices</span>
+        <h2 class="tj-section-title tj-reveal tj-d1">What traders notice first</h2>
+        <p class="tj-section-sub tj-reveal tj-d2">A few notes from traders using the journal across forex, indices, and crypto.</p>
+        <div class="row g-4">
+            <div class="col-lg-4 tj-reveal">
+                <div class="tj-voice-card">
+                    <div class="tj-voice-stars">★★★★★</div>
+                    <p class="tj-voice-quote">The AI actually caught that I was oversizing every trade I took after a loss. I didn't notice the pattern myself until it was pointed out in plain language.</p>
+                    <div class="tj-voice-person">
+                        <div class="tj-voice-avatar">RK</div>
+                        <div><div class="tj-voice-name">Rahul K.</div><div class="tj-voice-role">XAUUSD / MT5</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 tj-reveal tj-d1">
+                <div class="tj-voice-card">
+                    <div class="tj-voice-stars">★★★★★</div>
+                    <p class="tj-voice-quote">Auto sync from MT4 just works. I stopped keeping a separate spreadsheet within the first week and haven't opened one since.</p>
+                    <div class="tj-voice-person">
+                        <div class="tj-voice-avatar">AS</div>
+                        <div><div class="tj-voice-name">Aisha S.</div><div class="tj-voice-role">EURUSD / MT4</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 tj-reveal tj-d2">
+                <div class="tj-voice-card">
+                    <div class="tj-voice-stars">★★★★★</div>
+                    <p class="tj-voice-quote">Free plan still gives me real AI usage, not a locked demo. I upgraded to Pro because I wanted more tokens, not because the free tier was useless.</p>
+                    <div class="tj-voice-person">
+                        <div class="tj-voice-avatar">DM</div>
+                        <div><div class="tj-voice-name">Dev M.</div><div class="tj-voice-role">NAS100 / MT5</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Final CTA -->
+<section id="tj-cta">
+    <div class="container tj-reveal">
+        <h2>Your next trade deserves a record.</h2>
+        <p>Start free, get real AI from day one, and sync MT4 or MT5 the moment you're ready.</p>
+        <a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-primary">Create Your Free Journal</a>
+    </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+    // Scroll-reveal via IntersectionObserver
+    var revealEls = document.querySelectorAll('#tj-page .tj-reveal');
+    if('IntersectionObserver' in window){
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(entry){
+                if(entry.isIntersecting){
+                    entry.target.classList.add('tj-in');
+                    io.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        revealEls.forEach(function(el){ io.observe(el); });
+    } else {
+        revealEls.forEach(function(el){ el.classList.add('tj-in'); });
+    }
+
+    // Animated stat counters
+    var counters = document.querySelectorAll('#tj-page .tj-counter');
+    var animateCounter = function(el){
+        var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+        var suffix = el.getAttribute('data-suffix') || '';
+        var prefix = el.textContent && el.textContent.indexOf('₹') === 0 ? '₹' : '';
+        var duration = 1400;
+        var startTime = null;
+        function step(ts){
+            if(!startTime) startTime = ts;
+            var progress = Math.min((ts - startTime) / duration, 1);
+            var eased = 1 - Math.pow(1 - progress, 3);
+            var value = Math.floor(eased * target);
+            el.textContent = prefix + value.toLocaleString('en-IN') + suffix;
+            if(progress < 1){ requestAnimationFrame(step); }
+            else{ el.textContent = prefix + target.toLocaleString('en-IN') + suffix; }
+        }
+        requestAnimationFrame(step);
+    };
+    if('IntersectionObserver' in window && counters.length){
+        var cio = new IntersectionObserver(function(entries){
+            entries.forEach(function(entry){
+                if(entry.isIntersecting){
+                    animateCounter(entry.target);
+                    cio.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.4 });
+        counters.forEach(function(el){ cio.observe(el); });
+    }
+})();
+</script>
+{% endblock %}

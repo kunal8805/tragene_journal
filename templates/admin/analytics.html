@@ -1,0 +1,17 @@
+{% extends "base_admin.html" %}
+{% block title %}Analytics - Admin{% endblock %}
+{% block page_title %}Platform Analytics{% endblock %}
+{% block content %}
+
+<div class="row g-3">
+    <div class="col-md-6"><div class="card p-3"><h6 class="fw-bold mb-3">User Growth</h6><canvas id="userGrowth" height="230"></canvas></div></div>
+    <div class="col-md-6"><div class="card p-3"><h6 class="fw-bold mb-3">Revenue</h6><canvas id="revenue" height="230"></canvas></div></div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+new Chart(document.getElementById('userGrowth'),{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{data:[0,2,5,8,12,{{ total_users }}],borderColor:'#ff6b6b',tension:0.4}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+new Chart(document.getElementById('revenue'),{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{data:[0,0,500,1000,2000,{{ revenue }}],backgroundColor:'#ff6b6b'}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+</script>
+{% endblock %}

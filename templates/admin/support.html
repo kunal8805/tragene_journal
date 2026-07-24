@@ -1,0 +1,191 @@
+{% extends "base_admin.html" %}
+{% block title %}Support Tickets - Admin{% endblock %}
+{% block page_title %}🎫 Support Tickets{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .admin-support-container {
+        max-width: 1300px;
+        margin: 0 auto;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+        padding: 8px 18px;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .filter-tab:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .filter-tab .count {
+        font-size: 0.65rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.15);
+        margin-left: 4px;
+    }
+
+    .ticket-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+    }
+    
+    .ticket-table thead th {
+        background: var(--bg-body);
+        color: var(--text-muted);
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    
+    .ticket-table tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+    
+    .ticket-table tbody tr {
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .ticket-table tbody tr:hover { background: rgba(255,107,107,0.03); }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    
+    .status-badge.open { background: rgba(0,230,118,0.1); color: #00e676; }
+    .status-badge.in_progress { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .status-badge.resolved { background: rgba(79,142,247,0.1); color: #4f8ef7; }
+    .status-badge.closed { background: var(--bg-body); color: var(--text-muted); }
+
+    .ticket-number {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        color: var(--accent);
+        font-size: 0.78rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="admin-support-container">
+    
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <a href="?status=open" class="filter-tab {% if status_filter == 'open' %}active{% endif %}">
+            Open <span class="count" id="countOpen">-</span>
+        </a>
+        <a href="?status=in_progress" class="filter-tab {% if status_filter == 'in_progress' %}active{% endif %}">
+            In Progress <span class="count" id="countProgress">-</span>
+        </a>
+        <a href="?status=resolved" class="filter-tab {% if status_filter == 'resolved' %}active{% endif %}">
+            Resolved <span class="count" id="countResolved">-</span>
+        </a>
+        <a href="?status=closed" class="filter-tab {% if status_filter == 'closed' %}active{% endif %}">
+            Closed <span class="count" id="countClosed">-</span>
+        </a>
+        <a href="?status=all" class="filter-tab {% if status_filter == 'all' %}active{% endif %}">
+            All <span class="count" id="countAll">-</span>
+        </a>
+    </div>
+
+    <!-- Tickets Table -->
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;overflow:hidden;">
+        <table class="ticket-table">
+            <thead>
+                <tr>
+                    <th>Ticket</th>
+                    <th>User</th>
+                    <th>Subject</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if tickets %}
+                    {% for ticket in tickets %}
+                    <tr onclick="window.location.href='{{ url_for('admin.support_ticket_detail', ticket_number=ticket.ticket_number) }}'">
+                        <td><span class="ticket-number">{{ ticket.ticket_number }}</span></td>
+                        <td><strong>{{ ticket.user.username }}</strong></td>
+                        <td>{{ ticket.subject[:60] }}{% if ticket.subject|length > 60 %}...{% endif %}</td>
+                        <td>{{ ticket.category | replace('_', ' ') | title }}</td>
+                        <td><span class="status-badge {{ ticket.status }}">{{ ticket.status | replace('_', ' ') }}</span></td>
+                        <td style="font-size:0.75rem;color:var(--text-muted);">{{ ticket.created_at.strftime('%d %b, %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox" style="font-size:2rem;opacity:0.3;"></i>
+                                <p>No tickets found with this status.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Count tickets by status
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/admin/api/ai-users') // Reuse existing endpoint or count from page
+        const rows = document.querySelectorAll('.ticket-table tbody tr');
+        let counts = {open: 0, in_progress: 0, resolved: 0, closed: 0, all: 0};
+        
+        // This runs on page load - count from rendered data
+        document.getElementById('countOpen').textContent = '{{ tickets|selectattr("status","equalto","open")|list|length }}';
+        document.getElementById('countProgress').textContent = '{{ tickets|selectattr("status","equalto","in_progress")|list|length }}';
+        document.getElementById('countResolved').textContent = '{{ tickets|selectattr("status","equalto","resolved")|list|length }}';
+        document.getElementById('countClosed').textContent = '{{ tickets|selectattr("status","equalto","closed")|list|length }}';
+        document.getElementById('countAll').textContent = '{{ tickets|length }}';
+    });
+</script>
+{% endblock %}

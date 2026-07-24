@@ -1,0 +1,363 @@
+{% extends "base_user.html" %}
+{% block title %}Add Trade - Tragene Journal{% endblock %}
+{% block page_title %}Manual Entry{% endblock %}
+{% block content %}
+
+<style>
+    .symbol-chip {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        margin: 3px;
+    }
+    .symbol-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(79,142,247,0.1);
+    }
+    .symbol-chip.selected {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+    }
+    .symbol-chip.gold { border-left: 3px solid #ffb300; }
+    .symbol-chip.forex { border-left: 3px solid #4f8ef7; }
+    .symbol-chip.crypto { border-left: 3px solid #ff6b6b; }
+    .symbol-chip.index { border-left: 3px solid #7c4dff; }
+    .symbol-chip.oil { border-left: 3px solid #00bcd4; }
+    
+    .category-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+    
+    .trade-type-toggle {
+        display: flex;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+    .trade-type-toggle .btn {
+        flex: 1;
+        border: none;
+        border-radius: 0;
+        padding: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    .trade-type-toggle .btn.buy-active {
+        background: rgba(0,200,83,0.2);
+        color: #00c853;
+    }
+    .trade-type-toggle .btn.sell-active {
+        background: rgba(255,82,82,0.2);
+        color: #ff5252;
+    }
+    .trade-type-toggle .btn:not(.buy-active):not(.sell-active) {
+        background: var(--bg-card);
+        color: var(--text-muted);
+    }
+    
+    .section-divider {
+        border-color: var(--border-color);
+        margin: 20px 0;
+        opacity: 0.5;
+    }
+    
+    .form-floating-custom {
+        position: relative;
+    }
+    .form-floating-custom .floating-label {
+        position: absolute;
+        top: -10px;
+        left: 12px;
+        background: var(--bg-card);
+        padding: 0 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--accent);
+        z-index: 1;
+    }
+    
+    .pnl-preview {
+        text-align: center;
+        padding: 12px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    .pnl-preview.profit {
+        background: rgba(0,200,83,0.1);
+        color: #00c853;
+    }
+    .pnl-preview.loss {
+        background: rgba(255,82,82,0.1);
+        color: #ff5252;
+    }
+    .pnl-preview.neutral {
+        background: var(--bg-body);
+        color: var(--text-muted);
+    }
+</style>
+
+<div class="mb-3">
+    <a href="{{ url_for('user.import_trades') }}" class="text-decoration-none" style="color: var(--text-secondary);">
+        <i class="bi bi-arrow-left"></i> Back to Import
+    </a>
+</div>
+
+<div class="card p-4">
+    <form method="POST" id="tradeForm">
+        
+        <!-- Symbol Quick Select -->
+        <div class="mb-4">
+            <div class="category-label"><i class="bi bi-star-fill" style="color: #ffb300; font-size: 0.6rem;"></i> Quick Select Pair</div>
+            <div id="symbolChips">
+                <span class="symbol-chip gold" onclick="selectSymbol('XAUUSD')" data-symbol="XAUUSD">🥇 XAUUSD</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('EURUSD')" data-symbol="EURUSD">💱 EURUSD</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('GBPUSD')" data-symbol="GBPUSD">💱 GBPUSD</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('USDJPY')" data-symbol="USDJPY">💱 USDJPY</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('GBPJPY')" data-symbol="GBPJPY">💱 GBPJPY</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('BTCUSD')" data-symbol="BTCUSD">₿ BTCUSD</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('ETHUSD')" data-symbol="ETHUSD">Ξ ETHUSD</span>
+                <span class="symbol-chip index" onclick="selectSymbol('NAS100')" data-symbol="NAS100">📊 NAS100</span>
+                <span class="symbol-chip index" onclick="selectSymbol('US30')" data-symbol="US30">📊 US30</span>
+                <span class="symbol-chip oil" onclick="selectSymbol('USOIL')" data-symbol="USOIL">🛢 USOIL</span>
+            </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Main Inputs -->
+        <div class="row g-3">
+            <!-- Symbol Input -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Symbol *</span>
+                    <input type="text" name="symbol" id="symbolInput" class="form-control" placeholder="EURUSD, XAUUSD..." required style="padding-top: 14px;">
+                </div>
+            </div>
+
+            <!-- Trade Type Toggle -->
+            <div class="col-md-4">
+                <label class="form-label small fw-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Type *</label>
+                <div class="trade-type-toggle">
+                    <button type="button" class="btn buy-active" id="btnBuy" onclick="setTradeType('buy')">
+                        <i class="bi bi-arrow-up-circle-fill"></i> BUY
+                    </button>
+                    <button type="button" class="btn" id="btnSell" onclick="setTradeType('sell')">
+                        <i class="bi bi-arrow-down-circle-fill"></i> SELL
+                    </button>
+                </div>
+                <input type="hidden" name="trade_type" id="tradeTypeInput" value="buy">
+            </div>
+
+            <!-- Lot Size -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Lot Size</span>
+                    <input type="number" name="lot_size" class="form-control" value="1.0" step="0.01" min="0.01" style="padding-top: 14px;">
+                </div>
+            </div>
+
+            <!-- Entry Price -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Entry Price *</span>
+                    <input type="number" name="entry_price" id="entryPrice" class="form-control" step="0.00001" required style="padding-top: 14px;" oninput="previewPnL()">
+                </div>
+            </div>
+
+            <!-- Exit Price -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Exit Price</span>
+                    <input type="number" name="exit_price" id="exitPrice" class="form-control" step="0.00001" style="padding-top: 14px;" oninput="previewPnL()">
+                </div>
+            </div>
+
+            <!-- Stop Loss -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Stop Loss</span>
+                    <input type="number" name="stop_loss" class="form-control" step="0.00001" style="padding-top: 14px;">
+                </div>
+            </div>
+
+            <!-- Take Profit -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Take Profit</span>
+                    <input type="number" name="take_profit" class="form-control" step="0.00001" style="padding-top: 14px;">
+                </div>
+            </div>
+
+            <!-- Entry Date -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Entry Date *</span>
+                    <input type="datetime-local" name="entry_date" class="form-control" required style="padding-top: 14px;">
+                </div>
+            </div>
+
+            <!-- Exit Date -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Exit Date</span>
+                    <input type="datetime-local" name="exit_date" class="form-control" style="padding-top: 14px;">
+                </div>
+            </div>
+
+            <!-- Session -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Session</span>
+                    <select name="session" class="form-select" style="padding-top: 14px;">
+                        <option value="">Auto Detect</option>
+                        <option value="asian">🌅 Asian</option>
+                        <option value="london">🏙 London</option>
+                        <option value="newyork">🌃 New York</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- P&L Preview -->
+            <div class="col-md-4">
+                <label class="form-label small fw-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">P&L Preview</label>
+                <div class="pnl-preview neutral" id="pnlPreview">—</div>
+            </div>
+
+            <!-- Tags -->
+            <div class="col-md-8">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Tags</span>
+                    <input type="text" name="tags" class="form-control" placeholder="scalping, news, trend" style="padding-top: 14px;">
+                </div>
+                <div class="mt-2">
+                    <span class="symbol-chip" onclick="addTag('scalping')" style="font-size: 0.7rem; padding: 4px 10px;">scalping</span>
+                    <span class="symbol-chip" onclick="addTag('daytrade')" style="font-size: 0.7rem; padding: 4px 10px;">daytrade</span>
+                    <span class="symbol-chip" onclick="addTag('swing')" style="font-size: 0.7rem; padding: 4px 10px;">swing</span>
+                    <span class="symbol-chip" onclick="addTag('news')" style="font-size: 0.7rem; padding: 4px 10px;">news</span>
+                    <span class="symbol-chip" onclick="addTag('breakout')" style="font-size: 0.7rem; padding: 4px 10px;">breakout</span>
+                    <span class="symbol-chip" onclick="addTag('trend')" style="font-size: 0.7rem; padding: 4px 10px;">trend</span>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="col-12">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Notes</span>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="Why did you take this trade? What was your setup?" style="padding-top: 14px;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn text-white" style="background: var(--accent); border-radius: 8px; border: none; padding: 10px 24px; font-weight: 600;">
+                <i class="bi bi-check-lg"></i> Save Trade
+            </button>
+            <a href="{{ url_for('user.import_trades') }}" class="btn btn-outline-secondary" style="border-radius: 8px; padding: 10px 24px;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Set default entry date
+    document.querySelector('input[name="entry_date"]').value = new Date().toISOString().slice(0, 16);
+
+    // Symbol quick select
+    function selectSymbol(sym) {
+        document.getElementById('symbolInput').value = sym;
+        document.querySelectorAll('#symbolChips .symbol-chip').forEach(c => c.classList.remove('selected'));
+        document.querySelector(`[data-symbol="${sym}"]`).classList.add('selected');
+    }
+
+    // Trade type toggle
+    function setTradeType(type) {
+        document.getElementById('tradeTypeInput').value = type;
+        document.getElementById('btnBuy').classList.toggle('buy-active', type === 'buy');
+        document.getElementById('btnSell').classList.toggle('sell-active', type === 'sell');
+        document.getElementById('btnBuy').classList.toggle('buy-active', type === 'buy');
+        document.getElementById('btnSell').classList.remove('buy-active');
+        document.getElementById('btnBuy').classList.remove('sell-active');
+        previewPnL();
+    }
+
+    // Tag quick add
+    function addTag(tag) {
+        const input = document.querySelector('input[name="tags"]');
+        const current = input.value.split(',').map(t => t.trim()).filter(t => t);
+        if (!current.includes(tag)) {
+            current.push(tag);
+            input.value = current.join(', ');
+        }
+    }
+
+    // P&L Preview
+    function previewPnL() {
+        const entry = parseFloat(document.getElementById('entryPrice').value);
+        const exit = parseFloat(document.getElementById('exitPrice').value);
+        const type = document.getElementById('tradeTypeInput').value;
+        const lotSize = parseFloat(document.querySelector('input[name="lot_size"]').value) || 1.0;
+        const symbol = document.getElementById('symbolInput').value.toUpperCase();
+        const preview = document.getElementById('pnlPreview');
+        
+        if (!entry || !exit) {
+            preview.textContent = '—';
+            preview.className = 'pnl-preview neutral';
+            return;
+        }
+
+        let pipMultiplier = 10000;
+        let valuePerPip = 10;
+        
+        if (symbol.includes('XAU') || symbol.includes('GOLD')) { pipMultiplier = 100; valuePerPip = 10; }
+        else if (symbol.includes('JPY')) { pipMultiplier = 100; valuePerPip = 10; }
+        else if (['US30','NAS100','NAS','SPX','DJI','DAX'].some(x => symbol.includes(x))) { pipMultiplier = 1; valuePerPip = 10; }
+        else if (['BTC','ETH','XRP','SOL'].some(x => symbol.includes(x))) { pipMultiplier = 1; valuePerPip = 1; }
+
+        let pips;
+        if (type === 'buy') {
+            pips = (exit - entry) * pipMultiplier;
+        } else {
+            pips = (entry - exit) * pipMultiplier;
+        }
+        
+        const pnl = (pips * lotSize * valuePerPip).toFixed(2);
+        
+        if (pnl > 0) {
+            preview.innerHTML = `<i class="bi bi-arrow-up-circle-fill"></i> +$${pnl}`;
+            preview.className = 'pnl-preview profit';
+        } else if (pnl < 0) {
+            preview.innerHTML = `<i class="bi bi-arrow-down-circle-fill"></i> -$${Math.abs(pnl)}`;
+            preview.className = 'pnl-preview loss';
+        } else {
+            preview.textContent = '$0.00';
+            preview.className = 'pnl-preview neutral';
+        }
+    }
+
+    // Highlight selected symbol on input change
+    document.getElementById('symbolInput').addEventListener('input', function() {
+        const val = this.value.toUpperCase();
+        document.querySelectorAll('#symbolChips .symbol-chip').forEach(c => c.classList.remove('selected'));
+        const match = document.querySelector(`[data-symbol="${val}"]`);
+        if (match) match.classList.add('selected');
+    });
+</script>
+{% endblock %}

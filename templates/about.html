@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}About Us — Tragene Journal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .about-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px 60px;
+    }
+    
+    .about-hero {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+    
+    .about-logo {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--accent);
+        box-shadow: 0 0 30px rgba(38,166,154,0.3);
+        margin-bottom: 20px;
+    }
+    
+    .about-hero h1 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .about-hero .tagline {
+        font-size: 1.05rem;
+        color: var(--accent);
+        font-weight: 500;
+    }
+    
+    .about-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 28px 30px;
+        margin-bottom: 20px;
+    }
+    
+    .about-section h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .about-section h3 i {
+        color: var(--accent);
+        font-size: 1.2rem;
+    }
+    
+    .about-section p {
+        color: var(--text-dim);
+        font-size: 0.95rem;
+        line-height: 1.7;
+        margin-bottom: 0;
+    }
+    
+    .about-section .highlight {
+        color: var(--accent);
+        font-weight: 600;
+    }
+    
+    .contact-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .contact-row:last-child {
+        border-bottom: none;
+    }
+    
+    .contact-row i {
+        font-size: 1.2rem;
+        color: var(--accent);
+        width: 24px;
+        text-align: center;
+    }
+    
+    .contact-row span {
+        color: var(--text-dim);
+        font-size: 0.92rem;
+    }
+    
+    .contact-row strong {
+        color: var(--text-primary);
+    }
+    
+    @media (max-width: 768px) {
+        .about-hero h1 {
+            font-size: 1.6rem;
+        }
+        .about-section {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="about-wrapper">
+    
+    <!-- Hero -->
+    <div class="about-hero">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tragene Journal" class="about-logo">
+        <h1>Tragene Journal</h1>
+        <p class="tagline">Trading is in our genes.</p>
+    </div>
+    
+    <!-- What is TRAGENE? -->
+    <div class="about-section">
+        <h3><i class="bi bi-lightbulb"></i> What is <span class="highlight">TRAGENE</span>?</h3>
+        <p>
+            <strong>TRA</strong>ding + <strong>GENE</strong>s = <span class="highlight">TRAGENE</span>.
+            We believe that successful trading isn't just about charts and numbers — it's about 
+            understanding your own patterns, instincts, and behavior. Every trader has a unique 
+            "trading DNA," and our mission is to help you decode yours.
+        </p>
+    </div>
+    
+    <!-- What we do -->
+    <div class="about-section">
+        <h3><i class="bi bi-journal-text"></i> What We Do</h3>
+        <p>
+            Tragene Journal is an <span class="highlight">AI-powered Tragene Journal</span> built for serious traders 
+            who want to stop guessing and start improving. We combine manual trade logging with 
+            automatic MT4/MT5 sync, advanced analytics, and an AI coach that actually reads your 
+            trades — flagging mistakes like overtrading, revenge trading, and poor risk management 
+            before they become expensive habits.
+        </p>
+    </div>
+    
+    <!-- Our Philosophy -->
+    <div class="about-section">
+        <h3><i class="bi bi-compass"></i> Our Philosophy</h3>
+        <p>
+            We don't sell signals. We don't promise "get rich quick." We give you the tools to 
+            <span class="highlight">understand your own performance</span> — because the most profitable 
+            edge in trading is knowing yourself. Your journal is your mirror. Our AI is the flashlight 
+            that helps you see the blind spots.
+        </p>
+    </div>
+    
+    <!-- Built For -->
+    <div class="about-section">
+        <h3><i class="bi bi-people"></i> Built For Traders, By Traders</h3>
+        <p>
+            Whether you're scalping XAUUSD, swinging indices, or holding crypto positions — 
+            Tragene Journal adapts to your style. Log manually when you want control, sync 
+            automatically when you don't. Track multiple accounts, analyze by session, and let 
+            the AI diary writer summarize your entire trading day in one click.
+        </p>
+    </div>
+    
+    <!-- Contact -->
+    <div class="about-section">
+        <h3><i class="bi bi-envelope"></i> Get In Touch</h3>
+        <div class="contact-row">
+            <i class="bi bi-envelope-fill"></i>
+            <span>Email: <strong>tragene.co@gmail.com</strong></span>
+        </div>
+        <div class="contact-row">
+            <i class="bi bi-globe"></i>
+            <span>Website: <strong>journal.tragenefunded.com</strong></span>
+        </div>
+        <div class="contact-row">
+            <i class="bi bi-clock"></i>
+            <span>Support hours: <strong>Monday — Saturday, 10 AM to 7 PM IST</strong></span>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

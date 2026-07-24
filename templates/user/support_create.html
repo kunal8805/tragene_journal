@@ -1,0 +1,211 @@
+{% extends "base_user.html" %}
+{% block title %}Create Ticket - Tragene Journal{% endblock %}
+{% block page_title %}🎫 New Support Ticket{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .create-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .create-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .create-header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .create-header .ch-icon {
+        width: 48px; height: 48px;
+        border-radius: 14px;
+        background: rgba(79,142,247,0.1);
+        color: var(--accent);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .create-header h6 {
+        margin: 0;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+    }
+
+    .create-header p {
+        margin: 2px 0 0;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+
+    .create-body {
+        padding: 28px;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.88rem;
+        font-family: 'Space Grotesk', sans-serif;
+        transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(79,142,247,0.08);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 140px;
+    }
+
+    .form-group select option {
+        background: var(--bg-card);
+        color: var(--text-primary);
+    }
+
+    .btn-row {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
+
+    .btn-submit {
+        padding: 12px 28px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        font-family: 'Space Grotesk', sans-serif;
+        transition: all 0.2s;
+    }
+
+    .btn-submit:hover {
+        opacity: 0.9;
+    }
+
+    .btn-cancel {
+        padding: 12px 20px;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: none;
+        font-family: 'Space Grotesk', sans-serif;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-cancel:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="create-container">
+    
+    <div class="create-card">
+        <div class="create-header">
+            <div class="ch-icon"><i class="bi bi-headset"></i></div>
+            <div>
+                <h6>Create Support Ticket</h6>
+                <p>We usually respond within a few hours</p>
+            </div>
+        </div>
+
+        <div class="create-body">
+            <form method="POST" action="{{ url_for('user.support_create') }}" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Issue Category *</label>
+                    <select name="category" required>
+                        <option value="" disabled selected>Select category</option>
+                        <option value="bug">🐛 Bug Report</option>
+                        <option value="feature">💡 Feature Request</option>
+                        <option value="account">👤 Account Issue</option>
+                        <option value="billing">💳 Billing & Payment</option>
+                        <option value="ai">🤖 AI / TRAGENE</option>
+                        <option value="trading">📊 Tragene Journal</option>
+                        <option value="other">❓ Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Subject *</label>
+                    <input type="text" name="subject" required placeholder="Briefly describe your issue" maxlength="200">
+                </div>
+
+                <div class="form-group">
+                    <label>Message *</label>
+                    <textarea name="message" required placeholder="Provide as much detail as possible. Include any relevant information like trade details, error messages, or steps to reproduce the issue."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Attachment (Optional)</label>
+                    <div style="border:2px dashed var(--border-color);border-radius:12px;padding:20px;text-align:center;cursor:pointer;" 
+                         onclick="document.getElementById('fileUpload').click()">
+                        <i class="bi bi-cloud-upload" style="font-size:2rem;color:var(--text-muted);"></i>
+                        <p style="color:var(--text-muted);font-size:0.8rem;margin-top:8px;" id="fileLabel">Click to upload screenshot or file</p>
+                        <p style="color:var(--text-muted);font-size:0.65rem;">PNG, JPG, JPEG or PDF (max 5MB)</p>
+                    </div>
+                    <input type="file" name="attachment" id="fileUpload" style="display:none;" accept="image/*,.pdf" 
+                           onchange="document.getElementById('fileLabel').textContent = this.files[0] ? this.files[0].name : 'Click to upload screenshot or file'">
+                </div>
+
+                <div class="btn-row">
+                    <a href="{{ url_for('user.support') }}" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-submit">
+                        <i class="bi bi-send"></i> Submit Ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

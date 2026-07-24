@@ -1,0 +1,126 @@
+{% extends "base_user.html" %}
+{% set analyse_page_key = 'dashboard' %}
+{% block title %}Dashboard - Tragene Journal{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4">
+        <div class="card stat-card p-3 text-center">
+            <div class="label">Total Trades</div>
+            <h2 class="mb-0 mt-1">{{ trade_count }}</h2>
+            {% if trade_count > 0 %}
+                <small class="text-muted">{{ total_wins }}W / {{ total_losses }}L</small>
+            {% else %}
+                <small class="text-muted">Start trading</small>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card stat-card p-3 text-center">
+            <div class="label">Win Rate</div>
+            <h2 class="mb-0 mt-1 {% if win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">{{ win_rate }}%</h2>
+            <small class="text-muted">{{ total_wins }} wins / {{ total_losses }} losses</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card stat-card p-3 text-center">
+            <div class="label">Total P&L</div>
+            <h2 class="mb-0 mt-1 {% if total_pnl > 0 %}text-success{% elif total_pnl < 0 %}text-danger{% endif %}">
+                {{ '+' if total_pnl > 0 else '' }}${{ '%.2f'|format(total_pnl) }}
+            </h2>
+            {% if trade_count > 0 %}
+                {% set avg_pnl = total_pnl / trade_count %}
+                <small class="text-muted">{{ '%.2f'|format(avg_pnl) }} avg per trade</small>
+            {% else %}
+                <small class="text-muted">No data</small>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card stat-card p-3 text-center">
+            <div class="label">Profit Factor</div>
+            <h2 class="mb-0 mt-1 {% if profit_factor >= 1.5 %}text-success{% elif profit_factor >= 1 %}text-warning{% else %}text-danger{% endif %}">
+                {% if profit_factor == 999999 %}∞{% else %}{{ profit_factor }}{% endif %}
+            </h2>
+            <small class="text-muted">
+                +${{ '%.2f'|format(gross_profit) }} / -${{ '%.2f'|format(gross_loss) }}
+            </small>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card stat-card p-3 text-center">
+            <div class="label">Avg Risk:Reward</div>
+            <h2 class="mb-0 mt-1">{{ avg_rr }}</h2>
+            <small class="text-muted">Based on SL/TP set</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card stat-card p-3 text-center">
+            <div class="label">Best Symbol</div>
+            <h2 class="mb-0 mt-1" style="font-size: 1.3rem;">{{ best_symbol }}</h2>
+            {% if trade_count > 0 %}
+                <small class="text-success">Most profitable</small>
+            {% else %}
+                <small class="text-muted">No data</small>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h6 class="fw-bold mb-3">Quick Actions</h6>
+            <a href="{{ url_for('user.import_trades') }}" class="btn w-100 mb-2 text-white" style="background: var(--accent); border: none; border-radius: 8px;">
+                <i class="bi bi-plus-circle"></i> Add New Trade
+            </a>
+            <a href="{{ url_for('user.journal') }}" class="btn btn-outline-secondary w-100 mb-2" style="border-radius: 8px;">
+                <i class="bi bi-journal-text"></i> View Journal ({{ trade_count }})
+            </a>
+            <a href="{{ url_for('user.analytics') }}" class="btn btn-outline-secondary w-100" style="border-radius: 8px;">
+                <i class="bi bi-graph-up"></i> Analytics
+            </a>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h6 class="fw-bold mb-3">Performance Summary</h6>
+            {% if trade_count > 0 %}
+                <div class="row g-2 small">
+                    <div class="col-6">
+                        <div class="p-2 rounded" style="background: rgba(0,200,83,0.08);">
+                            <span class="text-muted">Gross Profit</span><br>
+                            <strong class="text-success">+${{ '%.2f'|format(gross_profit) }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded" style="background: rgba(255,82,82,0.08);">
+                            <span class="text-muted">Gross Loss</span><br>
+                            <strong class="text-danger">-${{ '%.2f'|format(gross_loss) }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded" style="background: rgba(79,142,247,0.08);">
+                            <span class="text-muted">Wins</span><br>
+                            <strong>{{ total_wins }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded" style="background: rgba(79,142,247,0.08);">
+                            <span class="text-muted">Losses</span><br>
+                            <strong>{{ total_losses }}</strong>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-clock-history display-4"></i>
+                    <p class="mt-2">No recent activity.<br>Start by adding your first trade.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

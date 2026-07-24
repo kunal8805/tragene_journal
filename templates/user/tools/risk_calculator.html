@@ -1,0 +1,625 @@
+ {% extends "base_user.html" %}
+{% block title %}Risk Calculator - Tragene Journal{% endblock %}
+{% block page_title %}📐 Risk Calculator{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .calc-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* ── Glass Card ── */
+    .glass-card {
+        background: linear-gradient(145deg, var(--bg-card) 0%, rgba(22,27,34,0.6) 100%);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+    
+    .glass-card::before {
+        content: '';
+        position: absolute;
+        top: -100px; right: -100px;
+        width: 250px; height: 250px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(79,142,247,0.06) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .glass-card .card-glow-bottom {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        opacity: 0.5;
+    }
+
+    /* ── Form Styles ── */
+    .calc-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .calc-form-grid .full-width {
+        grid-column: 1 / -1;
+    }
+    
+    .input-group-custom {
+        position: relative;
+    }
+    
+    .input-group-custom label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .input-group-custom label i {
+        font-size: 0.9rem;
+        color: var(--accent);
+    }
+    
+    .input-group-custom .input-wrapper {
+        position: relative;
+    }
+    
+    .input-group-custom input {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px 16px;
+        padding-right: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+        transition: all 0.3s;
+        letter-spacing: 0.5px;
+    }
+    
+    .input-group-custom input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(79,142,247,0.1), 0 0 30px rgba(79,142,247,0.05);
+        background: var(--input-bg);
+    }
+    
+    .input-group-custom input::placeholder {
+        color: var(--text-muted);
+        font-weight: 400;
+        font-size: 0.9rem;
+    }
+    
+    .input-group-custom .input-suffix {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        pointer-events: none;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* ── Quick Risk Buttons ── */
+    .quick-risk-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .quick-risk-btn {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-body);
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .quick-risk-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(79,142,247,0.05);
+    }
+    
+    .quick-risk-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+    }
+    
+    /* ── Results Panel ── */
+    .results-panel {
+        display: none;
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .results-panel.show {
+        display: block;
+    }
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .result-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .result-card {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .result-card.primary {
+        border-color: rgba(79,142,247,0.3);
+        background: linear-gradient(135deg, rgba(79,142,247,0.06) 0%, var(--bg-body) 100%);
+    }
+    
+    .result-card.danger {
+        border-color: rgba(255,82,82,0.3);
+        background: linear-gradient(135deg, rgba(255,82,82,0.04) 0%, var(--bg-body) 100%);
+    }
+    
+    .result-card.success {
+        border-color: rgba(0,230,118,0.3);
+        background: linear-gradient(135deg, rgba(0,230,118,0.04) 0%, var(--bg-body) 100%);
+    }
+    
+    .result-card .rc-icon {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+    }
+    .result-card.primary .rc-icon { color: var(--accent); }
+    .result-card.danger .rc-icon { color: #ff5252; }
+    .result-card.success .rc-icon { color: #00e676; }
+    
+    .result-card .rc-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-bottom: 6px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .result-card .rc-value {
+        font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -1px;
+    }
+    
+    .result-card .rc-sub {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* ── Risk Visual Bar ── */
+    .risk-visual {
+        margin-top: 20px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .risk-bar-outer {
+        height: 10px;
+        background: var(--bg-body);
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+    
+    .risk-bar-inner {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.6s;
+    }
+    
+    .risk-bar-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* ── Info Callout ── */
+    .info-callout {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+        background: rgba(79,142,247,0.05);
+        border: 1px solid rgba(79,142,247,0.15);
+        border-radius: 12px;
+        margin-top: 20px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .info-callout i {
+        color: var(--accent);
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    .info-callout p {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    .info-callout p strong {
+        color: var(--text-primary);
+    }
+    
+    /* ── Action Button ── */
+    .btn-calculate {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, var(--accent) 0%, #6db3f2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 14px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+        letter-spacing: 0.5px;
+        position: relative;
+        z-index: 1;
+        margin-top: 8px;
+    }
+    
+    .btn-calculate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(79,142,247,0.35);
+    }
+    
+    .btn-calculate:active {
+        transform: translateY(0);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+        .calc-form-grid { grid-template-columns: 1fr; }
+        .result-grid { grid-template-columns: 1fr; }
+        .glass-card { padding: 20px; }
+        .result-card .rc-value { font-size: 1.3rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="calc-container">
+    
+    <!-- ── INPUT CARD ── -->
+    <div class="glass-card">
+        <div class="card-glow-bottom"></div>
+        
+        <div class="calc-form-grid">
+            
+            <!-- Account Size -->
+            <div class="input-group-custom">
+                <label><i class="bi bi-wallet2"></i> Account Size</label>
+                <div class="input-wrapper">
+                    <input type="number" id="accountSize" placeholder="10000" step="any">
+                    <span class="input-suffix">USD</span>
+                </div>
+            </div>
+            
+            <!-- Risk Percentage -->
+            <div class="input-group-custom">
+                <label><i class="bi bi-percent"></i> Risk Per Trade</label>
+                <div class="input-wrapper">
+                    <input type="number" id="riskPercent" placeholder="1" step="0.1" value="1">
+                    <span class="input-suffix">%</span>
+                </div>
+                <div class="quick-risk-row" style="margin-top: 10px;">
+                    <button class="quick-risk-btn active" onclick="setRisk(1)">1%</button>
+                    <button class="quick-risk-btn" onclick="setRisk(1.5)">1.5%</button>
+                    <button class="quick-risk-btn" onclick="setRisk(2)">2%</button>
+                    <button class="quick-risk-btn" onclick="setRisk(3)">3%</button>
+                    <button class="quick-risk-btn" onclick="setRisk(5)">5%</button>
+                </div>
+            </div>
+            
+            <!-- Entry Price -->
+            <div class="input-group-custom">
+                <label><i class="bi bi-box-arrow-in-right"></i> Entry Price</label>
+                <div class="input-wrapper">
+                    <input type="number" id="entryPrice" placeholder="1.2500" step="any">
+                </div>
+            </div>
+            
+            <!-- Stop Loss -->
+            <div class="input-group-custom">
+                <label><i class="bi bi-shield-x"></i> Stop Loss Price</label>
+                <div class="input-wrapper">
+                    <input type="number" id="stopLoss" placeholder="1.2400" step="any">
+                </div>
+            </div>
+            
+            <!-- Take Profit (Optional) -->
+            <div class="input-group-custom">
+                <label><i class="bi bi-flag"></i> Take Profit <span style="opacity:0.5;">(optional)</span></label>
+                <div class="input-wrapper">
+                    <input type="number" id="takeProfit" placeholder="1.2700" step="any">
+                </div>
+            </div>
+            
+            <!-- Calculate Button -->
+            <div class="full-width">
+                <button class="btn-calculate" onclick="calculateRisk()">
+                    <i class="bi bi-calculator"></i> Calculate Position Size
+                </button>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- ── RESULTS PANEL ── -->
+    <div class="results-panel" id="resultsPanel">
+        
+        <!-- Risk Amount Card -->
+        <div class="glass-card" style="margin-bottom: 14px;">
+            <div class="card-glow-bottom"></div>
+            <div class="result-grid">
+                
+                <div class="result-card danger">
+                    <div class="rc-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="rc-label">Max Risk Amount</div>
+                    <div class="rc-value" id="riskAmount">$0.00</div>
+                    <div class="rc-sub">Amount you'll lose if SL hit</div>
+                </div>
+                
+                <div class="result-card primary">
+                    <div class="rc-icon"><i class="bi bi-bullseye"></i></div>
+                    <div class="rc-label">Position Size</div>
+                    <div class="rc-value" id="positionSize">0.00</div>
+                    <div class="rc-sub" id="positionSizeSub">Units / Lots</div>
+                </div>
+                
+                <div class="result-card success" id="rewardCard" style="display:none;">
+                    <div class="rc-icon"><i class="bi bi-trophy"></i></div>
+                    <div class="rc-label">Potential Reward</div>
+                    <div class="rc-value" id="potentialReward">$0.00</div>
+                    <div class="rc-sub" id="rrRatio">R:R 1:0</div>
+                </div>
+                
+            </div>
+            
+            <!-- Risk Visual -->
+            <div class="risk-visual">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Risk Exposure</span>
+                    <span style="font-size:0.7rem; font-weight:700; font-family:'JetBrains Mono',monospace;" id="riskBarLabel">0%</span>
+                </div>
+                <div class="risk-bar-outer">
+                    <div class="risk-bar-inner" id="riskBar" style="width:0%; background:#ff5252;"></div>
+                </div>
+                <div class="risk-bar-labels">
+                    <span>Safe</span><span>Moderate</span><span>High</span><span>Danger</span>
+                </div>
+            </div>
+            
+            <!-- Info -->
+            <div class="info-callout">
+                <i class="bi bi-info-circle"></i>
+                <p>
+                    <strong>Stop Distance:</strong> <span id="stopDistance">0</span> pips/points &nbsp;|&nbsp;
+                    <strong>Direction:</strong> <span id="direction">-</span>
+                </p>
+            </div>
+        </div>
+        
+    </div>
+    
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function setRisk(value) {
+        document.getElementById('riskPercent').value = value;
+        document.querySelectorAll('.quick-risk-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.trim() === value + '%') {
+                btn.classList.add('active');
+            }
+        });
+        calculateRisk();
+    }
+    
+    // Auto-calculate on input change
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', function() {
+            const account = document.getElementById('accountSize').value;
+            const entry = document.getElementById('entryPrice').value;
+            const sl = document.getElementById('stopLoss').value;
+            if (account && entry && sl) {
+                calculateRisk();
+            }
+        });
+    });
+    
+    // Quick risk button clicks
+    document.querySelectorAll('.quick-risk-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const val = parseFloat(this.textContent.replace('%', ''));
+            setRisk(val);
+        });
+    });
+    
+    function calculateRisk() {
+        const accountSize = parseFloat(document.getElementById('accountSize').value);
+        const riskPercent = parseFloat(document.getElementById('riskPercent').value);
+        const entryPrice = parseFloat(document.getElementById('entryPrice').value);
+        const stopLoss = parseFloat(document.getElementById('stopLoss').value);
+        const takeProfit = parseFloat(document.getElementById('takeProfit').value) || null;
+        
+        if (!accountSize || !riskPercent || !entryPrice || !stopLoss || accountSize <= 0 || entryPrice <= 0 || stopLoss <= 0) {
+            document.getElementById('resultsPanel').classList.remove('show');
+            return;
+        }
+        
+        if (entryPrice === stopLoss) {
+            alert('Entry price and stop loss cannot be the same!');
+            return;
+        }
+        
+        // Send to API
+        fetch('/tools/api/calculate-risk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                account_size: accountSize,
+                risk_percent: riskPercent,
+                entry_price: entryPrice,
+                stop_loss: stopLoss,
+                take_profit: takeProfit
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                displayResults(data);
+            } else {
+                alert(data.message || 'Calculation error');
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('Failed to calculate. Check your inputs.');
+        });
+    }
+    
+    function displayResults(data) {
+        const panel = document.getElementById('resultsPanel');
+        panel.classList.add('show');
+        
+        // Animate values
+        animateValue('riskAmount', 0, data.risk_amount, 600, '$');
+        animateValue('positionSize', 0, data.position_size, 600, '');
+        
+        document.getElementById('stopDistance').textContent = data.stop_distance;
+        document.getElementById('direction').textContent = data.direction.toUpperCase();
+        document.getElementById('positionSizeSub').textContent = 'Units / Lots';
+        
+        // Reward section
+        const rewardCard = document.getElementById('rewardCard');
+        if (data.potential_reward !== null) {
+            rewardCard.style.display = '';
+            animateValue('potentialReward', 0, data.potential_reward, 600, '$');
+            document.getElementById('rrRatio').textContent = `R:R 1:${data.reward_risk_ratio}`;
+        } else {
+            rewardCard.style.display = 'none';
+        }
+        
+        // Risk bar
+        const riskBar = document.getElementById('riskBar');
+        const riskPct = data.risk_percent;
+        let barWidth = Math.min(riskPct * 20, 100); // 5% = 100%
+        let barColor;
+        
+        if (riskPct <= 1) barColor = '#00e676';
+        else if (riskPct <= 2) barColor = '#ffb300';
+        else if (riskPct <= 5) barColor = '#ff5252';
+        else barColor = '#ff1744';
+        
+        setTimeout(() => {
+            riskBar.style.width = barWidth + '%';
+            riskBar.style.background = barColor;
+        }, 200);
+        
+        document.getElementById('riskBarLabel').textContent = riskPct + '%';
+        document.getElementById('riskBarLabel').style.color = barColor;
+        
+        // Scroll to results
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function animateValue(elementId, start, end, duration, prefix) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        const range = end - start;
+        const startTime = performance.now();
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3); // ease-out
+            const current = start + range * eased;
+            
+            if (prefix === '$') {
+                element.textContent = '$' + current.toFixed(2);
+            } else {
+                element.textContent = current.toFixed(4);
+            }
+            
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+    
+    // Enter key triggers calculate
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            calculateRisk();
+        }
+    });
+</script>
+{% endblock %}

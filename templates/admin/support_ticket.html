@@ -1,0 +1,422 @@
+{% extends "base_admin.html" %}
+{% block title %}Ticket {{ ticket.ticket_number }} - Admin{% endblock %}
+{% block page_title %}🎫 {{ ticket.ticket_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .ticket-detail-container {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .chat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 60vh;
+        min-height: 450px;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        background: var(--bg-body);
+    }
+
+    .chat-msg {
+        display: flex;
+        gap: 10px;
+        max-width: 75%;
+    }
+
+    .chat-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .chat-msg.admin { align-self: flex-start; }
+
+    .chat-msg .msg-avatar {
+        width: 30px; height: 30px;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.7rem; flex-shrink: 0;
+    }
+
+    .msg-avatar.user-av { background: var(--bg-body); border: 1px solid var(--border-color); }
+    .msg-avatar.admin-av { background: var(--accent); color: #fff; }
+
+    .chat-msg .msg-bubble {
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.82rem;
+        line-height: 1.5;
+    }
+
+    .chat-msg.user .msg-bubble { background: #4f8ef7; color: #fff; }
+    .chat-msg.admin .msg-bubble { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); }
+
+    .chat-msg .msg-meta {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        margin-top: 3px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .chat-input-area {
+        padding: 14px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        gap: 8px;
+        background: var(--bg-card);
+    }
+
+    .chat-input-area textarea {
+        flex: 1;
+        padding: 10px 14px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.82rem;
+        font-family: 'Space Grotesk', sans-serif;
+        resize: none;
+        min-height: 60px;
+    }
+
+    .chat-input-area textarea:focus { outline: none; border-color: var(--accent); }
+
+    .btn-send-reply {
+        padding: 10px 18px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-family: 'Space Grotesk', sans-serif;
+        white-space: nowrap;
+    }
+
+    .btn-send-reply:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Sidebar */
+    .sidebar-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .side-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px;
+    }
+
+    .side-card h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.8rem;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .side-card .info-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        margin-bottom: 6px;
+    }
+
+    .side-card .info-row .label { color: var(--text-muted); }
+    .side-card .info-row .value { font-weight: 600; color: var(--text-primary); }
+
+    .status-badge {
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .status-badge.open { background: rgba(0,230,118,0.1); color: #00e676; }
+    .status-badge.in_progress { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .status-badge.resolved { background: rgba(79,142,247,0.1); color: #4f8ef7; }
+    .status-badge.closed { background: var(--bg-body); color: var(--text-muted); }
+
+    .side-card select {
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+    }
+
+    .side-card select:focus { outline: none; border-color: var(--accent); }
+
+    .btn-status {
+        width: 100%;
+        padding: 8px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        cursor: pointer;
+    }
+
+    .side-card textarea {
+        width: 100%;
+        padding: 10px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.78rem;
+        resize: vertical;
+        min-height: 80px;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .side-card textarea:focus { outline: none; border-color: var(--accent); }
+
+    .btn-save-note {
+        width: 100%;
+        padding: 7px;
+        background: rgba(255,82,82,0.1);
+        border: 1px solid rgba(255,82,82,0.2);
+        color: #ff5252;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.72rem;
+        cursor: pointer;
+        margin-top: 6px;
+    }
+
+    .btn-save-note:hover { background: rgba(255,82,82,0.2); }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 14px;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    @media (max-width: 900px) {
+        .ticket-detail-container {
+            grid-template-columns: 1fr;
+        }
+        .sidebar-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .sidebar-cards {
+            grid-template-columns: 1fr;
+        }
+        .chat-msg { max-width: 90%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div>
+    <a href="{{ url_for('admin.support_tickets') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Tickets
+    </a>
+</div>
+
+<div class="ticket-detail-container">
+    
+    <!-- Chat Area -->
+    <div>
+        <div class="chat-card">
+            <div class="chat-messages" id="chatMessages">
+                {% for reply in ticket.replies %}
+                <div class="chat-msg {{ 'admin' if reply.is_admin_reply else 'user' }}">
+                    <div class="msg-avatar {{ 'admin-av' if reply.is_admin_reply else 'user-av' }}">
+                        {{ '🛡️' if reply.is_admin_reply else '👤' }}
+                    </div>
+                    <div>
+                        <div class="msg-bubble">{{ reply.message }}</div>
+                        {% if reply.attachment_url %}
+                        <div style="margin-top:8px;">
+                            {% if reply.attachment_url.endswith(('.jpg','.jpeg','.png','.gif','.webp')) %}
+                                <img src="/{{ reply.attachment_url }}" style="max-width:300px;border-radius:8px;cursor:pointer;" 
+                                     onclick="window.open('/{{ reply.attachment_url }}')" alt="Attachment">
+                            {% else %}
+                                <a href="/{{ reply.attachment_url }}" target="_blank" 
+                                   style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg-body);border-radius:8px;text-decoration:none;font-size:0.75rem;">
+                                    <i class="bi bi-file-earmark"></i> Download File
+                                </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="msg-meta">
+                            {{ 'Support Team' if reply.is_admin_reply else ticket.user.username }} • 
+                            {{ reply.created_at.strftime('%d %b, %H:%M') }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if ticket.status != 'closed' %}
+            <div class="chat-input-area">
+                <textarea id="replyMessage" placeholder="Type your reply..." onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendReply();}"></textarea>
+                <button class="btn-send-reply" id="sendBtn" onclick="sendReply()">
+                    <i class="bi bi-send"></i> Send
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar-cards">
+        
+        <!-- User Info -->
+        <div class="side-card">
+            <h6>👤 User Information</h6>
+            <div class="info-row">
+                <span class="label">Username</span>
+                <span class="value">{{ ticket.user.username }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Email</span>
+                <span class="value">{{ ticket.user.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Plan</span>
+                <span class="value">{{ ticket.user.subscription_tier | upper }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Joined</span>
+                <span class="value">{{ ticket.user.created_at.strftime('%d %b %Y') }}</span>
+            </div>
+        </div>
+
+        <!-- Ticket Status -->
+        <div class="side-card">
+            <h6>📊 Ticket Info</h6>
+            <div class="info-row">
+                <span class="label">Ticket</span>
+                <span class="value" style="font-family:'JetBrains Mono',monospace;color:var(--accent);">{{ ticket.ticket_number }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Category</span>
+                <span class="value">{{ ticket.category | replace('_', ' ') | title }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Status</span>
+                <span class="value"><span class="status-badge {{ ticket.status }}">{{ ticket.status | replace('_', ' ') }}</span></span>
+            </div>
+            <div class="info-row">
+                <span class="label">Created</span>
+                <span class="value">{{ ticket.created_at.strftime('%d %b, %H:%M') }}</span>
+            </div>
+            
+            <select id="statusSelect" style="margin-top:10px;">
+                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+            </select>
+            <button class="btn-status" onclick="updateStatus()">Update Status</button>
+        </div>
+
+        <!-- Internal Notes -->
+        <div class="side-card">
+            <h6>🔒 Internal Admin Notes</h6>
+            <p style="font-size:0.6rem;color:#ff5252;margin-bottom:6px;">Visible only to admins</p>
+            <textarea id="adminNote" placeholder="Private notes about this ticket...">{{ ticket.admin_note or '' }}</textarea>
+            <button class="btn-save-note" onclick="saveNote()">💾 Save Note</button>
+        </div>
+        
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chat = document.getElementById('chatMessages');
+    chat.scrollTop = chat.scrollHeight;
+
+    function sendReply() {
+        const message = document.getElementById('replyMessage').value.trim();
+        if (!message) return;
+
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        fetch('/admin/api/support/{{ ticket.ticket_number }}/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .finally(() => { btn.disabled = false; btn.textContent = 'Send'; });
+    }
+
+    function updateStatus() {
+        const status = document.getElementById('statusSelect').value;
+        
+        fetch('/admin/api/support/{{ ticket.ticket_number }}/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: status })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) location.reload();
+        });
+    }
+
+    function saveNote() {
+        const note = document.getElementById('adminNote').value;
+        
+        fetch('/admin/api/support/{{ ticket.ticket_number }}/note', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admin_note: note })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) alert('Note saved!');
+        });
+    }
+</script>
+{% endblock %}

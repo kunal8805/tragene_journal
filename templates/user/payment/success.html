@@ -1,0 +1,70 @@
+{% extends "base_user.html" %}
+{% block title %}Payment Successful - Tragene Journal{% endblock %}
+{% block page_title %}✅ Payment Successful{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-container {
+        max-width: 500px;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .success-icon {
+        font-size: 5rem;
+        animation: bounceIn 0.6s ease;
+    }
+    @keyframes bounceIn {
+        0% { transform: scale(0); opacity: 0; }
+        60% { transform: scale(1.2); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .success-card {
+        background: var(--bg-card);
+        border: 1px solid rgba(0,230,118,0.3);
+        border-radius: 20px;
+        padding: 30px;
+        margin-top: 20px;
+    }
+    .plan-active {
+        display: inline-block;
+        padding: 8px 20px;
+        background: rgba(0,230,118,0.1);
+        color: #00e676;
+        border-radius: 25px;
+        font-weight: 700;
+        margin: 12px 0;
+    }
+    .btn-dashboard {
+        padding: 12px 30px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-icon">🎉</div>
+    <h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;margin-top:10px;">Payment Successful!</h4>
+    <p style="color:var(--text-muted);">Your subscription has been activated.</p>
+    
+    <div class="success-card">
+        <div class="plan-active">
+            <i class="bi bi-star-fill"></i> 
+            {{ plan_name if plan_name else 'Pro' }} Plan Active
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px;">
+            Thank you for upgrading! You now have access to all premium features.
+        </p>
+    </div>
+    
+    <a href="{{ url_for('user.dashboard') }}" class="btn-dashboard">
+        <i class="bi bi-speedometer2"></i> Go to Dashboard
+    </a>
+</div>
+{% endblock %}

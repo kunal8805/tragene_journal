@@ -1,0 +1,758 @@
+{% extends "base_user.html" %}
+{% block title %}Checklists - Tragene Journal{% endblock %}
+{% block page_title %}✅ Trading Checklists{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .checklist-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    /* ── Action Bar ── */
+    .action-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-create {
+        padding: 11px 22px;
+        background: linear-gradient(135deg, var(--accent) 0%, #6db3f2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: 'Space Grotesk', sans-serif;
+        text-decoration: none;
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(79,142,247,0.35);
+        color: #fff;
+    }
+    
+    .btn-delete-cl {
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid rgba(255,82,82,0.3);
+        color: #ff5252;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .btn-delete-cl:hover {
+        background: rgba(255,82,82,0.1);
+        border-color: #ff5252;
+    }
+
+    /* ── Checklist Tabs ── */
+    .cl-tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+    
+    .cl-tab {
+        padding: 10px 18px;
+        border-radius: 25px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: 'Space Grotesk', sans-serif;
+        white-space: nowrap;
+    }
+    
+    .cl-tab:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    .cl-tab.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+    }
+    
+    .cl-tab .tab-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+    }
+    
+    .tab-dot.active-cl { background: #00e676; }
+    .tab-dot.expired-cl { background: #ff5252; }
+
+    /* ── Month Navigator ── */
+    .month-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .month-nav-btn {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .month-nav-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+    
+    .month-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        min-width: 160px;
+        text-align: center;
+    }
+    
+    .btn-today-sm {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--accent);
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.72rem;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .btn-today-sm:hover {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    /* ── Calendar ── */
+    .calendar-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 20px;
+        overflow: hidden;
+    }
+    
+    .cal-day-headers {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+    
+    .cal-day-header {
+        text-align: center;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        padding: 6px 0;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+    }
+    
+    .cal-day {
+        aspect-ratio: 1;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        min-height: 42px;
+        border: 1px solid transparent;
+    }
+    
+    .cal-day:hover {
+        transform: scale(1.08);
+        z-index: 2;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    
+    .cal-day.empty {
+        opacity: 0.2;
+        cursor: default;
+        background: transparent;
+        border-color: transparent;
+    }
+    
+    .cal-day.empty:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .cal-day.completed {
+        background: rgba(0,230,118,0.15);
+        border-color: rgba(0,230,118,0.3);
+        color: #00e676;
+    }
+    
+    .cal-day.partial {
+        background: rgba(255,82,82,0.12);
+        border-color: rgba(255,82,82,0.25);
+        color: #ff5252;
+    }
+    
+    .cal-day.pending {
+        background: rgba(255,179,0,0.08);
+        border-color: rgba(255,179,0,0.15);
+        color: #ffb300;
+    }
+    
+    .cal-day.today {
+        box-shadow: inset 0 0 0 2px var(--accent);
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { box-shadow: inset 0 0 0 2px var(--accent); }
+        50% { box-shadow: inset 0 0 0 4px var(--accent); }
+    }
+    
+    .cal-day .day-num {
+        font-size: 0.85rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    
+    .cal-day .day-icon {
+        font-size: 0.5rem;
+        margin-top: 2px;
+        opacity: 0.7;
+    }
+
+    /* ── Legend ── */
+    .cal-legend {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+    
+    .legend-dot {
+        width: 12px; height: 12px;
+        border-radius: 4px;
+    }
+
+    /* ── Stats Row ── */
+    .mini-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .mini-stat {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+    }
+    
+    .mini-stat .ms-val {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+    
+    .mini-stat .ms-lbl {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-top: 2px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Checklist Info Card ── */
+    .info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .info-card .ic-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .info-card .ic-icon {
+        width: 44px; height: 44px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .ic-icon.active-icon {
+        background: rgba(0,230,118,0.12);
+        color: #00e676;
+    }
+    
+    .ic-icon.expired-icon {
+        background: rgba(255,82,82,0.1);
+        color: #ff5252;
+    }
+    
+    .info-card h6 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .info-card .ic-meta {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+    
+    .info-card .ic-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .ic-badge.active-badge {
+        background: rgba(0,230,118,0.1);
+        color: #00e676;
+    }
+    
+    .ic-badge.expired-badge {
+        background: rgba(255,82,82,0.1);
+        color: #ff5252;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 4rem;
+        color: var(--text-muted);
+        opacity: 0.2;
+        margin-bottom: 16px;
+    }
+    
+    .empty-state h5 {
+        color: var(--text-primary);
+        font-weight: 700;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+        .mini-stats { grid-template-columns: repeat(2, 1fr); }
+        .cal-day { min-height: 32px; font-size: 0.7rem; }
+        .cal-day .day-num { font-size: 0.7rem; }
+        .cl-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+        .info-card { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="checklist-container">
+    
+    <!-- ── Action Bar ── -->
+    <div class="action-bar">
+        <a href="{{ url_for('tools.checklist_create') }}" class="btn-create">
+            <i class="bi bi-plus-circle"></i> Create Checklist
+        </a>
+        {% if current_user.subscription_tier == 'free' %}
+            <span style="font-size:0.72rem;color:var(--text-muted);">
+                <i class="bi bi-folder2"></i> Free Plan: 3 active checklists
+            </span>
+        {% endif %}
+    </div>
+    
+    {% if checklists %}
+    
+    <!-- ── Checklist Tabs ── -->
+    <div class="cl-tabs" id="checklistTabs">
+        {% for cl in checklists %}
+        <button class="cl-tab {% if loop.first %}active{% endif %}" 
+                onclick="selectChecklist({{ cl.id }}, this)"
+                id="tab-{{ cl.id }}">
+            <span class="tab-dot {% if cl.is_active and cl.end_date >= today %}active-cl{% else %}expired-cl{% endif %}"></span>
+            {{ cl.name }}
+        </button>
+        {% endfor %}
+    </div>
+    
+    <!-- ── Checklist Info Card ── -->
+    <div class="info-card" id="infoCard">
+        <div class="ic-left">
+            <div class="ic-icon active-icon" id="infoIcon">
+                <i class="bi bi-play-circle-fill"></i>
+            </div>
+            <div>
+                <h6 id="infoName">-</h6>
+                <div class="ic-meta" id="infoMeta">-</div>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <span class="ic-badge active-badge" id="infoBadge">-</span>
+            <button class="btn-delete-cl" id="deleteBtn" onclick="deleteCurrentChecklist()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- ── Stats Row ── -->
+    <div class="mini-stats" id="statsRow">
+        <div class="mini-stat">
+            <div class="ms-val text-success" id="statCompleted">-</div>
+            <div class="ms-lbl">Completed Days</div>
+        </div>
+        <div class="mini-stat">
+            <div class="ms-val text-danger" id="statPartial">-</div>
+            <div class="ms-lbl">Partial Days</div>
+        </div>
+        <div class="mini-stat">
+            <div class="ms-val text-warning" id="statPending">-</div>
+            <div class="ms-lbl">Pending Days</div>
+        </div>
+        <div class="mini-stat">
+            <div class="ms-val" style="color:var(--accent);" id="statRate">-</div>
+            <div class="ms-lbl">Completion Rate</div>
+        </div>
+    </div>
+    
+    <!-- ── Month Navigator ── -->
+    <div class="month-nav">
+        <button class="month-nav-btn" onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+        <span class="month-title" id="monthTitle">January 2025</span>
+        <button class="month-nav-btn" onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
+        <button class="btn-today-sm" onclick="goToToday()">Today</button>
+    </div>
+    
+    <!-- ── Calendar ── -->
+    <div class="calendar-card">
+        <div class="cal-day-headers">
+            <div class="cal-day-header">Sun</div>
+            <div class="cal-day-header">Mon</div>
+            <div class="cal-day-header">Tue</div>
+            <div class="cal-day-header">Wed</div>
+            <div class="cal-day-header">Thu</div>
+            <div class="cal-day-header">Fri</div>
+            <div class="cal-day-header">Sat</div>
+        </div>
+        <div class="cal-grid" id="calendarGrid"></div>
+        
+        <div class="cal-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:rgba(0,230,118,0.5);"></span> All Done</div>
+            <div class="legend-item"><span class="legend-dot" style="background:rgba(255,82,82,0.5);"></span> Partial</div>
+            <div class="legend-item"><span class="legend-dot" style="background:rgba(255,179,0,0.5);"></span> Pending</div>
+            <div class="legend-item" style="font-size:0.6rem;">Click day → tick tasks</div>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-check2-square"></i></div>
+        <h5>No Checklists Yet</h5>
+        <p>Create your first trading checklist to build discipline.</p>
+        <a href="{{ url_for('tools.checklist_create') }}" class="btn-create" style="display:inline-flex;">
+            <i class="bi bi-plus-circle"></i> Create First Checklist
+        </a>
+    </div>
+    {% endif %}
+    
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Store checklist data for info card
+    const checklistData = {
+        {% for cl in checklists %}
+        {{ cl.id }}: {
+            name: "{{ cl.name|e }}",
+            type: "{{ cl.checklist_type }}",
+            start: "{{ cl.start_date.isoformat() }}",
+            end: "{{ cl.end_date.isoformat() }}",
+            isActive: {{ 'true' if cl.is_active and cl.end_date >= today else 'false' }},
+            taskCount: {{ cl.tasks|length }}
+        },
+        {% endfor %}
+    };
+    
+    let activeChecklistId = {{ checklists[0].id if checklists else 0 }};
+    let currentMonth, currentYear;
+    let allCompletions = {};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
+        
+        {% if checklists %}
+        activeChecklistId = {{ checklists[0].id }};
+        updateInfoCard(activeChecklistId);
+        loadChecklistData(activeChecklistId);
+        {% endif %}
+    });
+    
+    // ─── Select Checklist ───
+    function selectChecklist(clId, btn) {
+        activeChecklistId = clId;
+        
+        document.querySelectorAll('.cl-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        
+        updateInfoCard(clId);
+        loadChecklistData(clId);
+    }
+    
+    // ─── Update Info Card ───
+    function updateInfoCard(clId) {
+        const data = checklistData[clId];
+        if (!data) return;
+        
+        document.getElementById('infoName').textContent = data.name;
+        document.getElementById('infoMeta').textContent = 
+            `${data.type.toUpperCase()} • ${data.taskCount} tasks • ${formatDateShort(data.start)} - ${formatDateShort(data.end)}`;
+        
+        const iconEl = document.getElementById('infoIcon');
+        const badgeEl = document.getElementById('infoBadge');
+        
+        if (data.isActive) {
+            iconEl.className = 'ic-icon active-icon';
+            iconEl.innerHTML = '<i class="bi bi-play-circle-fill"></i>';
+            badgeEl.className = 'ic-badge active-badge';
+            badgeEl.textContent = 'ACTIVE';
+        } else {
+            iconEl.className = 'ic-icon expired-icon';
+            iconEl.innerHTML = '<i class="bi bi-archive"></i>';
+            badgeEl.className = 'ic-badge expired-badge';
+            badgeEl.textContent = 'ENDED';
+        }
+    }
+    
+    function formatDateShort(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-US', { day:'numeric', month:'short' });
+    }
+    
+    // ─── Load Checklist Data ───
+    function loadChecklistData(clId) {
+        fetch('/tools/api/checklist/' + clId + '/completions')
+            .then(res => res.json())
+            .then(data => {
+                allCompletions = data.completions || {};
+                renderCalendar();
+                updateStats();
+            })
+            .catch(err => {
+                console.error('Failed to load:', err);
+                allCompletions = {};
+                renderCalendar();
+                updateStats();
+            });
+    }
+    
+    // ─── Render Calendar ───
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        document.getElementById('monthTitle').textContent = months[currentMonth] + ' ' + currentYear;
+        
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        
+        // Get checklist date range
+        const clData = checklistData[activeChecklistId];
+        const clStart = clData ? new Date(clData.start + 'T00:00:00') : null;
+        const clEnd = clData ? new Date(clData.end + 'T00:00:00') : null;
+        
+        let html = '';
+        
+        // Empty cells before first day
+        for (let i = 0; i < firstDay; i++) {
+            html += '<div class="cal-day empty"></div>';
+        }
+        
+        // Day cells
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const dayData = allCompletions[dateStr];
+            const isToday = dateStr === todayStr;
+            
+            // Check if day is within checklist range
+            const thisDate = new Date(currentYear, currentMonth, d);
+            const inRange = clStart && clEnd && thisDate >= clStart && thisDate <= clEnd;
+            
+            let cls = 'cal-day';
+            let icon = '';
+            let onclick = '';
+            
+            if (!inRange) {
+                cls += ' empty';
+            } else if (dayData) {
+                onclick = `onclick="goToDay('${dateStr}')"`;
+                if (dayData.completed === dayData.total && dayData.total > 0) {
+                    cls += ' completed';
+                    icon = '<span class="day-icon">✅</span>';
+                } else if (dayData.completed > 0) {
+                    cls += ' partial';
+                    icon = '<span class="day-icon">⚠️</span>';
+                } else {
+                    cls += ' pending';
+                    icon = '<span class="day-icon">⏳</span>';
+                }
+            } else {
+                cls += ' pending';
+                onclick = `onclick="goToDay('${dateStr}')"`;
+            }
+            
+            if (isToday) cls += ' today';
+            
+            html += `<div class="${cls}" ${onclick}>
+                <span class="day-num">${d}</span>${icon}
+            </div>`;
+        }
+        
+        grid.innerHTML = html;
+    }
+    
+    // ─── Go to Day View ───
+    function goToDay(dateStr) {
+        window.location.href = `/tools/checklist/${activeChecklistId}/day?date=${dateStr}`;
+    }
+    
+    // ─── Update Stats ───
+    function updateStats() {
+        let completed = 0, partial = 0, pending = 0, total = 0;
+        
+        Object.values(allCompletions).forEach(day => {
+            total++;
+            if (day.completed === day.total && day.total > 0) completed++;
+            else if (day.completed > 0) partial++;
+            else pending++;
+        });
+        
+        document.getElementById('statCompleted').textContent = completed;
+        document.getElementById('statPartial').textContent = partial;
+        document.getElementById('statPending').textContent = pending;
+        
+        const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+        document.getElementById('statRate').textContent = rate + '%';
+    }
+    
+    // ─── Month Navigation ───
+    function changeMonth(delta) {
+        currentMonth += delta;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        renderCalendar();
+    }
+    
+    function goToToday() {
+        const today = new Date();
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
+        renderCalendar();
+    }
+    
+    // ─── Delete Current Checklist ───
+    function deleteCurrentChecklist() {
+        if (!confirm('Delete this checklist and all its data? This cannot be undone.')) return;
+        
+        fetch('/tools/api/checklist/' + activeChecklistId + '/delete', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+    }
+</script>
+{% endblock %}

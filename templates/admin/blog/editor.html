@@ -1,0 +1,155 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Blog Editor | Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<style>
+    .editor-container {
+        display: flex;
+        gap: 24px;
+    }
+    .editor-main {
+        flex: 1;
+    }
+    .editor-sidebar {
+        width: 320px;
+        flex-shrink: 0;
+    }
+    .card-dark {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .form-control-dark {
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        border-radius: 8px;
+    }
+    .form-control-dark:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(79, 142, 247, 0.25);
+    }
+    .seo-preview {
+        background: #fff;
+        padding: 16px;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .seo-title { color: #1a0dab; font-size: 20px; text-decoration: none; display: block; margin-bottom: 2px;}
+    .seo-url { color: #006621; font-size: 14px; display: block; margin-bottom: 2px;}
+    .seo-desc { color: #545454; font-size: 13px; line-height: 1.4; display: block;}
+    
+    .CodeMirror {
+        border-color: var(--border-color);
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="m-0 text-light"><i class="bi bi-pencil-square text-primary"></i> Blog Editor</h4>
+    <div>
+        <a href="{{ url_for('admin.blog_list') }}" class="btn btn-outline-secondary">Cancel</a>
+        <button class="btn btn-primary" onclick="document.getElementById('blogForm').submit()">Save Post</button>
+    </div>
+</div>
+
+<form id="blogForm" method="POST" action="{{ url_for('admin.blog_edit', blog_id=blog.id) if blog else url_for('admin.blog_new') }}">
+<div class="editor-container">
+    <div class="editor-main">
+        <div class="card-dark">
+            <div class="mb-3">
+                <label class="form-label text-light fw-bold">Post Title</label>
+                <input type="text" name="title" id="titleInput" class="form-control form-control-dark form-control-lg" placeholder="Enter an engaging title..." value="{{ blog.title if blog else '' }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-light fw-bold">Content</label>
+                <textarea name="content" id="markdownEditor">{{ blog.content if blog else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+    
+    <div class="editor-sidebar">
+        <div class="card-dark">
+            <h5 class="text-light mb-3"><i class="bi bi-gear"></i> Publishing</h5>
+            <div class="mb-3">
+                <label class="form-label text-muted">Status</label>
+                <select name="status" class="form-select form-control-dark">
+                    <option value="draft" {% if blog and blog.status == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="published" {% if blog and blog.status == 'published' %}selected{% endif %}>Published</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-muted">URL Slug</label>
+                <input type="text" name="slug" id="slugInput" class="form-control form-control-dark" placeholder="auto-generated-slug" value="{{ blog.slug if blog else '' }}">
+            </div>
+        </div>
+        
+        <div class="card-dark">
+            <h5 class="text-light mb-3"><i class="bi bi-search"></i> SEO Metadata</h5>
+            <div class="mb-3">
+                <label class="form-label text-muted">Meta Title</label>
+                <input type="text" name="meta_title" id="metaTitle" class="form-control form-control-dark" value="{{ blog.meta_title if blog else '' }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-muted">Meta Description</label>
+                <textarea name="meta_description" id="metaDesc" class="form-control form-control-dark" rows="3">{{ blog.meta_description if blog else '' }}</textarea>
+            </div>
+            
+            <div class="mt-4">
+                <h6 class="text-muted mb-2">Google Preview</h6>
+                <div class="seo-preview">
+                    <span class="seo-title" id="previewTitle">{{ blog.meta_title or blog.title or 'Your Post Title Here' if blog else 'Your Post Title Here' }}</span>
+                    <span class="seo-url" id="previewUrl">{{ request.url_root }}blog/<span id="previewSlug">{{ blog.slug if blog else 'slug' }}</span></span>
+                    <span class="seo-desc" id="previewDesc">{{ blog.meta_description or 'Your meta description will appear here in search results. Keep it between 120-150 characters for best results.' if blog else 'Your meta description will appear here in search results. Keep it between 120-150 characters for best results.' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script>
+    var simplemde = new SimpleMDE({ element: document.getElementById("markdownEditor") });
+    
+    // Auto-generate slug and update preview
+    const titleInput = document.getElementById('titleInput');
+    const slugInput = document.getElementById('slugInput');
+    const metaTitle = document.getElementById('metaTitle');
+    const metaDesc = document.getElementById('metaDesc');
+    
+    const previewTitle = document.getElementById('previewTitle');
+    const previewSlug = document.getElementById('previewSlug');
+    const previewDesc = document.getElementById('previewDesc');
+    
+    titleInput.addEventListener('input', function() {
+        const slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        slugInput.value = slug;
+        previewSlug.textContent = slug;
+        
+        if(!metaTitle.value) {
+            previewTitle.textContent = this.value || 'Your Post Title Here';
+        }
+    });
+    
+    slugInput.addEventListener('input', function() {
+        previewSlug.textContent = this.value || 'slug';
+    });
+    
+    metaTitle.addEventListener('input', function() {
+        previewTitle.textContent = this.value || titleInput.value || 'Your Post Title Here';
+    });
+    
+    metaDesc.addEventListener('input', function() {
+        previewDesc.textContent = this.value || 'Your meta description will appear here in search results.';
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,838 @@
+{% extends "base_user.html" %}
+{% set analyse_page_key = 'goals' %}
+{% block title %}Goals & Planner - Tragene Journal{% endblock %}
+{% block page_title %}🎯 Goals & Planner{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .goals-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* ── Elite Badge ── */
+    .elite-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: linear-gradient(135deg, rgba(255,179,0,0.15), rgba(255,143,0,0.1));
+        border: 1px solid rgba(255,179,0,0.3);
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #ffb300;
+        margin-bottom: 20px;
+    }
+
+    /* ── Stats Overview ── */
+    .goals-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    
+    .goal-stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px;
+        text-align: center;
+    }
+    
+    .goal-stat-card .gsc-icon {
+        font-size: 1.3rem;
+        margin-bottom: 6px;
+    }
+    
+    .goal-stat-card .gsc-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+    
+    .goal-stat-card .gsc-label {
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 2px;
+    }
+
+    /* ── Goal Cards ── */
+    .goal-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        padding: 20px;
+        margin-bottom: 14px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .goal-card:hover {
+        border-color: rgba(79,142,247,0.25);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .goal-card.achieved {
+        border-color: rgba(0,230,118,0.3);
+        background: linear-gradient(135deg, rgba(0,230,118,0.03) 0%, var(--bg-card) 100%);
+    }
+    
+    .goal-card.achieved::before {
+        content: '🏆';
+        position: absolute;
+        top: -10px;
+        right: 16px;
+        font-size: 3rem;
+        opacity: 0.15;
+        pointer-events: none;
+    }
+    
+    .goal-card.failed {
+        border-color: rgba(255,82,82,0.2);
+        opacity: 0.7;
+    }
+    
+    .goal-card .gc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .goal-card .gc-type {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .gc-type.profit { background: rgba(0,230,118,0.1); color: #00e676; border: 1px solid rgba(0,230,118,0.2); }
+    .gc-type.drawdown { background: rgba(255,82,82,0.1); color: #ff5252; border: 1px solid rgba(255,82,82,0.2); }
+    .gc-type.win_rate { background: rgba(79,142,247,0.1); color: var(--accent); border: 1px solid rgba(79,142,247,0.2); }
+    .gc-type.rule { background: rgba(139,92,246,0.1); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+    .gc-type.custom { background: rgba(255,179,0,0.1); color: #ffb300; border: 1px solid rgba(255,179,0,0.2); }
+    
+    .goal-card .gc-status {
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 12px;
+    }
+    
+    .gc-status.ongoing { background: rgba(79,142,247,0.1); color: var(--accent); }
+    .gc-status.won { background: rgba(0,230,118,0.1); color: #00e676; }
+    .gc-status.lost { background: rgba(255,82,82,0.1); color: #ff5252; }
+    
+    .goal-card .gc-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .goal-card .gc-dates {
+        font-size: 0.68rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* ── Progress Bar ── */
+    .gc-progress-wrap {
+        margin: 14px 0;
+    }
+    
+    .gc-progress-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .gc-progress-outer {
+        height: 10px;
+        background: var(--bg-body);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .gc-progress-inner {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+    
+    .gc-progress-inner.on-track { background: linear-gradient(90deg, #00e676, #69f0ae); }
+    .gc-progress-inner.behind { background: linear-gradient(90deg, #ffb300, #ffc857); }
+    .gc-progress-inner.off-track { background: linear-gradient(90deg, #ff5252, #ff8a80); }
+    
+    /* ── AI Insight ── */
+    .gc-ai-insight {
+        background: rgba(139,92,246,0.05);
+        border: 1px solid rgba(139,92,246,0.15);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-top: 12px;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .gc-ai-insight i {
+        color: #8b5cf6;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+    
+    .btn-ai-insight {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid #8b5cf6;
+        background: transparent;
+        color: #8b5cf6;
+        font-size: 0.68rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+        margin-top: 8px;
+    }
+    
+    .btn-ai-insight:hover {
+        background: #8b5cf6;
+        color: #fff;
+    }
+    
+    .btn-ai-insight:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* ── Goal Actions ── */
+    .gc-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-shrink: 0;
+    }
+    
+    .btn-gc {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid var(--border-color);
+        background: var(--bg-body);
+        color: var(--text-secondary);
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .btn-gc:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    .btn-gc.delete:hover {
+        border-color: #ff5252;
+        color: #ff5252;
+    }
+
+    /* ── Create Goal Card ── */
+    .create-goal-card {
+        background: var(--bg-card);
+        border: 2px dashed var(--border-color);
+        border-radius: 18px;
+        padding: 28px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .create-goal-card:hover {
+        border-color: var(--accent);
+        background: rgba(79,142,247,0.02);
+    }
+    
+    .create-goal-card .cg-icon {
+        font-size: 2.5rem;
+        color: var(--text-muted);
+        opacity: 0.5;
+        margin-bottom: 10px;
+    }
+    
+    .create-goal-card h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .create-goal-card p {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    /* ── Modal ── */
+    .modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .modal-footer {
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .form-group {
+        margin-bottom: 14px;
+    }
+    
+    .form-group label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 11px 14px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(79,142,247,0.08);
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 4rem;
+        opacity: 0.2;
+        margin-bottom: 14px;
+    }
+    
+    .empty-state h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    /* ── Toast ── */
+    .toast-mini {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        padding: 10px 24px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+        animation: toastUp 0.4s ease, toastDown 0.4s ease 2s forwards;
+    }
+    
+    @keyframes toastUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    @keyframes toastDown { from { transform: translateX(-50%) translateY(0); opacity: 1; } to { transform: translateX(-50%) translateY(20px); opacity: 0; } }
+
+    @media (max-width: 768px) {
+        .goals-stats { grid-template-columns: repeat(2, 1fr); }
+        .form-row { grid-template-columns: 1fr; }
+    }
+    
+    @media (max-width: 480px) {
+        .goals-stats { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="goals-container">
+    
+    <!-- ── Elite Badge ── -->
+    <div class="elite-badge">
+        <i class="bi bi-star-fill"></i> Elite Feature
+    </div>
+    
+    <!-- ── Stats Overview ── -->
+    <div class="goals-stats">
+        <div class="goal-stat-card">
+            <div class="gsc-icon">🎯</div>
+            <div class="gsc-value" id="statActive">0</div>
+            <div class="gsc-label">Active Goals</div>
+        </div>
+        <div class="goal-stat-card">
+            <div class="gsc-icon">🏆</div>
+            <div class="gsc-value text-success" id="statAchieved">0</div>
+            <div class="gsc-label">Achieved</div>
+        </div>
+        <div class="goal-stat-card">
+            <div class="gsc-icon">📈</div>
+            <div class="gsc-value" style="color:var(--accent);" id="statRate">0%</div>
+            <div class="gsc-label">Success Rate</div>
+        </div>
+    </div>
+    
+    <!-- ── Active Goals ── -->
+    <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;margin-bottom:14px;color:var(--text-primary);">
+        🏃 Active Goals
+    </h6>
+    
+    <div id="activeGoals">
+        {% set active_goals = goals|selectattr('is_completed', 'equalto', false)|list %}
+        {% if active_goals %}
+            {% for goal in active_goals %}
+            <div class="goal-card" id="goal-{{ goal.id }}">
+                <div class="gc-header">
+                    <span class="gc-type {{ goal.goal_type }}">
+                        {{ goal.goal_type.replace('_', ' ') }}
+                    </span>
+                    <span class="gc-status ongoing">● Active</span>
+                </div>
+                
+                <div class="gc-title">
+                    {% if goal.goal_type == 'profit_target' %}
+                        Profit Target: ${{ '%.0f'|format(goal.target_value) }}
+                    {% elif goal.goal_type == 'drawdown_limit' %}
+                        Max Drawdown: ${{ '%.0f'|format(goal.target_value) }}
+                    {% elif goal.goal_type == 'win_rate' %}
+                        Win Rate: {{ '%.0f'|format(goal.target_value) }}%
+                    {% elif goal.goal_type == 'rule_compliance' %}
+                        Rule Compliance: {{ '%.0f'|format(goal.target_value) }}%
+                    {% else %}
+                        {{ goal.goal_type.replace('_', ' ').title() }}: {{ goal.target_value }}
+                    {% endif %}
+                </div>
+                
+                <div class="gc-dates">
+                    {{ goal.start_date.strftime('%d %b %Y') }} → {{ goal.end_date.strftime('%d %b %Y') }}
+                    · {{ goal.timeframe }}
+                </div>
+                
+                {% set pct = (goal.current_value / goal.target_value * 100) if goal.target_value > 0 else 0 %}
+                <div class="gc-progress-wrap">
+                    <div class="gc-progress-header">
+                        <span>Progress: {{ '%.0f'|format(pct) }}%</span>
+                        <span>{{ '%.1f'|format(goal.current_value) }} / {{ '%.1f'|format(goal.target_value) }}</span>
+                    </div>
+                    <div class="gc-progress-outer">
+                        <div class="gc-progress-inner {{ 'on-track' if pct >= 50 else 'behind' if pct >= 25 else 'off-track' }}" 
+                             style="width:{{ pct if pct <= 100 else 100 }}%;"></div>
+                    </div>
+                </div>
+                
+                {% if goal.ai_insight %}
+                <div class="gc-ai-insight">
+                    <i class="bi bi-robot"></i>
+                    <span>{{ goal.ai_insight }}</span>
+                </div>
+                {% else %}
+                <button class="btn-ai-insight" onclick="getAIInsight({{ goal.id }})">
+                    <i class="bi bi-magic"></i> Get AI Insight
+                </button>
+                {% endif %}
+                
+                <div class="gc-actions">
+                    <button class="btn-gc" onclick="updateGoal({{ goal.id }})">📝 Update</button>
+                    <button class="btn-gc" onclick="analyzeGoal({{ goal.id }})">🔍 Analyze</button>
+                    <button class="btn-gc delete" onclick="deleteGoal({{ goal.id }})">🗑️ Delete</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🎯</div>
+                <h5>No Active Goals</h5>
+                <p>Set your first trading goal and let AI track your progress.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- ── Completed Goals ── -->
+    {% set completed_goals = goals|selectattr('is_completed', 'equalto', true)|list %}
+    {% if completed_goals %}
+    <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;margin:24px 0 14px;color:var(--text-primary);">
+        📜 Completed Goals
+    </h6>
+    
+    <div id="completedGoals">
+        {% for goal in completed_goals %}
+        <div class="goal-card {{ 'achieved' if goal.is_achieved else 'failed' }}" id="goal-{{ goal.id }}">
+            <div class="gc-header">
+                <span class="gc-type {{ goal.goal_type }}">{{ goal.goal_type.replace('_', ' ') }}</span>
+                <span class="gc-status {{ 'won' if goal.is_achieved else 'lost' }}">
+                    {{ '🏆 Achieved' if goal.is_achieved else '❌ Missed' }}
+                </span>
+            </div>
+            <div class="gc-title">
+                Target: {{ '%.1f'|format(goal.target_value) }} | Result: {{ '%.1f'|format(goal.current_value) }}
+            </div>
+            <div class="gc-dates">
+                {{ goal.start_date.strftime('%d %b %Y') }} → {{ goal.end_date.strftime('%d %b %Y') }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- ── AI Suggested Goals Button ── -->
+    <button class="create-goal-card" style="width:100%;border:2px dashed #8b5cf6;background:rgba(139,92,246,0.03);margin-top:20px;" onclick="suggestGoals()" id="suggestGoalsBtn">
+        <div class="cg-icon" style="color:#8b5cf6;">✨</div>
+        <h6>AI Suggested Goals</h6>
+        <p>Let AI recommend goals based on your recent trading data</p>
+    </button>
+
+    <div id="suggestedGoalsList" style="margin-top:14px;"></div>
+    
+    <!-- ── Create New Goal ── -->
+    <div class="create-goal-card" onclick="showCreateModal()" style="margin-top:20px;">
+        <div class="cg-icon">➕</div>
+        <h6>Create New Goal</h6>
+        <p>Set a target and let AI track your progress</p>
+    </div>
+    
+</div>
+
+<!-- ── Create Goal Modal ── -->
+<div class="modal fade" id="createGoalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.95rem;">
+                    <i class="bi bi-plus-circle" style="color:var(--accent);"></i> Create Goal
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Goal Type</label>
+                    <select id="goalType" onchange="updateGoalType()">
+                        <option value="profit_target">💰 Monthly Profit Target</option>
+                        <option value="drawdown_limit">🛡️ Max Drawdown Limit</option>
+                        <option value="win_rate">📊 Win Rate Target</option>
+                        <option value="rule_compliance">📋 Rule Compliance %</option>
+                        <option value="max_trades_per_day">📅 Max Trades Per Day</option>
+                        <option value="custom">🔧 Custom Goal</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label id="targetLabel">Target Value</label>
+                    <input type="number" id="targetValue" placeholder="e.g., 2000" step="any">
+                </div>
+                <div class="form-group">
+                    <label>Timeframe</label>
+                    <select id="timeframe">
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly" selected>Monthly</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:8px;">Cancel</button>
+                <button type="button" class="btn btn-sm text-white" style="background:var(--accent);border-radius:8px;" onclick="createGoal()">
+                    <i class="bi bi-check-lg"></i> Create Goal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let createModal;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        createModal = new bootstrap.Modal(document.getElementById('createGoalModal'));
+        
+        // Set default dates
+        const today = new Date();
+        document.getElementById('startDate').value = today.toISOString().split('T')[0];
+        
+        const endDate = new Date(today);
+        endDate.setMonth(endDate.getMonth() + 1);
+        document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        
+        updateStats();
+    });
+    
+    function updateGoalType() {
+        const type = document.getElementById('goalType').value;
+        const label = document.getElementById('targetLabel');
+        const labels = {
+            'profit_target': 'Target Profit ($)',
+            'drawdown_limit': 'Max Drawdown ($)',
+            'win_rate': 'Target Win Rate (%)',
+            'rule_compliance': 'Target Compliance (%)',
+            'max_trades_per_day': 'Max Trades Per Day',
+            'custom': 'Target Value'
+        };
+        label.textContent = labels[type] || 'Target Value';
+    }
+    
+    function showCreateModal() {
+        createModal.show();
+    }
+    
+    function createGoal() {
+        const type = document.getElementById('goalType').value;
+        const target = document.getElementById('targetValue').value;
+        const timeframe = document.getElementById('timeframe').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!target || !startDate || !endDate) {
+            showToast('⚠️ Please fill all fields.', '#ffb300');
+            return;
+        }
+        
+        if (new Date(endDate) <= new Date(startDate)) {
+            showToast('⚠️ End date must be after start date.', '#ffb300');
+            return;
+        }
+        
+        fetch('/ai/goals/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                goal_type: type,
+                target_value: parseFloat(target),
+                timeframe: timeframe,
+                start_date: startDate,
+                end_date: endDate
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                createModal.hide();
+                showToast('✅ Goal created!', '#00e676');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                showToast('❌ ' + data.message, '#ff5252');
+            }
+        });
+    }
+    
+    function getAIInsight(goalId) {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analyzing...';
+        
+        fetch('/ai/goals/' + goalId + '/analyze', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const goalCard = document.getElementById('goal-' + goalId);
+                    const insightDiv = document.createElement('div');
+                    insightDiv.className = 'gc-ai-insight';
+                    insightDiv.innerHTML = `<i class="bi bi-robot"></i><span>${data.insight}</span>`;
+                    
+                    // Replace button with insight
+                    btn.parentElement.replaceWith(insightDiv);
+                } else {
+                    showToast('❌ ' + data.message, '#ff5252');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-magic"></i> Get AI Insight';
+                }
+            });
+    }
+    
+    function updateGoal(goalId) {
+        const newValue = prompt('Enter current progress value:');
+        if (!newValue || isNaN(newValue)) return;
+        
+        fetch('/ai/goals/' + goalId + '/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ current_value: parseFloat(newValue) })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Goal updated!', '#00e676');
+                setTimeout(() => location.reload(), 600);
+            }
+        });
+    }
+    
+    function analyzeGoal(goalId) {
+        showToast('🔍 Requesting AI analysis...', '#8b5cf6');
+        fetch('/ai/goals/' + goalId + '/analyze', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('✅ Analysis complete!', '#00e676');
+                    setTimeout(() => location.reload(), 600);
+                }
+            });
+    }
+    
+    function deleteGoal(goalId) {
+        if (!confirm('Delete this goal?')) return;
+        
+        fetch('/ai/goals/' + goalId + '/delete', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const card = document.getElementById('goal-' + goalId);
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(20px)';
+                    card.style.transition = 'all 0.3s';
+                    setTimeout(() => {
+                        card.remove();
+                        updateStats();
+                    }, 300);
+                }
+            });
+    }
+    
+    function updateStats() {
+        const total = document.querySelectorAll('.goal-card').length;
+        const achieved = document.querySelectorAll('.goal-card.achieved').length;
+        const active = document.querySelectorAll('.gc-status.ongoing').length;
+        const rate = total > 0 ? Math.round((achieved / total) * 100) : 0;
+        
+        document.getElementById('statActive').textContent = active;
+        document.getElementById('statAchieved').textContent = achieved;
+        document.getElementById('statRate').textContent = rate + '%';
+    }
+    
+    function suggestGoals() {
+        const btn = document.getElementById('suggestGoalsBtn');
+        btn.querySelector('h6').textContent = 'Analyzing your trades...';
+        btn.disabled = true;
+
+        fetch('/ai/goals/suggest', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.querySelector('h6').textContent = 'AI Suggested Goals';
+
+                if (!data.success) {
+                    showToast('❌ ' + data.message, '#ff5252');
+                    return;
+                }
+                if (!data.suggestions || data.suggestions.length === 0) {
+                    showToast('ℹ️ ' + (data.message || 'No suggestions right now.'), '#4f8ef7');
+                    return;
+                }
+                renderSuggestions(data.suggestions);
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.querySelector('h6').textContent = 'AI Suggested Goals';
+                showToast('❌ Failed to get suggestions.', '#ff5252');
+            });
+    }
+
+    function renderSuggestions(suggestions) {
+        const container = document.getElementById('suggestedGoalsList');
+        container.innerHTML = suggestions.map((s) => `
+            <div class="goal-card" style="border-color:rgba(139,92,246,0.3);">
+                <div class="gc-header">
+                    <span class="gc-type ${s.goal_type}">${s.title}</span>
+                    <span class="gc-status" style="background:rgba(139,92,246,0.1);color:#8b5cf6;">✨ Suggested</span>
+                </div>
+                <div class="gc-title">Target: ${s.target_value} · ${s.timeframe}</div>
+                <div class="gc-ai-insight" style="margin-top:8px;">
+                    <i class="bi bi-robot"></i><span>${s.reason}</span>
+                </div>
+                <div class="gc-actions">
+                    <button class="btn-gc" style="border-color:#8b5cf6;color:#8b5cf6;"
+                        onclick='useSuggestion(${JSON.stringify(s)})'>✅ Use This</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function useSuggestion(s) {
+        document.getElementById('goalType').value = s.goal_type;
+        updateGoalType();
+        document.getElementById('targetValue').value = s.target_value;
+        document.getElementById('timeframe').value = s.timeframe;
+        showCreateModal();
+    }
+    
+    function showToast(message, color) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-mini';
+        toast.style.cssText = `
+            background: var(--bg-card);
+            border: 1px solid ${color};
+            color: ${color};
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+    }
+</script>
+{% endblock %}

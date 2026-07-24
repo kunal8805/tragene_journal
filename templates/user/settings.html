@@ -1,0 +1,693 @@
+{% extends "base_user.html" %}
+{% block title %}Settings - Tragene Journal{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-section {
+        margin-bottom: 24px;
+    }
+    .settings-section .section-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .settings-section .section-title i {
+        font-size: 1rem;
+        color: var(--accent);
+    }
+    
+    .account-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 10px;
+        transition: all 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .account-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .account-card.active-account {
+        border-left: 4px solid var(--accent);
+        background: rgba(79,142,247,0.04);
+    }
+    .account-card .acc-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+        min-width: 200px;
+    }
+    .account-card .acc-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+    .acc-icon.live {
+        background: rgba(0,230,118,0.12);
+        color: #00e676;
+    }
+    .acc-icon.demo {
+        background: rgba(255,179,0,0.12);
+        color: #ffb300;
+    }
+    .account-card .acc-details h6 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .account-card .acc-details .acc-meta {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 3px;
+    }
+    .account-card .acc-details .acc-badge {
+        font-size: 0.6rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+    .acc-badge.live { background: rgba(0,230,118,0.15); color: #00e676; }
+    .acc-badge.demo { background: rgba(255,179,0,0.15); color: #ffb300; }
+    .acc-badge.active-badge {
+        background: rgba(79,142,247,0.15);
+        color: var(--accent);
+    }
+    .acc-badge.verified {
+        background: rgba(0,230,118,0.15);
+        color: #00e676;
+        font-size: 0.65rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+        margin-left: 6px;
+    }
+    .acc-badge.unverified {
+        background: rgba(255,82,82,0.15);
+        color: #ff5252;
+        font-size: 0.65rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+        margin-left: 6px;
+    }
+    
+    .account-card .acc-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    .account-card .acc-actions .btn {
+        padding: 6px 14px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-switch {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+    }
+    .btn-switch:hover { opacity: 0.9; color: #fff; }
+    .btn-switch:disabled {
+        background: var(--border-color);
+        color: var(--text-muted);
+        cursor: not-allowed;
+    }
+    .btn-edit-acc {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+    }
+    .btn-edit-acc:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-delete-acc {
+        background: transparent;
+        border: 1px solid rgba(255,82,82,0.3);
+        color: #ff5252;
+    }
+    .btn-delete-acc:hover {
+        background: rgba(255,82,82,0.1);
+        border-color: #ff5252;
+    }
+    
+    .create-account-card {
+        background: var(--bg-card);
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .create-account-card:hover {
+        border-color: var(--accent);
+        background: rgba(79,142,247,0.03);
+    }
+    .create-account-card.locked {
+        opacity: 0.5;
+        cursor: not-allowed;
+        border-color: var(--border-color);
+    }
+    .create-account-card.locked:hover {
+        border-color: var(--border-color);
+        background: var(--bg-card);
+    }
+    .create-account-card .create-icon {
+        font-size: 2.5rem;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+    }
+    .create-account-card h6 {
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+    .create-account-card p {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        margin: 0;
+    }
+    .create-account-card .limit-text {
+        color: #ffb300;
+        font-weight: 600;
+        font-size: 0.78rem;
+        margin-top: 6px;
+    }
+    
+    .acc-stats-row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+    }
+    .acc-stat-item {
+        font-size: 0.75rem;
+    }
+    .acc-stat-item .stat-val {
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    
+    .modal-form .form-group {
+        margin-bottom: 14px;
+    }
+    .modal-form label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+        display: block;
+    }
+    
+    .plan-info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .plan-info-card .plan-icon {
+        font-size: 1.5rem;
+        color: var(--accent);
+        flex-shrink: 0;
+    }
+    .plan-info-card .plan-text {
+        flex: 1;
+    }
+    .plan-info-card .plan-text h6 {
+        margin: 0;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .plan-info-card .plan-text p {
+        margin: 2px 0 0;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+    .plan-info-card .btn-upgrade {
+        background: linear-gradient(135deg, #ffb300, #ff8f00);
+        color: #000;
+        border: none;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+    .plan-info-card .btn-upgrade:hover {
+        opacity: 0.9;
+        color: #000;
+    }
+
+    .email-change-form {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+    .email-change-form input {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-primary);
+        font-size: 0.75rem;
+        width: 180px;
+    }
+    .btn-email {
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+    .btn-email-change {
+        background: var(--accent);
+        color: #fff;
+    }
+    .btn-email-resend {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 5px 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .account-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .account-card .acc-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+        .plan-info-card {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Profile Section ── -->
+<div class="settings-section">
+    <div class="section-title"><i class="bi bi-person-badge"></i> Profile</div>
+    <div class="card p-3">
+        <div class="row g-2">
+            <div class="col-md-6 mb-2">
+                <small class="text-muted">Username</small><br>
+                <strong>{{ current_user.username }}</strong>
+            </div>
+            <div class="col-md-6 mb-2">
+                <small class="text-muted">Email</small><br>
+                <strong>{{ current_user.email }}</strong>
+                {% if email_verified %}
+                    <span class="acc-badge verified">
+                        <i class="bi bi-check-circle"></i> Verified
+                    </span>
+                {% else %}
+                    <span class="acc-badge unverified">
+                        <i class="bi bi-exclamation-triangle"></i> Not Verified
+                    </span>
+                    <div class="email-change-form">
+                        <form method="POST" action="{{ url_for('user.change_email') }}" style="display:flex;gap:6px;">
+                            <input type="email" name="new_email" placeholder="New email address" required>
+                            <button type="submit" class="btn-email btn-email-change">Change</button>
+                        </form>
+                        <a href="{{ url_for('user.resend_verification_from_settings') }}" class="btn-email btn-email-resend">Resend</a>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 mb-2">
+                <small class="text-muted">Plan</small><br>
+                <span class="badge" style="background: var(--accent); font-size: 0.75rem;">{{ current_user.subscription_tier | upper }}</span>
+            </div>
+            <div class="col-md-6 mb-2">
+                <small class="text-muted">Joined</small><br>
+                <strong>{{ current_user.created_at.strftime('%d %b %Y') }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Plan & Account Limit Info ── -->
+<div class="settings-section" id="accounts">
+    <div class="section-title"><i class="bi bi-info-circle"></i> Account Usage</div>
+    <div class="plan-info-card">
+        <div class="plan-icon"><i class="bi bi-folder2-open"></i></div>
+        <div class="plan-text">
+            <h6>{{ current_count }} / {{ max_accounts }} Accounts Used</h6>
+            <p>
+                {% if max_accounts >= 999 %}
+                    You have <strong>unlimited</strong> accounts on the {{ current_user.subscription_tier | upper }} plan.
+                {% else %}
+                    You can create up to <strong>{{ max_accounts }}</strong> accounts on your {{ current_user.subscription_tier | upper }} plan.
+                {% endif %}
+            </p>
+        </div>
+        {% if current_user.subscription_tier == 'free' %}
+            <a href="{{ url_for('user.subscription') }}" class="btn-upgrade text-decoration-none">
+                <i class="bi bi-star-fill"></i> Upgrade
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Manage Accounts Section ── -->
+<div class="settings-section">
+    <div class="section-title"><i class="bi bi-folder2"></i> Trading Accounts</div>
+    
+    <div id="accountsList">
+        <div class="text-center py-4">
+            <div class="spinner-border spinner-border-sm" style="color: var(--accent);"></div>
+            <p class="text-muted small mt-2">Loading accounts...</p>
+        </div>
+    </div>
+    
+    <div id="createAccountCard">
+        {% if can_create %}
+        <div class="create-account-card" onclick="showCreateAccountModal()">
+            <div class="create-icon"><i class="bi bi-plus-circle"></i></div>
+            <h6>Create New Account</h6>
+            <p>Add a new trading account for a different market or strategy</p>
+        </div>
+        {% else %}
+        <div class="create-account-card locked" onclick="showUpgradeAlert()">
+            <div class="create-icon"><i class="bi bi-plus-circle"></i></div>
+            <h6>Create New Account</h6>
+            <p>Add a new trading account for a different market or strategy</p>
+            <div class="limit-text">
+                <i class="bi bi-exclamation-triangle-fill"></i> 
+                Account limit reached ({{ current_count }}/{{ max_accounts }})
+            </div>
+            {% if current_user.subscription_tier == 'free' %}
+            <a href="{{ url_for('user.subscription') }}" class="btn btn-sm text-white mt-2" style="background: linear-gradient(135deg, #ffb300, #ff8f00); border: none; border-radius: 20px; padding: 6px 18px; font-weight: 600;">
+                Upgrade to Create More
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Create/Edit Account Modal ── -->
+<div class="modal fade" id="accountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="accountForm" onsubmit="return false;">
+                <div class="modal-header">
+                    <h6 class="fw-bold mb-0" id="accountModalTitle">Create Account</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body modal-form">
+                    <input type="hidden" id="editAccountId" value="">
+                    <div class="form-group">
+                        <label>Account Name <span style="color: #ff5252;">*</span></label>
+                        <input type="text" class="form-control" id="accountName" placeholder="e.g., Crypto Trading, Forex, Indian Stocks" required maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Broker (Optional)</label>
+                        <input type="text" class="form-control" id="accountBroker" placeholder="e.g., Binance, Zerodha, MT5" maxlength="100">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 form-group">
+                            <label>Account Type</label>
+                            <select class="form-select" id="accountType">
+                                <option value="live">Live</option>
+                                <option value="demo">Demo</option>
+                            </select>
+                        </div>
+                        <div class="col-6 form-group">
+                            <label>Currency</label>
+                            <select class="form-select" id="accountCurrency">
+                                <option value="USD">USD</option>
+                                <option value="INR">INR</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                                <option value="JPY">JPY</option>
+                                <option value="AUD">AUD</option>
+                                <option value="CAD">CAD</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                    <button type="button" class="btn btn-sm text-white" style="background: var(--accent); border-radius: 8px;" id="saveAccountBtn" onclick="saveAccount()">
+                        <i class="bi bi-check-lg"></i> Save Account
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Delete Confirmation Modal ── -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header" style="border-bottom: none;">
+                <h6 class="fw-bold mb-0" style="color: #ff5252;">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Delete Account?
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-0" id="deleteWarningText">
+                    This will permanently delete this account and all its trades, notes, and diary entries. This action cannot be undone.
+                </p>
+                <input type="hidden" id="deleteAccountId" value="">
+            </div>
+            <div class="modal-footer" style="border-top: none;">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                <button type="button" class="btn btn-sm text-white" style="background: #ff5252; border-radius: 8px;" onclick="confirmDeleteAccount()">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let accountModal, deleteModal;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        accountModal = new bootstrap.Modal(document.getElementById('accountModal'));
+        deleteModal = new bootstrap.Modal(document.getElementById('deleteAccountModal'));
+        loadAccountsList();
+    });
+    
+    function loadAccountsList() {
+        fetch('/user/api/accounts')
+            .then(res => res.json())
+            .then(accounts => {
+                renderAccountsList(accounts);
+            })
+            .catch(err => {
+                console.error('Failed to load accounts:', err);
+                document.getElementById('accountsList').innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 2rem; color: #ff5252;"></i>
+                        <p class="text-muted small mt-2">Failed to load accounts.</p>
+                    </div>
+                `;
+            });
+    }
+    
+    function renderAccountsList(accounts) {
+        const container = document.getElementById('accountsList');
+        
+        if (accounts.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-folder2-open" style="font-size: 2rem; opacity: 0.3;"></i>
+                    <p class="mt-2 small">No accounts yet. Create your first one!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        
+        accounts.forEach(acc => {
+            const stats = acc.stats;
+            const isCurrent = acc.is_current;
+            const pnlClass = stats.pnl > 0 ? 'text-success' : stats.pnl < 0 ? 'text-danger' : '';
+            const pnlSign = stats.pnl > 0 ? '+' : '';
+            
+            html += `
+                <div class="account-card ${isCurrent ? 'active-account' : ''}">
+                    <div class="acc-left">
+                        <div class="acc-icon ${acc.account_type}">
+                            <i class="bi ${acc.account_type === 'live' ? 'bi-graph-up-arrow' : 'bi-cpu'}"></i>
+                        </div>
+                        <div class="acc-details">
+                            <h6>
+                                ${acc.name}
+                                ${isCurrent ? '<span class="acc-badge active-badge ms-2">ACTIVE</span>' : ''}
+                            </h6>
+                            <div class="acc-meta">
+                                <span class="acc-badge ${acc.account_type}">${acc.account_type.toUpperCase()}</span>
+                                <span>${acc.currency}</span>
+                                ${acc.broker ? `<span>${acc.broker}</span>` : ''}
+                            </div>
+                            <div class="acc-stats-row">
+                                <span class="acc-stat-item">
+                                    <span class="text-muted">Trades:</span> 
+                                    <span class="stat-val">${stats.count}</span>
+                                </span>
+                                <span class="acc-stat-item">
+                                    <span class="text-muted">Win Rate:</span> 
+                                    <span class="stat-val ${stats.win_rate >= 50 ? 'text-success' : 'text-danger'}">${stats.win_rate}%</span>
+                                </span>
+                                <span class="acc-stat-item">
+                                    <span class="text-muted">P&L:</span> 
+                                    <span class="stat-val ${pnlClass}">${pnlSign}$${stats.pnl.toFixed(2)}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="acc-actions">
+                        <button class="btn btn-switch" onclick="switchToAccount(${acc.id})" ${isCurrent ? 'disabled' : ''}>
+                            <i class="bi ${isCurrent ? 'bi-check-circle-fill' : 'bi-arrow-repeat'}"></i>
+                            ${isCurrent ? 'Current' : 'Switch'}
+                        </button>
+                        <button class="btn btn-edit-acc" onclick="showEditAccountModal(${acc.id}, '${acc.name.replace(/'/g, "\\'")}', '${acc.broker ? acc.broker.replace(/'/g, "\\'") : ''}', '${acc.account_type}', '${acc.currency}')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-delete-acc" onclick="showDeleteAccountModal(${acc.id}, '${acc.name.replace(/'/g, "\\'")}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function switchToAccount(accountId) {
+        fetch(`/user/switch-account/${accountId}`, { method: 'POST' })
+            .then(res => { if (res.ok) window.location.reload(); })
+            .catch(err => console.error('Failed to switch:', err));
+    }
+    
+    function showCreateAccountModal() {
+        document.getElementById('accountModalTitle').textContent = 'Create New Account';
+        document.getElementById('editAccountId').value = '';
+        document.getElementById('accountName').value = '';
+        document.getElementById('accountBroker').value = '';
+        document.getElementById('accountType').value = 'live';
+        document.getElementById('accountCurrency').value = 'USD';
+        document.getElementById('saveAccountBtn').innerHTML = '<i class="bi bi-check-lg"></i> Create Account';
+        accountModal.show();
+    }
+    
+    function showEditAccountModal(id, name, broker, type, currency) {
+        document.getElementById('accountModalTitle').textContent = 'Edit Account';
+        document.getElementById('editAccountId').value = id;
+        document.getElementById('accountName').value = name;
+        document.getElementById('accountBroker').value = broker;
+        document.getElementById('accountType').value = type;
+        document.getElementById('accountCurrency').value = currency;
+        document.getElementById('saveAccountBtn').innerHTML = '<i class="bi bi-check-lg"></i> Update Account';
+        accountModal.show();
+    }
+    
+    function saveAccount() {
+        const accountId = document.getElementById('editAccountId').value;
+        const name = document.getElementById('accountName').value.trim();
+        const broker = document.getElementById('accountBroker').value.trim();
+        const accountType = document.getElementById('accountType').value;
+        const currency = document.getElementById('accountCurrency').value;
+        
+        if (!name) { alert('Please enter an account name.'); return; }
+        
+        const btn = document.getElementById('saveAccountBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+        
+        let url = accountId ? `/user/api/accounts/${accountId}/update` : '/user/api/accounts/create';
+        
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, broker, account_type: accountType, currency })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                accountModal.hide();
+                loadAccountsList();
+                if (!accountId) setTimeout(() => window.location.reload(), 500);
+            } else {
+                alert(data.message || 'Error saving account.');
+            }
+        })
+        .catch(err => { console.error('Error:', err); alert('Failed to save account.'); })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> ' + (accountId ? 'Update Account' : 'Create Account');
+        });
+    }
+    
+    function showDeleteAccountModal(accountId, accountName) {
+        document.getElementById('deleteAccountId').value = accountId;
+        document.getElementById('deleteWarningText').innerHTML = `This will permanently delete <strong>"${accountName}"</strong> and all its trades, notes, and diary entries. This action cannot be undone.`;
+        deleteModal.show();
+    }
+    
+    function confirmDeleteAccount() {
+        const accountId = document.getElementById('deleteAccountId').value;
+        fetch(`/user/api/accounts/${accountId}/delete`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) { deleteModal.hide(); loadAccountsList(); setTimeout(() => window.location.reload(), 500); }
+                else { alert(data.message || 'Error deleting account.'); }
+            })
+            .catch(err => { console.error('Error:', err); alert('Failed to delete account.'); });
+    }
+    
+    function showUpgradeAlert() {
+        alert('You have reached the maximum number of accounts for your plan. Please upgrade to create more accounts.');
+    }
+</script>
+{% endblock %}

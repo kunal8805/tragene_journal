@@ -1,0 +1,396 @@
+{% extends "base_user.html" %}
+{% block title %}Help & Support - Tragene Journal{% endblock %}
+{% block page_title %}🎧 Help & Support{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .support-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* ── Tabs ── */
+    .support-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    
+    .support-tab {
+        padding: 10px 20px;
+        border-radius: 25px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .support-tab:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    .support-tab.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+
+    /* ── Search Bar ── */
+    .faq-search {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .faq-search input {
+        width: 100%;
+        padding: 14px 20px 14px 45px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .faq-search input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(79,142,247,0.1);
+    }
+    
+    .faq-search i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 1.1rem;
+    }
+    
+    .search-results-count {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 6px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── FAQ Categories ── */
+    .faq-category {
+        margin-bottom: 24px;
+    }
+    
+    .faq-category h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--accent);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .faq-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        margin-bottom: 8px;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+    
+    .faq-item:hover {
+        border-color: rgba(79,142,247,0.3);
+    }
+    
+    .faq-question {
+        padding: 14px 18px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        transition: background 0.2s;
+    }
+    
+    .faq-question:hover {
+        background: rgba(79,142,247,0.03);
+    }
+    
+    .faq-question i {
+        transition: transform 0.3s;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+    
+    .faq-item.open .faq-question i {
+        transform: rotate(180deg);
+        color: var(--accent);
+    }
+    
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+        padding: 0 18px;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        border-top: 1px solid transparent;
+    }
+    
+    .faq-item.open .faq-answer {
+        max-height: 300px;
+        padding: 14px 18px;
+        border-top-color: var(--border-color);
+    }
+
+    /* ── Tickets List ── */
+    .ticket-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .ticket-card:hover {
+        border-color: rgba(79,142,247,0.3);
+    }
+    
+    .ticket-card .tc-number {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        color: var(--accent);
+        font-size: 0.8rem;
+    }
+    
+    .ticket-card .tc-subject {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+    }
+    
+    .ticket-status {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    
+    .ticket-status.open {
+        background: rgba(0,230,118,0.1);
+        color: #00e676;
+    }
+    
+    .ticket-status.in_progress {
+        background: rgba(255,179,0,0.1);
+        color: #ffb300;
+    }
+    
+    .ticket-status.resolved {
+        background: rgba(79,142,247,0.1);
+        color: var(--accent);
+    }
+    
+    .ticket-status.closed {
+        background: var(--bg-body);
+        color: var(--text-muted);
+    }
+
+    .btn-create-ticket {
+        padding: 11px 22px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .btn-create-ticket:hover {
+        color: #fff;
+        opacity: 0.9;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state h6 {
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .empty-state p {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="support-container">
+    
+    <!-- ── Tabs ── -->
+    <div class="support-tabs">
+        <button class="support-tab active" onclick="switchTab('faq', this)">📚 FAQ</button>
+        <button class="support-tab" onclick="switchTab('tickets', this)">🎫 My Tickets</button>
+    </div>
+    
+    <!-- ── FAQ Panel ── -->
+    <div id="faqPanel">
+        <div class="faq-search">
+            <i class="bi bi-search"></i>
+            <input type="text" id="faqSearch" placeholder="Search FAQs... (e.g., risk, account, payment)" onkeyup="searchFAQ()">
+        </div>
+        <div class="search-results-count" id="searchCount"></div>
+        
+        <div id="faqList">
+            {% if faq_categories %}
+                {% for category, faqs in faq_categories.items() %}
+                <div class="faq-category" data-category="{{ category }}">
+                    <h6>📂 {{ category }}</h6>
+                    {% for faq in faqs %}
+                    <div class="faq-item" data-keywords="{{ faq.question.lower() }} {{ faq.answer.lower() }}">
+                        <div class="faq-question" onclick="toggleFAQ(this)">
+                            {{ faq.question }}
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">{{ faq.answer }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📚</div>
+                    <h6>No FAQs Yet</h6>
+                    <p>Check back soon for helpful articles.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- ── Tickets Panel ── -->
+    <div id="ticketsPanel" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;margin:0;">My Support Tickets</h6>
+            <a href="{{ url_for('user.support_create') }}" class="btn-create-ticket">
+                <i class="bi bi-plus-circle"></i> New Ticket
+            </a>
+        </div>
+        
+        <div id="ticketsList">
+            {% if tickets %}
+                {% for ticket in tickets %}
+                <div class="ticket-card" onclick="window.location.href='{{ url_for('user.support_ticket', ticket_number=ticket.ticket_number) }}'">
+                    <div>
+                        <span class="tc-number">{{ ticket.ticket_number }}</span>
+                        <span class="tc-subject" style="margin-left:10px;">{{ ticket.subject }}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span class="ticket-status {{ ticket.status }}">{{ ticket.status | replace('_', ' ') }}</span>
+                        <span style="font-size:0.7rem;color:var(--text-muted);">{{ ticket.created_at.strftime('%d %b') }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🎫</div>
+                    <h6>No Tickets Yet</h6>
+                    <p>Create a ticket if you need help with anything.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.support-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('faqPanel').style.display = tab === 'faq' ? '' : 'none';
+        document.getElementById('ticketsPanel').style.display = tab === 'tickets' ? '' : 'none';
+    }
+    
+    function toggleFAQ(questionEl) {
+        const item = questionEl.parentElement;
+        item.classList.toggle('open');
+    }
+    
+    function searchFAQ() {
+        const query = document.getElementById('faqSearch').value.toLowerCase();
+        const items = document.querySelectorAll('.faq-item');
+        const categories = document.querySelectorAll('.faq-category');
+        let visibleCount = 0;
+        
+        categories.forEach(cat => cat.style.display = '');
+        
+        items.forEach(item => {
+            const keywords = item.getAttribute('data-keywords');
+            if (query === '' || keywords.includes(query)) {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Hide empty categories
+        categories.forEach(cat => {
+            const visibleItems = cat.querySelectorAll('.faq-item[style*="display:"]').length === 0;
+            const hasItems = cat.querySelectorAll('.faq-item').length > 0;
+            if (query !== '' && hasItems) {
+                const anyVisible = Array.from(cat.querySelectorAll('.faq-item')).some(item => item.style.display !== 'none');
+                cat.style.display = anyVisible ? '' : 'none';
+            }
+        });
+        
+        document.getElementById('searchCount').textContent = query ? `${visibleCount} result${visibleCount !== 1 ? 's' : ''} found` : '';
+    }
+</script>
+{% endblock %}

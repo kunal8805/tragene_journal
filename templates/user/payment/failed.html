@@ -1,0 +1,49 @@
+{% extends "base_user.html" %}
+{% block title %}Payment Failed - Tragene Journal{% endblock %}
+{% block page_title %}⚠️ Payment Failed{% endblock %}
+
+{% block extra_css %}
+<style>
+    .failed-container {
+        max-width: 500px;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .failed-icon { font-size: 5rem; }
+    .failed-card {
+        background: var(--bg-card);
+        border: 1px solid rgba(255,82,82,0.3);
+        border-radius: 20px;
+        padding: 30px;
+        margin-top: 20px;
+    }
+    .btn-retry {
+        padding: 12px 30px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="failed-container">
+    <div class="failed-icon">🔴</div>
+    <h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;margin-top:10px;">Payment Failed</h4>
+    <p style="color:var(--text-muted);">Your payment couldn't be processed.</p>
+    
+    <div class="failed-card">
+        <p style="font-size:0.85rem;color:var(--text-secondary);">
+            This could be due to insufficient funds, card limits, or a network issue. Please try again or use a different payment method.
+        </p>
+    </div>
+    
+    <a href="{{ url_for('user.subscription') }}" class="btn-retry">
+        <i class="bi bi-arrow-repeat"></i> Try Again
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,334 @@
+{% extends "base_user.html" %}
+{% set analyse_page_key = 'calendar_day' %}
+{% set analyse_sub_id = date_str %}
+{% block title %}Trading Calendar - Tragene Journal{% endblock %}
+{% block page_title %}📅 Trading Calendar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-container { max-width: 100%; margin: 0 auto; }
+    
+    .cal-stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .cal-stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    
+    .cal-stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .cal-stat-icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .cal-stat-value { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); }
+    .cal-stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
+    .cal-stat-card.wins { border-left: 3px solid #00e676; }
+    .cal-stat-card.losses { border-left: 3px solid #ff5252; }
+    .cal-stat-card.streak { border-left: 3px solid #ffb300; }
+    .cal-stat-card.total { border-left: 3px solid var(--accent); }
+    
+    .cal-nav-section {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+    }
+    
+    .cal-month-title { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); min-width: 180px; text-align: center; }
+    
+    .cal-nav-btn {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        color: var(--text-primary); border-radius: 10px; width: 36px; height: 36px;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        font-size: 1rem; transition: all 0.2s;
+    }
+    
+    .cal-nav-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    
+    .cal-today-btn {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        color: var(--accent); padding: 8px 16px; border-radius: 20px;
+        cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;
+    }
+    
+    .cal-today-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    
+    .cal-card {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 16px; padding: 20px; margin-bottom: 16px;
+    }
+    
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    
+    .cal-day-header {
+        text-align: center; font-size: 0.7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);
+        padding: 8px 0; margin-bottom: 4px;
+    }
+    
+    .cal-day {
+        aspect-ratio: 1; border-radius: 10px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;
+        transition: all 0.15s; position: relative; cursor: default; min-height: 45px;
+        background: var(--bg-body); border: 1px solid transparent; color: var(--text-primary);
+    }
+    
+    .cal-day.clickable { cursor: pointer; border-color: var(--border-color); }
+    .cal-day.clickable:hover { transform: scale(1.08); z-index: 2; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-color: var(--accent); }
+    .cal-day.profit { background: rgba(0,230,118,0.1); border-color: rgba(0,230,118,0.3); }
+    .cal-day.loss { background: rgba(255,82,82,0.1); border-color: rgba(255,82,82,0.3); }
+    .cal-day.breakeven { background: rgba(255,179,0,0.1); border-color: rgba(255,179,0,0.3); }
+    .cal-day.empty { opacity: 0.3; background: transparent; border-color: transparent; }
+    .cal-day .day-num { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
+    .cal-day.profit .day-num { color: #00e676; }
+    .cal-day.loss .day-num { color: #ff5252; }
+    .cal-day.breakeven .day-num { color: #ffb300; }
+    .cal-day .day-pnl { font-size: 0.55rem; font-weight: 700; line-height: 1; margin-top: 2px; }
+    .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); animation: pulse 2s infinite; }
+    .cal-day.has-note::after { content: '📝'; position: absolute; top: 2px; right: 4px; font-size: 0.5rem; }
+    
+    @keyframes pulse {
+        0%, 100% { box-shadow: inset 0 0 0 2px var(--accent); }
+        50% { box-shadow: inset 0 0 0 4px var(--accent); }
+    }
+    
+    .cal-legend {
+        display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px;
+        padding-top: 12px; border-top: 1px solid var(--border-color);
+    }
+    
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+    
+    #dayDetailPanel { animation: slideDown 0.3s ease; }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @media (max-width: 768px) {
+        .cal-card { padding: 12px; }
+        .cal-day { min-height: 35px; font-size: 0.7rem; }
+        .cal-day .day-num { font-size: 0.75rem; }
+        .cal-day .day-pnl { font-size: 0.5rem; }
+        .cal-day-header { font-size: 0.6rem; padding: 4px 0; }
+        .cal-stats-row { grid-template-columns: repeat(2, 1fr); }
+        .cal-stat-value { font-size: 1.1rem; }
+    }
+    
+    @media (max-width: 480px) {
+        .cal-day { min-height: 30px; font-size: 0.65rem; border-radius: 6px; }
+        .cal-grid { gap: 2px; }
+        .cal-month-title { font-size: 1.1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendar-container">
+    
+    <div class="cal-stats-row" id="calStatsRow">
+        <div class="cal-stat-card total">
+            <div class="cal-stat-icon">📊</div>
+            <div class="cal-stat-value" id="statTotalTrades">0</div>
+            <div class="cal-stat-label">Total Trading Days</div>
+        </div>
+        <div class="cal-stat-card wins">
+            <div class="cal-stat-icon">✅</div>
+            <div class="cal-stat-value" id="statWinDays" style="color: #00e676;">0</div>
+            <div class="cal-stat-label">Profitable Days</div>
+        </div>
+        <div class="cal-stat-card losses">
+            <div class="cal-stat-icon">❌</div>
+            <div class="cal-stat-value" id="statLossDays" style="color: #ff5252;">0</div>
+            <div class="cal-stat-label">Losing Days</div>
+        </div>
+        <div class="cal-stat-card streak">
+            <div class="cal-stat-icon">🔥</div>
+            <div class="cal-stat-value" id="statStreak" style="color: #ffb300;">0</div>
+            <div class="cal-stat-label">Current Streak</div>
+        </div>
+    </div>
+    
+    <div class="cal-nav-section">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+        <span class="cal-month-title" id="monthYear"></span>
+        <button class="cal-nav-btn" onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
+        <button class="cal-today-btn" onclick="goToToday()"><i class="bi bi-calendar-check"></i> Today</button>
+    </div>
+    
+    <div class="cal-card">
+        <div class="cal-grid">
+            {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}
+                <div class="cal-day-header">{{ day }}</div>
+            {% endfor %}
+        </div>
+        <div class="cal-grid" id="calendarGrid"></div>
+        <div class="cal-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#00e676;"></span> Profit</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#ff5252;"></span> Loss</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#ffb300;"></span> Breakeven</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--border-color);"></span> No Trades</div>
+            <div class="legend-item">📝 Has Notes</div>
+        </div>
+    </div>
+    
+    <div id="dayDetailPanel" style="display:none;">
+        <div class="card"><div class="card-body p-3" id="dayDetailContent"></div></div>
+    </div>
+    
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentMonth, currentYear, allTradeData = {}, allNotesData = {};
+    
+    async function fetchAllData() {
+        try {
+            const [tradeRes, notesRes] = await Promise.all([
+                fetch('/user/api/trade-dates'),
+                fetch('/user/api/day-notes')
+            ]);
+            allTradeData = await tradeRes.json();
+            allNotesData = await notesRes.json();
+        } catch (err) {
+            console.error('Failed to fetch data:', err);
+        }
+    }
+    
+    function calculateStats() {
+        const dates = Object.keys(allTradeData);
+        let totalDays = dates.length, winDays = 0, lossDays = 0;
+        
+        dates.forEach(dateStr => {
+            const pnl = allTradeData[dateStr].pnl;
+            if (pnl > 0) winDays++;
+            else if (pnl < 0) lossDays++;
+        });
+        
+        const sortedDates = dates.sort();
+        let currentStreak = 0;
+        const today = new Date(); today.setHours(0,0,0,0);
+        
+        if (sortedDates.length > 0) {
+            const lastDate = new Date(sortedDates[sortedDates.length - 1] + 'T00:00:00');
+            const lastPnl = allTradeData[sortedDates[sortedDates.length - 1]].pnl;
+            const isWin = lastPnl > 0;
+            const daysSince = Math.floor((today - lastDate) / (1000*60*60*24));
+            
+            if (daysSince <= 1) {
+                for (let i = sortedDates.length - 1; i >= 0; i--) {
+                    const pnl = allTradeData[sortedDates[i]].pnl;
+                    if ((isWin && pnl > 0) || (!isWin && pnl < 0)) currentStreak++;
+                    else break;
+                }
+            }
+        }
+        
+        document.getElementById('statTotalTrades').textContent = totalDays;
+        document.getElementById('statWinDays').textContent = winDays;
+        document.getElementById('statLossDays').textContent = lossDays;
+        document.getElementById('statStreak').textContent = currentStreak > 0 ? (allTradeData[sortedDates[sortedDates.length-1]]?.pnl > 0 ? '🔥 ' : '💀 ') + currentStreak : '0';
+    }
+    
+    async function renderCalendar() {
+        const now = new Date();
+        if (currentMonth === undefined) currentMonth = now.getMonth();
+        if (currentYear === undefined) currentYear = now.getFullYear();
+        
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        document.getElementById('monthYear').textContent = months[currentMonth] + ' ' + currentYear;
+        
+        await fetchAllData();
+        calculateStats();
+        
+        const grid = document.getElementById('calendarGrid');
+        let html = '';
+        
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        
+        for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+        
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const dayData = allTradeData[dateStr];
+            const hasNote = allNotesData[dateStr];
+            const isToday = dateStr === todayStr;
+            
+            let cls = 'cal-day';
+            let pnlHtml = '';
+            let onclick = '';
+            
+            if (dayData || hasNote) {
+                cls += ' clickable';
+                onclick = `onclick="loadDayDetail('${dateStr}')"`;
+                if (hasNote) cls += ' has-note';
+            }
+            
+            if (dayData) {
+                if (dayData.pnl > 0) cls += ' profit';
+                else if (dayData.pnl < 0) cls += ' loss';
+                else cls += ' breakeven';
+                
+                const absPnl = Math.abs(dayData.pnl);
+                const shortPnl = absPnl >= 1000 ? (absPnl/1000).toFixed(1)+'k' : absPnl.toFixed(0);
+                const sign = dayData.pnl > 0 ? '+' : dayData.pnl < 0 ? '-' : '';
+                pnlHtml = `<span class="day-pnl">${sign}$${shortPnl}</span>`;
+            } else if (!hasNote) {
+                cls += ' empty';
+            }
+            
+            if (isToday) cls += ' today';
+            
+            html += `<div class="${cls}" ${onclick}><span class="day-num">${d}</span>${pnlHtml}</div>`;
+        }
+        
+        grid.innerHTML = html;
+    }
+    
+    async function loadDayDetail(dateStr) {
+        const panel = document.getElementById('dayDetailPanel');
+        const content = document.getElementById('dayDetailContent');
+        
+        content.innerHTML = `<div class="text-center py-4"><div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div><p class="mt-2 mb-0" style="color:var(--text-muted);font-size:0.85rem;">Loading...</p></div>`;
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        try {
+            const res = await fetch(`/user/calendar/day/${dateStr}`);
+            if (!res.ok) throw new Error('Failed to load');
+            const html = await res.text();
+            content.innerHTML = html;
+        } catch (err) {
+            content.innerHTML = `<div class="text-center py-4"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#ff5252;"></i><p class="mt-2" style="color:var(--text-muted);">Failed to load</p></div>`;
+        }
+    }
+    
+    function changeMonth(delta) {
+        currentMonth += delta;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        document.getElementById('dayDetailPanel').style.display = 'none';
+        renderCalendar();
+    }
+    
+    function goToToday() {
+        const now = new Date();
+        currentMonth = now.getMonth();
+        currentYear = now.getFullYear();
+        document.getElementById('dayDetailPanel').style.display = 'none';
+        renderCalendar();
+    }
+    
+    renderCalendar();
+</script>
+{% endblock %}

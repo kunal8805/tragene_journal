@@ -1,0 +1,852 @@
+{% extends "base_user.html" %}
+{% block title %}Trading Rules - Tragene Journal{% endblock %}
+{% block page_title %}🛡️ Rule Compliance{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .rules-workspace {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* ── Panel Cards ── */
+    .panel-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .panel-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .panel-header h5 {
+        margin: 0;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .panel-header h5 i {
+        color: var(--accent);
+    }
+    
+    .panel-body {
+        padding: 16px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .panel-body.tall {
+        max-height: 650px;
+    }
+
+    /* ── Template Cards (Compact) ── */
+    .template-mini {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        transition: all 0.2s;
+    }
+    
+    .template-mini:hover {
+        border-color: rgba(79,142,247,0.3);
+    }
+    
+    .template-mini .tm-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .template-mini .tm-name {
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: var(--text-primary);
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .template-mini .tm-desc {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    
+    .btn-adopt-mini {
+        padding: 5px 14px;
+        border-radius: 20px;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--accent);
+        font-size: 0.68rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .btn-adopt-mini:hover {
+        background: var(--accent);
+        color: #fff;
+    }
+    
+    .btn-adopt-mini.added {
+        background: rgba(0,230,118,0.15);
+        border-color: #00e676;
+        color: #00e676;
+        cursor: default;
+    }
+
+    /* ── My Rules List ── */
+    .my-rule-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: var(--bg-body);
+        border-radius: 10px;
+        margin-bottom: 6px;
+        gap: 10px;
+    }
+    
+    .my-rule-row .rule-name {
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        flex: 1;
+    }
+    
+    .my-rule-row .rule-type-tag {
+        font-size: 0.58rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    
+    .tag-risk { background: rgba(255,82,82,0.1); color: #ff5252; }
+    .tag-freq { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .tag-session { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+    .tag-psych { background: rgba(0,230,118,0.1); color: #00e676; }
+    .tag-custom { background: rgba(79,142,247,0.1); color: var(--accent); }
+    
+    .btn-delete-rule {
+        background: none;
+        border: none;
+        color: #ff5252;
+        cursor: pointer;
+        font-size: 0.8rem;
+        padding: 4px 8px;
+        border-radius: 6px;
+        opacity: 0.5;
+        transition: all 0.2s;
+    }
+    
+    .btn-delete-rule:hover {
+        opacity: 1;
+        background: rgba(255,82,82,0.1);
+    }
+
+    /* ── Trade Selector ── */
+    .trade-select-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+    
+    .trade-select {
+        flex: 1;
+        min-width: 180px;
+        padding: 10px 14px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        font-family: 'Space Grotesk', sans-serif;
+        cursor: pointer;
+    }
+    
+    .trade-select:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    
+    .trade-select option {
+        background: var(--bg-card);
+        color: var(--text-primary);
+    }
+    
+    .selected-trade-info {
+        background: rgba(79,142,247,0.05);
+        border: 1px solid rgba(79,142,247,0.15);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        font-size: 0.75rem;
+        display: none;
+    }
+    
+    .selected-trade-info.show {
+        display: block;
+    }
+    
+    .selected-trade-info .ti-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        color: var(--text-muted);
+    }
+    
+    .selected-trade-info .ti-row strong {
+        color: var(--text-primary);
+    }
+
+    /* ── Rule Checklist (for selected trade) ── */
+    .rule-check-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .rule-check-item:hover {
+        border-color: rgba(79,142,247,0.3);
+    }
+    
+    .rule-check-item.checked {
+        border-color: rgba(0,230,118,0.3);
+        background: rgba(0,230,118,0.03);
+    }
+    
+    .rule-check-item.checked .check-box {
+        background: #00e676;
+        border-color: #00e676;
+        color: #000;
+    }
+    
+    .check-box {
+        width: 28px; height: 28px;
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+    
+    .rule-check-item .check-label {
+        font-weight: 600;
+        font-size: 0.78rem;
+        color: var(--text-primary);
+        flex: 1;
+    }
+    
+    .rule-check-item .check-points {
+        font-size: 0.65rem;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 3px 8px;
+        border-radius: 6px;
+    }
+    
+    .check-points.pass { background: rgba(0,230,118,0.1); color: #00e676; }
+    .check-points.fail { background: rgba(255,82,82,0.1); color: #ff5252; }
+
+    /* ── Buttons ── */
+    .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-save {
+        padding: 10px 22px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-save:hover {
+        box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+    }
+    
+    .btn-save:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    .btn-bulk {
+        padding: 10px 18px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.78rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-bulk:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    .btn-bulk.active-bulk {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+
+    /* ── Score Summary ── */
+    .score-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: var(--bg-body);
+        border-radius: 12px;
+        margin-top: 12px;
+    }
+    
+    .score-bar .score-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+    }
+    
+    .score-bar .score-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+    }
+    
+    .score-bar .score-detail {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-left: auto;
+    }
+
+    /* ── Toast ── */
+    .toast-mini {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        padding: 10px 24px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+        animation: toastUp 0.4s ease, toastDown 0.4s ease 1.5s forwards;
+    }
+    
+    @keyframes toastUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    @keyframes toastDown { from { transform: translateX(-50%) translateY(0); opacity: 1; } to { transform: translateX(-50%) translateY(20px); opacity: 0; } }
+
+    /* ── Empty State ── */
+    .empty-mini {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+        .rules-workspace {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="rules-workspace">
+    
+    <!-- ═══════════ LEFT PANEL: Adopt Rules ═══════════ -->
+    <div>
+        <!-- Templates -->
+        <div class="panel-card" style="margin-bottom:16px;">
+            <div class="panel-header">
+                <h5><i class="bi bi-collection"></i> Template Library</h5>
+                <span style="font-size:0.65rem;color:var(--text-muted);">{{ templates|length }} available</span>
+            </div>
+            <div class="panel-body">
+                {% for t in templates %}
+                <div class="template-mini" id="tmpl-{{ t.id }}">
+                    <div class="tm-header">
+                        <div>
+                            <div class="tm-name">{{ t.name }}</div>
+                            <div class="tm-desc">{{ t.description[:80] }}{% if t.description|length > 80 %}...{% endif %}</div>
+                        </div>
+                        <button class="btn-adopt-mini" id="adoptBtn-{{ t.id }}" onclick="adoptRule({{ t.id }})">
+                            + Adopt
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- My Rules -->
+        <div class="panel-card">
+            <div class="panel-header">
+                <h5><i class="bi bi-shield-check"></i> My Rules</h5>
+                <span style="font-size:0.65rem;color:var(--text-muted);" id="myRulesCount">{{ user_rules|length }} active</span>
+            </div>
+            <div class="panel-body" id="myRulesList">
+                {% if user_rules %}
+                    {% for rule in user_rules %}
+                    <div class="my-rule-row" id="myrule-{{ rule.id }}">
+                        <span class="rule-name">{{ rule.name }}</span>
+                        <span class="rule-type-tag tag-{{ rule.rule_type[:4] if rule.rule_type[:4] in ['risk','freq','sess','psyc','cust'] else 'custom' }}">
+                            {{ rule.rule_type[:8] }}
+                        </span>
+                        <button class="btn-delete-rule" onclick="deleteMyRule({{ rule.id }})" title="Remove">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-mini">
+                        <i class="bi bi-inbox" style="font-size:1.5rem;opacity:0.3;"></i>
+                        <p class="mt-2">No rules yet. Adopt from templates above.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- ═══════════ RIGHT PANEL: Audit Trades ═══════════ -->
+    <div>
+        <div class="panel-card">
+            <div class="panel-header">
+                <h5><i class="bi bi-clipboard-check"></i> Audit Trade</h5>
+            </div>
+            <div class="panel-body tall">
+                
+                <!-- Bulk Mode Toggle -->
+                <div class="btn-row" style="margin-bottom:14px;">
+                    <button class="btn-bulk" id="btnSingle" onclick="setMode('single')">Single Trade</button>
+                    <button class="btn-bulk" id="btnToday" onclick="setMode('today')">Today's Trades</button>
+                    <button class="btn-bulk" id="btnMonth" onclick="setMode('month')">This Month</button>
+                </div>
+                
+                <!-- Trade Selector (Single Mode) -->
+                <div id="singleMode">
+                    <label style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:700;">Select Trade</label>
+                    <div class="trade-select-row">
+                        <select class="trade-select" id="tradeSelect" onchange="onTradeSelect()">
+                            <option value="">-- Choose a trade --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Selected Trade Info -->
+                    <div class="selected-trade-info" id="tradeInfo">
+                        <div class="ti-row">
+                            <span>Symbol: <strong id="tiSymbol">-</strong></span>
+                            <span>Type: <strong id="tiType">-</strong></span>
+                            <span>P&L: <strong id="tiPnl">-</strong></span>
+                            <span>Date: <strong id="tiDate">-</strong></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bulk Mode Info -->
+                <div id="bulkMode" style="display:none;">
+                    <div class="selected-trade-info show">
+                        <div class="ti-row">
+                            <span id="bulkInfo">Apply rules to all trades for the selected period.</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rule Checklist -->
+                <label style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:700;margin-top:10px;display:block;">
+                    Rule Compliance
+                </label>
+                <div id="ruleChecklist">
+                    <div class="empty-mini">
+                        <i class="bi bi-arrow-left" style="font-size:1.5rem;opacity:0.3;"></i>
+                        <p class="mt-2">Select a trade to check rules.</p>
+                    </div>
+                </div>
+                
+                <!-- Score -->
+                <div class="score-bar" id="scoreBar" style="display:none;">
+                    <span class="score-label">Score:</span>
+                    <span class="score-value" id="scoreValue" style="color:#00e676;">+0</span>
+                    <span class="score-detail" id="scoreDetail"></span>
+                </div>
+                
+                <!-- Save Button -->
+                <div class="btn-row">
+                    <button class="btn-save" id="saveBtn" disabled onclick="saveAudit()">
+                        <i class="bi bi-check-lg"></i> Save Audit
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<input type="hidden" id="currentMode" value="single">
+<input type="hidden" id="selectedTradeId" value="">
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentMode = 'single';
+    let allTrades = [];
+    let ruleChecks = {}; // { ruleId: true/false }
+    
+    // ─── Load trades on page load ───
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTrades();
+    });
+    
+    function loadTrades() {
+        // Fetch recent trades via API (use calendar API or similar)
+        fetch('/user/api/trade-dates')
+            .then(res => res.json())
+            .then(data => {
+                // Get actual trades for the active account
+                // We'll use the journal approach - fetch from the page
+                loadTradeList();
+            });
+        
+        // Alternative: load from a simple API
+        loadTradeList();
+    }
+    
+    function loadTradeList() {
+        // Fetch trades from a simple endpoint
+        fetch('/tools/api/recent-trades')
+            .then(res => res.json())
+            .then(data => {
+                allTrades = data.trades || [];
+                populateTradeSelect();
+            })
+            .catch(err => {
+                console.log('Using empty trade list');
+                allTrades = [];
+                populateTradeSelect();
+            });
+    }
+    
+    function populateTradeSelect() {
+        const select = document.getElementById('tradeSelect');
+        select.innerHTML = '<option value="">-- Choose a trade --</option>';
+        
+        allTrades.forEach(t => {
+            const dateStr = new Date(t.entry_date).toLocaleDateString('en-US', { day:'2-digit', month:'short' });
+            const pnlStr = t.profit_loss ? (t.profit_loss > 0 ? '+' : '') + '$' + Math.abs(t.profit_loss).toFixed(2) : '-';
+            select.innerHTML += `<option value="${t.id}">${dateStr} | ${t.symbol} | ${t.trade_type.toUpperCase()} | ${pnlStr}</option>`;
+        });
+    }
+    
+    // ─── Mode Switching ───
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('currentMode').value = mode;
+        
+        document.getElementById('btnSingle').classList.toggle('active-bulk', mode === 'single');
+        document.getElementById('btnToday').classList.toggle('active-bulk', mode === 'today');
+        document.getElementById('btnMonth').classList.toggle('active-bulk', mode === 'month');
+        
+        document.getElementById('singleMode').style.display = mode === 'single' ? '' : 'none';
+        document.getElementById('bulkMode').style.display = mode !== 'single' ? '' : 'none';
+        
+        if (mode === 'today') {
+            document.getElementById('bulkInfo').textContent = '📅 Applying to ALL trades taken TODAY.';
+        } else if (mode === 'month') {
+            document.getElementById('bulkInfo').textContent = '📅 Applying to ALL trades taken THIS MONTH.';
+        }
+        
+        document.getElementById('selectedTradeId').value = '';
+        document.getElementById('tradeInfo').classList.remove('show');
+        resetChecklist();
+        updateScore();
+    }
+    
+    // ─── Trade Selection ───
+    function onTradeSelect() {
+        const tradeId = document.getElementById('tradeSelect').value;
+        document.getElementById('selectedTradeId').value = tradeId;
+        
+        if (!tradeId) {
+            document.getElementById('tradeInfo').classList.remove('show');
+            resetChecklist();
+            updateScore();
+            return;
+        }
+        
+        const trade = allTrades.find(t => t.id == tradeId);
+        if (!trade) return;
+        
+        document.getElementById('tiSymbol').textContent = trade.symbol;
+        document.getElementById('tiType').textContent = trade.trade_type.toUpperCase();
+        document.getElementById('tiPnl').textContent = trade.profit_loss ? (trade.profit_loss > 0 ? '+' : '') + '$' + Math.abs(trade.profit_loss).toFixed(2) : '-';
+        document.getElementById('tiDate').textContent = new Date(trade.entry_date).toLocaleDateString('en-US', { day:'2-digit', month:'short', year:'numeric' });
+        document.getElementById('tradeInfo').classList.add('show');
+        
+        buildChecklist();
+        updateScore();
+    }
+    
+    // ─── Build Rule Checklist ───
+    function buildChecklist() {
+        const container = document.getElementById('ruleChecklist');
+        const myRules = document.querySelectorAll('#myRulesList .my-rule-row');
+        
+        if (myRules.length === 0) {
+            container.innerHTML = '<div class="empty-mini"><p>Adopt rules first from the left panel.</p></div>';
+            return;
+        }
+        
+        ruleChecks = {};
+        let html = '';
+        
+        myRules.forEach(row => {
+            const ruleId = row.id.replace('myrule-', '');
+            const ruleName = row.querySelector('.rule-name').textContent;
+            
+            ruleChecks[ruleId] = false;
+            
+            html += `
+                <div class="rule-check-item" id="check-${ruleId}" onclick="toggleCheck('${ruleId}')">
+                    <div class="check-box" id="checkBox-${ruleId}"></div>
+                    <span class="check-label">${ruleName}</span>
+                    <span class="check-points fail" id="points-${ruleId}">-10 pts</span>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function resetChecklist() {
+        document.getElementById('ruleChecklist').innerHTML = `
+            <div class="empty-mini">
+                <i class="bi bi-arrow-left" style="font-size:1.5rem;opacity:0.3;"></i>
+                <p class="mt-2">Select a trade to check rules.</p>
+            </div>
+        `;
+        ruleChecks = {};
+    }
+    
+    // ─── Toggle Rule Check ───
+    function toggleCheck(ruleId) {
+        ruleChecks[ruleId] = !ruleChecks[ruleId];
+        
+        const item = document.getElementById('check-' + ruleId);
+        const box = document.getElementById('checkBox-' + ruleId);
+        const points = document.getElementById('points-' + ruleId);
+        
+        if (ruleChecks[ruleId]) {
+            item.classList.add('checked');
+            box.innerHTML = '<i class="bi bi-check-lg"></i>';
+            points.textContent = '+5 pts';
+            points.className = 'check-points pass';
+        } else {
+            item.classList.remove('checked');
+            box.innerHTML = '';
+            points.textContent = '-10 pts';
+            points.className = 'check-points fail';
+        }
+        
+        updateScore();
+    }
+    
+    // ─── Update Score ───
+    function updateScore() {
+        const scoreBar = document.getElementById('scoreBar');
+        const hasSelection = document.getElementById('selectedTradeId').value || currentMode !== 'single';
+        const hasChecks = Object.keys(ruleChecks).length > 0;
+        
+        if (!hasChecks || !hasSelection) {
+            scoreBar.style.display = 'none';
+            document.getElementById('saveBtn').disabled = true;
+            return;
+        }
+        
+        scoreBar.style.display = '';
+        
+        let totalScore = 0;
+        let passed = 0;
+        let failed = 0;
+        
+        Object.entries(ruleChecks).forEach(([ruleId, checked]) => {
+            if (checked) {
+                totalScore += 5;
+                passed++;
+            } else {
+                totalScore -= 10;
+                failed++;
+            }
+        });
+        
+        const scoreEl = document.getElementById('scoreValue');
+        scoreEl.textContent = (totalScore >= 0 ? '+' : '') + totalScore;
+        scoreEl.style.color = totalScore >= 0 ? '#00e676' : '#ff5252';
+        
+        document.getElementById('scoreDetail').textContent = `${passed} passed, ${failed} failed`;
+        document.getElementById('saveBtn').disabled = false;
+    }
+    
+    // ─── Save Audit ───
+    function saveAudit() {
+        const tradeId = document.getElementById('selectedTradeId').value;
+        const mode = document.getElementById('currentMode').value;
+        
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+        
+        const payload = {
+            mode: mode,
+            trade_id: tradeId || null,
+            checks: ruleChecks
+        };
+        
+        fetch('/tools/api/rules/save-audit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`✅ Audit saved! ${data.points > 0 ? '+' : ''}${data.points} points`, '#00e676');
+                
+                // Reset
+                document.getElementById('tradeSelect').value = '';
+                document.getElementById('tradeInfo').classList.remove('show');
+                document.getElementById('selectedTradeId').value = '';
+                resetChecklist();
+                updateScore();
+            } else {
+                showToast('❌ ' + data.message, '#ff5252');
+            }
+        })
+        .catch(err => {
+            showToast('❌ Error saving audit', '#ff5252');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> Save Audit';
+        });
+    }
+    
+    // ─── Adopt Rule ───
+    function adoptRule(templateId) {
+        const btn = document.getElementById('adoptBtn-' + templateId);
+        btn.disabled = true;
+        btn.textContent = '...';
+        
+        fetch('/tools/api/rules/adopt/' + templateId, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    btn.classList.add('added');
+                    btn.textContent = '✓ Added';
+                    showToast('✅ Rule adopted! +5 pts', '#00e676');
+                    
+                    // Reload my rules list
+                    setTimeout(() => location.reload(), 600);
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = '+ Adopt';
+                    showToast('⚠️ ' + data.message, '#ffb300');
+                }
+            });
+    }
+    
+    // ─── Delete My Rule ───
+    function deleteMyRule(ruleId) {
+        if (!confirm('Remove this rule?')) return;
+        
+        fetch('/tools/api/rules/' + ruleId + '/delete', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById('myrule-' + ruleId);
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(10px)';
+                    row.style.transition = 'all 0.3s';
+                    setTimeout(() => {
+                        row.remove();
+                        updateMyRulesCount();
+                        resetChecklist();
+                        updateScore();
+                    }, 300);
+                }
+            });
+    }
+    
+    function updateMyRulesCount() {
+        const count = document.querySelectorAll('#myRulesList .my-rule-row').length;
+        document.getElementById('myRulesCount').textContent = count + ' active';
+    }
+    
+    // ─── Toast ───
+    function showToast(message, color) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-mini';
+        toast.style.cssText = `
+            background: var(--bg-card);
+            border: 1px solid ${color};
+            color: ${color};
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+</script>
+{% endblock %}

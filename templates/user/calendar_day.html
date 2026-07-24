@@ -1,0 +1,644 @@
+<style>
+    /* Premium Day Detail Styles */
+    .dd-wrapper { 
+        color: var(--text-primary);
+        animation: fadeInUp 0.4s ease;
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Hero Section */
+    .dd-hero {
+        background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-body) 100%);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dd-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+        opacity: 0.03;
+        border-radius: 50%;
+    }
+    
+    .dd-hero-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    
+    .dd-date-display {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .dd-date-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--accent) 0%, #6db3f2 100%);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: #fff;
+        box-shadow: 0 8px 25px rgba(79,142,247,0.3);
+    }
+    
+    .dd-date-text h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .dd-date-text span {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+    
+    .dd-pnl-badge {
+        padding: 12px 24px;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s;
+    }
+    
+    .dd-pnl-badge.profit {
+        background: linear-gradient(135deg, rgba(0,230,118,0.15) 0%, rgba(0,200,100,0.1) 100%);
+        color: #00e676;
+        border: 1px solid rgba(0,230,118,0.3);
+        box-shadow: 0 4px 15px rgba(0,230,118,0.1);
+    }
+    
+    .dd-pnl-badge.loss {
+        background: linear-gradient(135deg, rgba(255,82,82,0.15) 0%, rgba(255,50,50,0.1) 100%);
+        color: #ff5252;
+        border: 1px solid rgba(255,82,82,0.3);
+        box-shadow: 0 4px 15px rgba(255,82,82,0.1);
+    }
+    
+    .dd-pnl-badge.even {
+        background: linear-gradient(135deg, rgba(255,179,0,0.15) 0%, rgba(255,160,0,0.1) 100%);
+        color: #ffb300;
+        border: 1px solid rgba(255,179,0,0.3);
+        box-shadow: 0 4px 15px rgba(255,179,0,0.1);
+    }
+    
+    .dd-pnl-badge i {
+        font-size: 1.2rem;
+    }
+    
+    /* Stats Grid */
+    .dd-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .dd-stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 16px;
+        text-align: center;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dd-stat-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+    }
+    
+    .dd-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        border-color: var(--accent);
+    }
+    
+    .dd-stat-card .stat-icon {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+    
+    .dd-stat-card .stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.5px;
+    }
+    
+    .dd-stat-card .stat-label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-top: 6px;
+    }
+    
+    .dd-stat-card.win { border-left: 4px solid #00e676; }
+    .dd-stat-card.win::after { background: linear-gradient(90deg, #00e676, transparent); }
+    .dd-stat-card.loss { border-left: 4px solid #ff5252; }
+    .dd-stat-card.loss::after { background: linear-gradient(90deg, #ff5252, transparent); }
+    .dd-stat-card.neutral { border-left: 4px solid var(--accent); }
+    .dd-stat-card.neutral::after { background: linear-gradient(90deg, var(--accent), transparent); }
+    .dd-stat-card.gold { border-left: 4px solid #ffb300; }
+    .dd-stat-card.gold::after { background: linear-gradient(90deg, #ffb300, transparent); }
+    
+    /* Highlight Cards */
+    .dd-highlight-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .dd-highlight-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.3s;
+    }
+    
+    .dd-highlight-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .dd-highlight-card.best {
+        border-left: 4px solid #00e676;
+        background: linear-gradient(135deg, rgba(0,230,118,0.05) 0%, var(--bg-card) 100%);
+    }
+    
+    .dd-highlight-card.worst {
+        border-left: 4px solid #ff5252;
+        background: linear-gradient(135deg, rgba(255,82,82,0.05) 0%, var(--bg-card) 100%);
+    }
+    
+    .dd-highlight-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    
+    .dd-highlight-card.best .dd-highlight-icon {
+        background: rgba(0,230,118,0.15);
+        color: #00e676;
+    }
+    
+    .dd-highlight-card.worst .dd-highlight-icon {
+        background: rgba(255,82,82,0.15);
+        color: #ff5252;
+    }
+    
+    .dd-highlight-info h6 {
+        margin: 0;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+    
+    .dd-highlight-info .val {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .dd-highlight-info .pnl {
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+    
+    /* Table Section */
+    .dd-table-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    
+    .dd-table-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .dd-table-header h5 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .dd-table-header h5 i {
+        color: var(--accent);
+    }
+    
+    .dd-trade-count {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        background: var(--bg-body);
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+    
+    .dd-table-wrap {
+        overflow-x: auto;
+    }
+    
+    .dd-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .dd-table thead th {
+        background: var(--bg-body);
+        color: var(--text-muted);
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    
+    .dd-table tbody td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+        transition: background 0.2s;
+    }
+    
+    .dd-table tbody tr {
+        transition: all 0.2s;
+    }
+    
+    .dd-table tbody tr:hover {
+        background: var(--bg-body);
+    }
+    
+    .dd-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .dd-badge-type {
+        padding: 5px 14px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .dd-badge-type.buy {
+        background: rgba(0,230,118,0.12);
+        color: #00e676;
+        border: 1px solid rgba(0,230,118,0.2);
+    }
+    
+    .dd-badge-type.sell {
+        background: rgba(255,82,82,0.12);
+        color: #ff5252;
+        border: 1px solid rgba(255,82,82,0.2);
+    }
+    
+    .dd-symbol-text {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+    
+    .dd-pnl-text {
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    
+    .dd-pnl-profit { color: #00e676; }
+    .dd-pnl-loss { color: #ff5252; }
+    .dd-pnl-even { color: #ffb300; }
+    
+    .dd-view-btn {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 7px 16px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    
+    .dd-view-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff !important;
+        text-decoration: none;
+        transform: translateX(2px);
+    }
+    
+    .dd-session-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: var(--bg-body);
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+    }
+    
+    .dd-empty-state {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 60px 20px;
+        text-align: center;
+    }
+    
+    .dd-empty-state .empty-icon {
+        font-size: 4rem;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    .dd-empty-state h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .dd-empty-state p {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    @media (max-width: 768px) {
+        .dd-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .dd-highlight-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .dd-stat-card .stat-value {
+            font-size: 1.2rem;
+        }
+        
+        .dd-table {
+            font-size: 0.75rem;
+        }
+        
+        .dd-table thead th,
+        .dd-table tbody td {
+            padding: 10px 12px;
+        }
+        
+        .dd-hero-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .dd-date-text h3 {
+            font-size: 1.1rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .dd-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+        
+        .dd-stat-card {
+            padding: 12px 10px;
+        }
+        
+        .dd-stat-card .stat-value {
+            font-size: 1rem;
+        }
+        
+        .dd-pnl-badge {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+
+<div class="dd-wrapper">
+    
+    <!-- Hero Header -->
+    <div class="dd-hero">
+        <div class="dd-hero-content">
+            <div class="dd-date-display">
+                <div class="dd-date-icon">
+                    <i class="bi bi-calendar3"></i>
+                </div>
+                <div class="dd-date-text">
+                    <h3>{{ target_date.strftime('%d %B %Y') }}</h3>
+                    <span>{{ target_date.strftime('%A') }}</span>
+                </div>
+            </div>
+            <span class="dd-pnl-badge {% if day_pnl > 0 %}profit{% elif day_pnl < 0 %}loss{% else %}even{% endif %}">
+                {% if day_pnl > 0 %}
+                    <i class="bi bi-arrow-up-circle-fill"></i> Profit
+                {% elif day_pnl < 0 %}
+                    <i class="bi bi-arrow-down-circle-fill"></i> Loss
+                {% else %}
+                    <i class="bi bi-dash-circle-fill"></i> Breakeven
+                {% endif %}
+                <strong>{{ '+' if day_pnl > 0 else '' }}${{ '%.2f'|format(day_pnl) }}</strong>
+            </span>
+        </div>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="dd-stats-grid">
+        <div class="dd-stat-card neutral">
+            <span class="stat-icon">📊</span>
+            <div class="stat-value">{{ total_trades }}</div>
+            <div class="stat-label">Total Trades</div>
+        </div>
+        <div class="dd-stat-card neutral">
+            <span class="stat-icon">🎯</span>
+            <div class="stat-value">{{ day_win_rate }}%</div>
+            <div class="stat-label">Win Rate</div>
+        </div>
+        <div class="dd-stat-card win">
+            <span class="stat-icon">✅</span>
+            <div class="stat-value" style="color:#00e676;">{{ win_count }}</div>
+            <div class="stat-label">Winning Trades</div>
+        </div>
+        <div class="dd-stat-card loss">
+            <span class="stat-icon">❌</span>
+            <div class="stat-value" style="color:#ff5252;">{{ loss_count }}</div>
+            <div class="stat-label">Losing Trades</div>
+        </div>
+    </div>
+    
+    <!-- Best & Worst Trade Highlights -->
+    {% if best_trade or worst_trade %}
+    <div class="dd-highlight-row">
+        {% if best_trade and best_trade.profit_loss %}
+        <div class="dd-highlight-card best">
+            <div class="dd-highlight-icon">
+                <i class="bi bi-trophy-fill"></i>
+            </div>
+            <div class="dd-highlight-info">
+                <h6>🏆 Best Trade</h6>
+                <div class="val">{{ best_trade.symbol }}</div>
+                <div class="pnl" style="color:#00e676;">+${{ '%.2f'|format(best_trade.profit_loss) }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if worst_trade and worst_trade.profit_loss and worst_trade.profit_loss < 0 %}
+        <div class="dd-highlight-card worst">
+            <div class="dd-highlight-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="dd-highlight-info">
+                <h6>📉 Worst Trade</h6>
+                <div class="val">{{ worst_trade.symbol }}</div>
+                <div class="pnl" style="color:#ff5252;">-${{ '%.2f'|format(worst_trade.profit_loss|abs) }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Trades Table -->
+    {% if trades %}
+    <div class="dd-table-card">
+        <div class="dd-table-header">
+            <h5>
+                <i class="bi bi-list-ul"></i>
+                Trade History
+            </h5>
+            <span class="dd-trade-count">{{ total_trades }} trade{{ 's' if total_trades != 1 else '' }}</span>
+        </div>
+        <div class="dd-table-wrap">
+            <table class="dd-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>P&L</th>
+                        <th>Session</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades %}
+                    <tr>
+                        <td>
+                            <span class="dd-symbol-text">{{ trade.symbol }}</span>
+                        </td>
+                        <td>
+                            <span class="dd-badge-type {{ 'buy' if trade.trade_type=='buy' else 'sell' }}">
+                                {{ trade.trade_type }}
+                            </span>
+                        </td>
+                        <td>{{ trade.entry_price }}</td>
+                        <td>{{ trade.exit_price if trade.exit_price else '<span style="color:var(--text-muted);">—</span>'|safe }}</td>
+                        <td>
+                            {% if trade.profit_loss is not none %}
+                                <span class="dd-pnl-text {% if trade.profit_loss > 0 %}dd-pnl-profit{% elif trade.profit_loss < 0 %}dd-pnl-loss{% else %}dd-pnl-even{% endif %}">
+                                    {{ '+' if trade.profit_loss > 0 else '' }}${{ '%.2f'|format(trade.profit_loss) }}
+                                </span>
+                            {% else %}
+                                <span style="color:var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="dd-session-badge">{{ trade.session if trade.session else '—' }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('user.trade_detail', trade_id=trade.id) }}" class="dd-view-btn">
+                                Details <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="dd-empty-state">
+        <div class="empty-icon">
+            <i class="bi bi-calendar-x"></i>
+        </div>
+        <h5>No Trades Recorded</h5>
+        <p>This day has no trading activity. Use the calendar to explore other days or add trades to start tracking your performance.</p>
+    </div>
+    {% endif %}
+    
+</div>

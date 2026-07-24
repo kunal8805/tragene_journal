@@ -1,0 +1,391 @@
+{% extends "base_user.html" %}
+{% block title %}{{ page_title }} - Tragene Journal{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .analyse-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .analyse-meta-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        margin-bottom: 18px;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .analyse-meta-bar .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .analyse-meta-bar .badge-cached {
+        background: rgba(139,92,246,0.15);
+        color: #8b5cf6;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+    .analyse-meta-bar .badge-fresh {
+        background: rgba(0,230,118,0.15);
+        color: #00e676;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+    .token-cost {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* ═══ Section Cards ═══ */
+    .section-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+        transition: border-color 0.25s;
+    }
+    .section-card:hover {
+        border-color: rgba(139,92,246,0.3);
+    }
+    .section-card .section-icon {
+        font-size: 1.3rem;
+        margin-right: 8px;
+    }
+    .section-card .section-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .section-card .section-body {
+        font-size: 0.88rem;
+        line-height: 1.7;
+        color: var(--text-secondary);
+    }
+    .section-card .section-body p {
+        margin-bottom: 6px;
+    }
+
+    /* ═══ Lists ═══ */
+    .insight-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .insight-list li {
+        padding: 8px 0;
+        border-bottom: 1px dashed rgba(255,255,255,0.05);
+        font-size: 0.84rem;
+        color: var(--text-secondary);
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+    }
+    .insight-list li:last-child { border-bottom: none; }
+    .insight-list .li-icon { flex-shrink: 0; margin-top: 1px; font-size: 0.85rem; }
+    .li-icon.win { color: #00e676; }
+    .li-icon.loss { color: #ff5252; }
+    .li-icon.leak { color: #ffb300; }
+    .li-icon.tip { color: #8b5cf6; }
+
+    /* ═══ Score Badge ═══ */
+    .score-display {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .score-circle {
+        width: 56px; height: 56px;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 1.5rem;
+        border: 2px solid;
+        flex-shrink: 0;
+    }
+    .score-circle.high { color: #00e676; border-color: rgba(0,230,118,0.4); background: rgba(0,230,118,0.08); }
+    .score-circle.mid { color: #ffb300; border-color: rgba(255,179,0,0.4); background: rgba(255,179,0,0.08); }
+    .score-circle.low { color: #ff5252; border-color: rgba(255,82,82,0.4); background: rgba(255,82,82,0.08); }
+    .score-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ═══ Action bar ═══ */
+    .analyse-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    .btn-reanalyse {
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        color: #fff;
+        border: none;
+        border-radius: 22px;
+        padding: 9px 20px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-reanalyse:hover {
+        box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+        transform: translateY(-1px);
+        color: #fff;
+    }
+    .btn-back {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        border-radius: 22px;
+        padding: 9px 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-back:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .data-window-warning {
+        background: rgba(255,179,0,0.08);
+        border: 1px solid rgba(255,179,0,0.25);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        font-size: 0.78rem;
+        color: #ffb300;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    .empty-state .empty-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analyse-container">
+
+    <!-- ═══ Meta Bar ═══ -->
+    <div class="analyse-meta-bar">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <span class="meta-item">
+                <i class="bi bi-calendar3"></i>
+                {% if analysis.date_range_start %}
+                    {{ analysis.date_range_start.strftime('%d %b %Y') }} — {{ analysis.date_range_end.strftime('%d %b %Y') }}
+                {% else %}
+                    Recent data
+                {% endif %}
+            </span>
+            <span class="meta-item">
+                <i class="bi bi-bar-chart"></i>
+                {{ analysis.trades_analyzed }} trades
+            </span>
+            {% if from_cache %}
+                <span class="badge-cached">📦 Cached — viewed {{ analysis.created_at.strftime('%d %b') }}</span>
+            {% else %}
+                <span class="badge-fresh">✨ Fresh analysis</span>
+            {% endif %}
+        </div>
+        <div class="token-cost" title="AI tokens used for this analysis">
+            🪙 {{ analysis.tokens_used }} tokens · ${{ "%.4f"|format(analysis.api_cost) }}
+        </div>
+    </div>
+
+    <!-- ═══ Data Window Warning ═══ -->
+    {% if analysis.data_window_note %}
+    <div class="data-window-warning">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        {{ analysis.data_window_note }}
+    </div>
+    {% endif %}
+
+    <!-- ═══ Summary ═══ -->
+    {% if analysis.summary %}
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">📊</span> Summary
+        </div>
+        <div class="section-body">{{ analysis.summary }}</div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Score (if applicable) ═══ -->
+    {% if analysis.score %}
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">📈</span> Performance Score
+        </div>
+        <div class="score-display">
+            <div class="score-circle {% if analysis.score >= 7 %}high{% elif analysis.score >= 4 %}mid{% else %}low{% endif %}">
+                {{ analysis.score }}
+            </div>
+            <span class="score-label">/ 10</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Standout Wins ═══ -->
+    {% set wins = analysis.get_standout_wins() %}
+    {% if wins %}
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">🏆</span> Standout Wins
+        </div>
+        <ul class="insight-list">
+            {% for w in wins %}
+            <li><span class="li-icon win">✅</span> {{ w }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Standout Losses ═══ -->
+    {% set losses = analysis.get_standout_losses() %}
+    {% if losses %}
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">📉</span> Standout Losses
+        </div>
+        <ul class="insight-list">
+            {% for l in losses %}
+            <li><span class="li-icon loss">❌</span> {{ l }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Money Leaks ═══ -->
+    {% set leaks = analysis.get_money_leaks() %}
+    {% if leaks %}
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">⚠️</span> Money Leaks
+        </div>
+        <ul class="insight-list">
+            {% for leak in leaks %}
+            <li><span class="li-icon leak">⚠️</span> {{ leak }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Suggestions ═══ -->
+    {% set suggestions = analysis.get_suggestions() %}
+    {% if suggestions %}
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">🎯</span> Suggestions
+        </div>
+        <ul class="insight-list">
+            {% for s in suggestions %}
+            <li><span class="li-icon tip">💡</span> {{ s }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Full Content (fallback if sections are empty) ═══ -->
+    {% if not analysis.summary and not wins and not losses and not leaks and not suggestions and analysis.content %}
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">🧠</span> Full Analysis
+        </div>
+        <div class="section-body" style="white-space: pre-wrap;">{{ analysis.content }}</div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ No data ═══ -->
+    {% if not analysis.summary and not analysis.content %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>No analysis data available yet.<br>Try adding some trades first!</p>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Actions ═══ -->
+    <div class="analyse-actions">
+        <a href="{{ url_for('user.analyse_page', page_key=page_key, sub_id=analysis.sub_id or '', force='1') }}" 
+           class="btn-reanalyse"
+           onclick="return confirm('This will use ~{{ analysis.tokens_used }} tokens to re-analyse. Continue?')">
+            🔄 Re-analyse
+        </a>
+        
+        {% if page_key == 'journal' %}
+            <a href="{{ url_for('user.journal') }}" class="btn-back">← Back to Journal</a>
+        {% elif page_key == 'analytics' %}
+            <a href="{{ url_for('user.analytics') }}" class="btn-back">← Back to Analytics</a>
+        {% elif page_key == 'calendar_day' %}
+            <a href="{{ url_for('user.calendar') }}" class="btn-back">← Back to Calendar</a>
+        {% elif page_key == 'insights' %}
+            <a href="{{ url_for('user.insights') }}" class="btn-back">← Back to Insights</a>
+        {% elif page_key == 'diary' %}
+            <a href="{{ url_for('user.diary') }}" class="btn-back">← Back to Diary</a>
+        {% elif page_key == 'goals' %}
+            <a href="{{ url_for('ai.goals_page') }}" class="btn-back">← Back to Goals</a>
+        {% elif page_key == 'dashboard' %}
+            <a href="{{ url_for('user.dashboard') }}" class="btn-back">← Back to Dashboard</a>
+        {% else %}
+            <a href="{{ url_for('user.dashboard') }}" class="btn-back">← Back</a>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

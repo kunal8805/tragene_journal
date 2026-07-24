@@ -1,0 +1,841 @@
+{% extends "base_user.html" %}
+{% set analyse_page_key = 'analytics' %}
+{% block title %}Risk Analytics - Tragene Journal{% endblock %}
+{% block page_title %}📊 Risk Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .analytics-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* ── Period Selector ── */
+    .period-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .period-tab {
+        padding: 10px 20px;
+        border-radius: 25px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s;
+        font-family: 'Space Grotesk', sans-serif;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .period-tab:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    .period-tab.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+    }
+    
+    .period-tab .pt-count {
+        font-size: 0.65rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.15);
+    }
+
+    /* ── Stats Grid ── */
+    .risk-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .risk-stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 18px;
+        text-align: center;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .risk-stat-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(79,142,247,0.3);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    
+    .risk-stat-card .rsc-icon {
+        font-size: 1.2rem;
+        margin-bottom: 6px;
+    }
+    
+    .risk-stat-card .rsc-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -1px;
+        line-height: 1;
+    }
+    
+    .risk-stat-card .rsc-label {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-top: 3px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .risk-stat-card .rsc-sub {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    
+    .rsc-top-border {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+    }
+    .rsc-top-border.green { background: linear-gradient(90deg, #00e676, #69f0ae); }
+    .rsc-top-border.red { background: linear-gradient(90deg, #ff5252, #ff8a80); }
+    .rsc-top-border.blue { background: linear-gradient(90deg, var(--accent), #6db3f2); }
+    .rsc-top-border.gold { background: linear-gradient(90deg, #ffb300, #ffc857); }
+    .rsc-top-border.purple { background: linear-gradient(90deg, #8b5cf6, #b388ff); }
+
+    /* ── Second Row Stats ── */
+    .stats-row-2 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    /* ── Consistency Gauge ── */
+    .gauge-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .gauge-circle {
+        width: 100px; height: 100px;
+        margin: 0 auto 10px;
+        position: relative;
+    }
+    
+    .gauge-circle canvas {
+        width: 100px; height: 100px;
+    }
+    
+    .gauge-label {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .gauge-sub {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+    }
+
+    /* ── Trade List ── */
+    .trade-list-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .trade-list-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .trade-list-header h5 {
+        margin: 0;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+    }
+    
+    .filter-pills {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-pill {
+        padding: 5px 12px;
+        border-radius: 18px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-body);
+        color: var(--text-secondary);
+        font-size: 0.65rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    
+    .filter-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+    
+    .trade-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+    
+    .trade-table thead th {
+        background: var(--bg-body);
+        color: var(--text-muted);
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    
+    .trade-table tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+    
+    .trade-table tbody tr {
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .trade-table tbody tr:hover {
+        background: rgba(79,142,247,0.04);
+    }
+    
+    .trade-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Badges ── */
+    .risk-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    
+    .risk-badge.low { background: rgba(0,230,118,0.1); color: #00e676; border: 1px solid rgba(0,230,118,0.2); }
+    .risk-badge.medium { background: rgba(255,179,0,0.1); color: #ffb300; border: 1px solid rgba(255,179,0,0.2); }
+    .risk-badge.high { background: rgba(255,82,82,0.1); color: #ff5252; border: 1px solid rgba(255,82,82,0.2); }
+    .risk-badge.unknown { background: rgba(139,92,246,0.1); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+    
+    .check-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    
+    .check-badge.pass { background: rgba(0,230,118,0.08); color: #00e676; }
+    .check-badge.fail { background: rgba(255,82,82,0.08); color: #ff5252; }
+    .check-badge.none { background: var(--bg-body); color: var(--text-muted); }
+
+    .symbol-text { font-weight: 700; color: var(--text-primary); font-size: 0.82rem; }
+    .pnl-text { font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+
+    /* ── Modal ── */
+    .modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .trade-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    
+    .td-item {
+        background: var(--bg-body);
+        border-radius: 10px;
+        padding: 12px 14px;
+    }
+    
+    .td-item .td-label {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .td-item .td-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-top: 2px;
+    }
+    
+    .rule-detail-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: var(--bg-body);
+        border-radius: 8px;
+        margin-bottom: 6px;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 4rem;
+        color: var(--text-muted);
+        opacity: 0.2;
+        margin-bottom: 14px;
+    }
+    
+    .empty-state h5 { color: var(--text-primary); font-weight: 700; }
+    .empty-state p { color: var(--text-muted); font-size: 0.85rem; }
+
+    @media (max-width: 992px) {
+        .risk-stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .stats-row-2 { grid-template-columns: 1fr; }
+    }
+    
+    @media (max-width: 576px) {
+        .risk-stats-grid { grid-template-columns: 1fr; }
+        .trade-list-header { flex-direction: column; align-items: flex-start; }
+        .trade-detail-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="analytics-container">
+    
+    <!-- ── Period Selector ── -->
+    <div class="period-tabs">
+        <button class="period-tab active" onclick="changePeriod('today', this)">📅 Today</button>
+        <button class="period-tab" onclick="changePeriod('week', this)">📆 This Week</button>
+        <button class="period-tab" onclick="changePeriod('month', this)">🗓️ This Month</button>
+        <button class="period-tab" onclick="changePeriod('last_month', this)">📋 Last Month</button>
+        <button class="period-tab" onclick="changePeriod('all', this)">📊 All Time</button>
+    </div>
+    
+    <!-- ── Stats Row 1 ── -->
+    <div class="risk-stats-grid">
+        <div class="risk-stat-card">
+            <div class="rsc-top-border blue"></div>
+            <div class="rsc-icon">📋</div>
+            <div class="rsc-value" id="statTotal">0</div>
+            <div class="rsc-label">Total Trades</div>
+            <div class="rsc-sub" id="statWinLoss">-</div>
+        </div>
+        
+        <div class="risk-stat-card">
+            <div class="rsc-top-border green"></div>
+            <div class="rsc-icon">💰</div>
+            <div class="rsc-value text-success" id="statPnl">$0</div>
+            <div class="rsc-label">Net P&L</div>
+            <div class="rsc-sub" id="statAvgPnl">-</div>
+        </div>
+        
+        <div class="risk-stat-card">
+            <div class="rsc-top-border gold"></div>
+            <div class="rsc-icon">🎯</div>
+            <div class="rsc-value text-warning" id="statWinRate">0%</div>
+            <div class="rsc-label">Win Rate</div>
+            <div class="rsc-sub" id="statBestStreak">-</div>
+        </div>
+        
+        <div class="risk-stat-card">
+            <div class="rsc-top-border red"></div>
+            <div class="rsc-icon">⚠️</div>
+            <div class="rsc-value text-danger" id="statHighRisk">0</div>
+            <div class="rsc-label">High Risk Trades</div>
+            <div class="rsc-sub" id="statMaxRisk">-</div>
+        </div>
+    </div>
+    
+    <!-- ── Stats Row 2 ── -->
+    <div class="stats-row-2">
+        <div class="risk-stat-card">
+            <div class="rsc-top-border purple"></div>
+            <div class="rsc-icon">📐</div>
+            <div class="rsc-value" id="statAvgRR">-</div>
+            <div class="rsc-label">Avg Risk:Reward</div>
+            <div class="rsc-sub" id="statBestRR">-</div>
+        </div>
+        
+        <div class="risk-stat-card">
+            <div class="rsc-top-border blue"></div>
+            <div class="rsc-icon">🛡️</div>
+            <div class="rsc-value text-success" id="statSLRate">0%</div>
+            <div class="rsc-label">Stop Loss Usage</div>
+            <div class="rsc-sub" id="statTPRate">-</div>
+        </div>
+        
+        <div class="gauge-card">
+            <div class="gauge-circle">
+                <canvas id="consistencyGauge" width="100" height="100"></canvas>
+            </div>
+            <div class="gauge-label" id="gaugeLabel">Consistency</div>
+            <div class="gauge-sub" id="gaugeSub">Loading...</div>
+        </div>
+    </div>
+    
+    <!-- ── Trade List ── -->
+    <div class="trade-list-card">
+        <div class="trade-list-header">
+            <h5><i class="bi bi-list-ul" style="color:var(--accent);"></i> Trade Details</h5>
+            <div class="filter-pills">
+                <button class="filter-pill active" onclick="filterSub('all', this)">All</button>
+                <button class="filter-pill" onclick="filterSub('win', this)">✅ Wins</button>
+                <button class="filter-pill" onclick="filterSub('loss', this)">❌ Losses</button>
+                <button class="filter-pill" onclick="filterSub('high', this)">⚠️ High Risk</button>
+            </div>
+        </div>
+        
+        <div class="table-wrap">
+            <table class="trade-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>P&L</th>
+                        <th>Risk %</th>
+                        <th>SL</th>
+                        <th>TP</th>
+                        <th>R:R</th>
+                        <th>Rules</th>
+                    </tr>
+                </thead>
+                <tbody id="tradeTableBody"></tbody>
+            </table>
+        </div>
+        
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <div class="empty-icon"><i class="bi bi-shield-check"></i></div>
+            <h5>No Trades Found</h5>
+            <p>No trades match the selected period and filters.</p>
+        </div>
+    </div>
+    
+</div>
+
+<!-- ── Trade Detail Modal ── -->
+<div class="modal fade" id="tradeDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 style="font-family:'Space Grotesk',sans-serif;font-weight:700;">
+                    <i class="bi bi-graph-up" style="color:var(--accent);"></i> Trade Risk Analysis
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="tradeDetailBody">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allTrades = [];
+    let filteredTrades = [];
+    let currentPeriod = 'month';
+    let currentSubFilter = 'all';
+    let tradeDetailModal;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        tradeDetailModal = new bootstrap.Modal(document.getElementById('tradeDetailModal'));
+        loadAllTrades();
+    });
+    
+    function loadAllTrades() {
+        fetch('/tools/api/all-trades-risk')
+            .then(res => res.json())
+            .then(data => {
+                allTrades = (data.trades || []).map(t => ({
+                    id: t.id,
+                    date: t.entry_date,
+                    symbol: t.symbol,
+                    type: t.trade_type,
+                    entry: t.entry_price,
+                    exit: t.exit_price,
+                    pnl: t.profit_loss,
+                    isWin: t.is_win,
+                    riskPct: t.risk_pct,
+                    riskLevel: t.risk_level,
+                    hasSL: t.has_sl,
+                    hasTP: t.has_tp,
+                    rrRatio: t.rr_ratio,
+                    passedChecks: t.passed_checks || 0,
+                    failedChecks: t.failed_checks || 0,
+                    totalChecks: t.total_checks || 0,
+                    stopLoss: t.stop_loss,
+                    takeProfit: t.take_profit,
+                    lotSize: t.lot_size,
+                    session: t.session,
+                    notes: t.notes
+                }));
+                applyPeriod();
+            });
+    }
+    
+    function changePeriod(period, btn) {
+        currentPeriod = period;
+        document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        applyPeriod();
+    }
+    
+    function applyPeriod() {
+        const now = new Date();
+        let startDate = null;
+        
+        if (currentPeriod === 'today') {
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        } else if (currentPeriod === 'week') {
+            startDate = new Date(now);
+            startDate.setDate(now.getDate() - now.getDay());
+            startDate.setHours(0,0,0,0);
+        } else if (currentPeriod === 'month') {
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (currentPeriod === 'last_month') {
+            startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+            filteredTrades = allTrades.filter(t => {
+                const d = new Date(t.date);
+                return d >= startDate && d <= endDate;
+            });
+            updateAll();
+            return;
+        }
+        
+        if (startDate) {
+            filteredTrades = allTrades.filter(t => new Date(t.date) >= startDate);
+        } else {
+            filteredTrades = [...allTrades];
+        }
+        
+        updateAll();
+    }
+    
+    function filterSub(filter, btn) {
+        currentSubFilter = filter;
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        renderTable();
+    }
+    
+    function updateAll() {
+        updateStats();
+        updateGauge();
+        renderTable();
+    }
+    
+    function updateStats() {
+        const trades = filteredTrades;
+        const total = trades.length;
+        const wins = trades.filter(t => t.isWin);
+        const losses = trades.filter(t => !t.isWin && t.pnl !== null);
+        const winRate = total > 0 ? Math.round((wins.length / total) * 100) : 0;
+        const totalPnl = trades.reduce((s, t) => s + (t.pnl || 0), 0);
+        const avgPnl = total > 0 ? totalPnl / total : 0;
+        const highRisk = trades.filter(t => t.riskLevel === 'high').length;
+        const maxRisk = trades.length > 0 ? Math.max(...trades.map(t => t.riskPct || 0)) : 0;
+        
+        // R:R
+        const tradesWithRR = trades.filter(t => t.rrRatio);
+        const avgRR = tradesWithRR.length > 0 ? 
+            (tradesWithRR.reduce((s, t) => s + t.rrRatio, 0) / tradesWithRR.length).toFixed(1) : '-';
+        const bestRR = tradesWithRR.length > 0 ? 
+            Math.max(...tradesWithRR.map(t => t.rrRatio)).toFixed(1) : '-';
+        
+        // SL/TP rates
+        const slRate = total > 0 ? Math.round((trades.filter(t => t.hasSL).length / total) * 100) : 0;
+        const tpRate = total > 0 ? Math.round((trades.filter(t => t.hasTP).length / total) * 100) : 0;
+        
+        // Streaks
+        let bestWinStreak = 0, currentStreak = 0;
+        trades.forEach(t => {
+            if (t.isWin) { currentStreak++; bestWinStreak = Math.max(bestWinStreak, currentStreak); }
+            else { currentStreak = 0; }
+        });
+        
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statWinLoss').textContent = `${wins.length}W / ${losses.length}L`;
+        document.getElementById('statPnl').textContent = (totalPnl >= 0 ? '+' : '') + '$' + Math.abs(totalPnl).toFixed(2);
+        document.getElementById('statPnl').className = 'rsc-value ' + (totalPnl >= 0 ? 'text-success' : 'text-danger');
+        document.getElementById('statAvgPnl').textContent = 'Avg: ' + (avgPnl >= 0 ? '+' : '') + '$' + Math.abs(avgPnl).toFixed(2);
+        document.getElementById('statWinRate').textContent = winRate + '%';
+        document.getElementById('statBestStreak').textContent = 'Best Streak: ' + bestWinStreak + 'W';
+        document.getElementById('statHighRisk').textContent = highRisk;
+        document.getElementById('statMaxRisk').textContent = 'Max: ' + maxRisk.toFixed(1) + '%';
+        document.getElementById('statAvgRR').textContent = avgRR !== '-' ? '1:' + avgRR : '-';
+        document.getElementById('statBestRR').textContent = bestRR !== '-' ? 'Best: 1:' + bestRR : '-';
+        document.getElementById('statSLRate').textContent = slRate + '%';
+        document.getElementById('statTPRate').textContent = 'TP: ' + tpRate + '%';
+    }
+    
+    function updateGauge() {
+        const canvas = document.getElementById('consistencyGauge');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 100, 100);
+        
+        const trades = filteredTrades;
+        const total = trades.length;
+        if (total === 0) {
+            document.getElementById('gaugeLabel').textContent = 'No Data';
+            document.getElementById('gaugeSub').textContent = 'Add trades to see consistency';
+            return;
+        }
+        
+        // Consistency = (SL usage% + TP usage% + rule pass%) / 3
+        const slRate = trades.filter(t => t.hasSL).length / total;
+        const tpRate = trades.filter(t => t.hasTP).length / total;
+        const rulesTotal = trades.reduce((s, t) => s + t.totalChecks, 0);
+        const rulesPassed = trades.reduce((s, t) => s + t.passedChecks, 0);
+        const ruleRate = rulesTotal > 0 ? rulesPassed / rulesTotal : 0;
+        const consistency = Math.round(((slRate + tpRate + ruleRate) / 3) * 100);
+        
+        // Draw gauge
+        const centerX = 50, centerY = 50, radius = 42;
+        const startAngle = Math.PI * 0.75;
+        const endAngle = Math.PI * 2.25;
+        const fillAngle = startAngle + (endAngle - startAngle) * (consistency / 100);
+        
+        // Background arc
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() || '#21262d';
+        ctx.lineWidth = 8;
+        ctx.stroke();
+        
+        // Fill arc
+        const color = consistency >= 80 ? '#00e676' : consistency >= 50 ? '#ffb300' : '#ff5252';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, fillAngle);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        
+        // Center text
+        ctx.fillStyle = '#e6edf3';
+        ctx.font = 'bold 22px "Space Grotesk", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(consistency + '%', centerX, centerY);
+        
+        document.getElementById('gaugeLabel').textContent = 'Consistency';
+        document.getElementById('gaugeSub').textContent = 
+            consistency >= 80 ? 'Excellent! 🏆' : consistency >= 50 ? 'Good 📈' : 'Needs Work 📉';
+    }
+    
+    function renderTable() {
+        const tbody = document.getElementById('tradeTableBody');
+        let trades = [...filteredTrades];
+        
+        if (currentSubFilter === 'win') trades = trades.filter(t => t.isWin);
+        else if (currentSubFilter === 'loss') trades = trades.filter(t => !t.isWin);
+        else if (currentSubFilter === 'high') trades = trades.filter(t => t.riskLevel === 'high');
+        
+        if (trades.length === 0) {
+            document.getElementById('emptyState').style.display = '';
+            tbody.innerHTML = '';
+            return;
+        }
+        document.getElementById('emptyState').style.display = 'none';
+        
+        tbody.innerHTML = trades.map(t => {
+            const dateStr = new Date(t.date).toLocaleDateString('en-US', { day:'2-digit', month:'short', year:'2-digit' });
+            const typeBadge = t.type === 'buy' 
+                ? '<span style="color:#00e676;font-weight:700;">BUY</span>' 
+                : '<span style="color:#ff5252;font-weight:700;">SELL</span>';
+            const pnlClass = t.pnl > 0 ? 'text-success' : t.pnl < 0 ? 'text-danger' : 'text-warning';
+            const pnlDisplay = t.pnl !== null ? (t.pnl >= 0 ? '+' : '') + '$' + Math.abs(t.pnl).toFixed(2) : '-';
+            
+            let riskHtml = '<span class="risk-badge unknown">N/A</span>';
+            if (t.riskPct !== null && t.riskPct !== undefined) {
+                riskHtml = `<span class="risk-badge ${t.riskLevel}">${t.riskPct}%</span>`;
+            }
+            
+            const slIcon = t.hasSL ? '✅' : '❌';
+            const tpIcon = t.hasTP ? '✅' : '⚠️';
+            const rrDisplay = t.rrRatio ? '1:' + t.rrRatio : '-';
+            
+            let rulesHtml = '<span class="check-badge none">-</span>';
+            if (t.totalChecks > 0) {
+                rulesHtml = t.failedChecks === 0 
+                    ? `<span class="check-badge pass">✅ ${t.passedChecks}/${t.totalChecks}</span>`
+                    : `<span class="check-badge fail">❌ ${t.failedChecks} fail</span>`;
+            }
+            
+            return `<tr onclick="openTradeDetail(${t.id})" style="cursor:pointer;">
+                <td style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text-muted);">${dateStr}</td>
+                <td><span class="symbol-text">${t.symbol}</span></td>
+                <td>${typeBadge}</td>
+                <td style="font-family:'JetBrains Mono',monospace;">${t.entry}</td>
+                <td style="font-family:'JetBrains Mono',monospace;">${t.exit || '-'}</td>
+                <td><span class="pnl-text ${pnlClass}">${pnlDisplay}</span></td>
+                <td>${riskHtml}</td>
+                <td class="text-center">${slIcon}</td>
+                <td class="text-center">${tpIcon}</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;">${rrDisplay}</td>
+                <td>${rulesHtml}</td>
+            </tr>`;
+        }).join('');
+    }
+    
+    function openTradeDetail(tradeId) {
+        const trade = allTrades.find(t => t.id === tradeId);
+        if (!trade) return;
+        
+        const body = document.getElementById('tradeDetailBody');
+        
+        const pnlClass = trade.pnl > 0 ? 'text-success' : trade.pnl < 0 ? 'text-danger' : '';
+        const riskLevelLabel = trade.riskLevel === 'high' ? '🔴 High' : trade.riskLevel === 'medium' ? '🟡 Medium' : trade.riskLevel === 'low' ? '🟢 Low' : '⚪ Unknown';
+        
+        body.innerHTML = `
+            <div class="trade-detail-grid">
+                <div class="td-item">
+                    <div class="td-label">Symbol</div>
+                    <div class="td-value">${trade.symbol}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Type</div>
+                    <div class="td-value" style="color:${trade.type==='buy'?'#00e676':'#ff5252'};">${trade.type.toUpperCase()}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Entry Price</div>
+                    <div class="td-value">${trade.entry}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Exit Price</div>
+                    <div class="td-value">${trade.exit || '-'}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">P&L</div>
+                    <div class="td-value ${pnlClass}">${trade.pnl !== null ? (trade.pnl>=0?'+':'')+'$'+Math.abs(trade.pnl).toFixed(2) : '-'}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Risk Level</div>
+                    <div class="td-value">${riskLevelLabel} ${trade.riskPct ? '('+trade.riskPct+'%)' : ''}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Stop Loss</div>
+                    <div class="td-value">${trade.stopLoss || 'Not Set ❌'}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Take Profit</div>
+                    <div class="td-value">${trade.takeProfit || 'Not Set ⚠️'}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">R:R Ratio</div>
+                    <div class="td-value">${trade.rrRatio ? '1:'+trade.rrRatio : 'N/A'}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Lot Size</div>
+                    <div class="td-value">${trade.lotSize || '-'}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Session</div>
+                    <div class="td-value">${trade.session || '-'}</div>
+                </div>
+                <div class="td-item">
+                    <div class="td-label">Notes</div>
+                    <div class="td-value" style="font-size:0.8rem;">${trade.notes || '-'}</div>
+                </div>
+            </div>
+            
+            <h6 style="margin-top:16px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;">
+                <i class="bi bi-shield-check" style="color:var(--accent);"></i> Rule Compliance
+            </h6>
+            <div style="margin-top:8px;">
+                ${trade.totalChecks > 0 ? `
+                    <div class="rule-detail-row">
+                        <span>Rules Checked</span>
+                        <strong>${trade.totalChecks}</strong>
+                    </div>
+                    <div class="rule-detail-row">
+                        <span>✅ Passed</span>
+                        <strong style="color:#00e676;">${trade.passedChecks}</strong>
+                    </div>
+                    <div class="rule-detail-row">
+                        <span>❌ Failed</span>
+                        <strong style="color:#ff5252;">${trade.failedChecks}</strong>
+                    </div>
+                ` : '<p class="text-muted" style="font-size:0.8rem;">No rules audited for this trade. Go to Rules page to audit.</p>'}
+            </div>
+        `;
+        
+        tradeDetailModal.show();
+    }
+</script>
+{% endblock %}

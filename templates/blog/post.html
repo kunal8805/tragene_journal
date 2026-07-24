@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{{ blog.meta_title or blog.title }} | Tragene Journal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .post-header {
+        padding: 60px 0 40px;
+        border-bottom: 1px solid #21262d;
+    }
+    .post-meta {
+        color: #8b949e;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .post-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #c9d1d9;
+    }
+    .post-content h2, .post-content h3 {
+        color: #e6edf3;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        font-weight: 700;
+    }
+    .post-content p {
+        margin-bottom: 20px;
+    }
+    .post-content img {
+        max-width: 100%;
+        border-radius: 12px;
+        margin: 30px 0;
+    }
+    .post-content blockquote {
+        border-left: 4px solid var(--accent);
+        padding-left: 20px;
+        color: #8b949e;
+        font-style: italic;
+        background: rgba(79, 142, 247, 0.05);
+        padding: 20px;
+        border-radius: 0 8px 8px 0;
+    }
+    .author-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-top: 60px;
+    }
+    .author-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #30363d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #8b949e;
+    }
+    .toc-sticky {
+        position: sticky;
+        top: 100px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+    }
+    .toc-sticky ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    .toc-sticky a {
+        color: #8b949e;
+        text-decoration: none;
+        display: block;
+        padding: 6px 0;
+        font-size: 0.9rem;
+        transition: color 0.2s;
+    }
+    .toc-sticky a:hover {
+        color: var(--accent);
+    }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.url }}"
+  },
+  "headline": "{{ blog.title }}",
+  "description": "{{ blog.meta_description or blog.excerpt }}",
+  "image": "{{ blog.featured_image or request.url_root + 'static/images/default-blog.jpg' }}",  
+  "author": {
+    "@type": "Person",
+    "name": "{{ blog.author.username }}"
+  },  
+  "publisher": {
+    "@type": "Organization",
+    "name": "Tragene Journal",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{{ request.url_root }}static/images/logo.png"
+    }
+  },
+  "datePublished": "{{ blog.published_at.isoformat() if blog.published_at else blog.created_at.isoformat() }}",
+  "dateModified": "{{ blog.updated_at.isoformat() }}"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="post-header">
+                {% if blog.category %}
+                <a href="{{ url_for('blog.category', slug=blog.category.slug) }}" class="badge bg-primary mb-3 text-decoration-none">{{ blog.category.name }}</a>
+                {% endif %}
+                <h1 class="fw-bold text-light mb-4">{{ blog.title }}</h1>
+                <div class="post-meta">
+                    <span><i class="bi bi-person-circle"></i> {{ blog.author.username }}</span>
+                    <span><i class="bi bi-calendar3"></i> {{ blog.published_at.strftime('%b %d, %Y') if blog.published_at else blog.created_at.strftime('%b %d, %Y') }}</span>
+                    <span><i class="bi bi-clock"></i> {{ blog.estimated_reading_time }} min read</span>
+                    <span><i class="bi bi-eye"></i> {{ blog.views }} views</span>
+                </div>
+            </div>
+            
+            {% if blog.featured_image %}
+            <img src="{{ blog.featured_image }}" class="img-fluid rounded-4 my-4 w-100" alt="{{ blog.title }}" style="max-height: 500px; object-fit: cover;">
+            {% endif %}
+            
+            <div class="post-content mt-4">
+                {# In a real scenario, this would be markdown converted to HTML safely #}
+                {{ blog.content|safe }}
+            </div>
+            
+            <div class="author-card">
+                <div class="author-avatar">
+                    <i class="bi bi-person"></i>
+                </div>
+                <div>
+                    <h5 class="text-light mb-1">Written by {{ blog.author.username }}</h5>
+                    <p class="text-muted mb-0">Professional Trader and Technical Analyst at Tragene Journal.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 d-none d-lg-block">
+            <div class="toc-sticky">
+                <h5 class="text-light mb-3">Table of Contents</h5>
+                <ul>
+                    <li><a href="#">Introduction</a></li>
+                    <li><a href="#">Key Trading Strategies</a></li>
+                    <li><a href="#">Risk Management Rules</a></li>
+                    <li><a href="#">Conclusion</a></li>
+                </ul>
+                
+                <div class="mt-4 pt-4 border-top border-dark">
+                    <h6 class="text-light mb-3">Share this post</h6>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-sm btn-outline-secondary"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" class="btn btn-sm btn-outline-secondary"><i class="bi bi-linkedin"></i></a>
+                        <a href="#" class="btn btn-sm btn-outline-secondary"><i class="bi bi-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

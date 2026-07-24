@@ -1,0 +1,941 @@
+{% extends "base_user.html" %}
+{% set analyse_page_key = 'diary' %}
+
+{% block title %}Trading Diary - Tragene Journal{% endblock %}
+
+{% block page_title %}Trading Diary{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --leather-dark:   #2c1b12;
+        --leather-mid:    #4a2e1c;
+        --leather-light:  #6b4426;
+        --brass:          #b8935a;
+        --brass-bright:   #d9b579;
+        --parchment:      #ecdfc0;
+        --parchment-lo:   #e2d3ac;
+        --parchment-hi:   #f6ecd4;
+        --ink:            #2a2117;
+        --ink-soft:       #4a3d2c;
+        --ink-faint:      #8a7a5c;
+        --wax:            #7c2b28;
+        --wax-dark:       #5a1e1c;
+        --rule:           #c9b585;
+    }
+
+    .diary-scope * { color: var(--ink) !important; }
+
+    body { background: #1b120b; }
+
+    /* ---------- outer wrapper / desk ---------- */
+    .diary-wrapper{
+        max-width: 960px;
+        margin: 24px auto 60px;
+        position: relative;
+    }
+
+    .diary-wrapper::before{
+        content:'';
+        position:absolute;
+        left:5%; right:5%; bottom:-30px; height:40px;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,0.55), transparent 70%);
+        filter: blur(4px);
+        z-index:0;
+    }
+
+    /* ---------- Tab Ribbon ---------- */
+    .tab-ribbon-wrap{
+        display: flex;
+        gap: 0;
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 10;
+    }
+    .tab-ribbon{
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.15rem;
+        letter-spacing: 2px;
+        font-weight: 600;
+        color: #8a7a5c !important;
+        background: rgba(44, 27, 18, 0.7);
+        border: 2px solid rgba(184, 147, 90, 0.4);
+        padding: 14px 32px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        backdrop-filter: blur(4px);
+    }
+    .tab-ribbon:first-child {
+        border-radius: 8px 0 0 8px;
+        border-right: none;
+    }
+    .tab-ribbon:last-child {
+        border-radius: 0 8px 8px 0;
+    }
+    .tab-ribbon:hover {
+        color: #d9b579 !important;
+        border-color: rgba(184, 147, 90, 0.8);
+        background: rgba(44, 27, 18, 0.9);
+    }
+    .tab-ribbon.active {
+        background: linear-gradient(135deg, #5a1e1c 0%, #7c2b28 50%, #5a1e1c 100%);
+        color: #f6ecd4 !important;
+        border-color: #b8935a;
+        box-shadow: 0 0 20px rgba(124, 43, 40, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
+        transform: translateY(-2px);
+    }
+    .tab-ribbon.active::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 10%;
+        right: 10%;
+        height: 3px;
+        background: #d9b579;
+        border-radius: 2px;
+    }
+
+    /* ---------- the book / cover ---------- */
+    .diary-book{
+        position:relative;
+        background:
+            linear-gradient(100deg, rgba(255,255,255,0.06) 0%, transparent 18%),
+            radial-gradient(circle at 15% 10%, rgba(255,255,255,0.05), transparent 40%),
+            linear-gradient(135deg, var(--leather-light) 0%, var(--leather-mid) 35%, var(--leather-dark) 75%, var(--leather-mid) 100%);
+        border-radius: 6px 22px 22px 6px;
+        box-shadow:
+            0 30px 70px rgba(0,0,0,0.55),
+            0 8px 18px rgba(0,0,0,0.4),
+            inset 0 0 0 1px rgba(0,0,0,0.4);
+        padding: 14px;
+    }
+
+    .diary-book::after{
+        content:'';
+        position:absolute; inset:0;
+        border-radius: 6px 22px 22px 6px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        mix-blend-mode: overlay;
+        opacity:0.5;
+        pointer-events:none;
+    }
+
+    .diary-book-stitch{
+        position:absolute;
+        inset: 9px;
+        border: 1.5px dashed rgba(216,181,121,0.35);
+        border-radius: 4px 18px 18px 4px;
+        pointer-events:none;
+    }
+
+    .brass-corner{
+        position:absolute; width:34px; height:34px; z-index:3; pointer-events:none;
+        background:
+            radial-gradient(circle at 30% 30%, var(--brass-bright), var(--brass) 55%, #7a5c33 100%);
+        clip-path: polygon(0 0, 100% 0, 0 100%);
+        box-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        opacity:0.9;
+    }
+    .brass-corner.tl{ top:6px; left:6px; }
+    .brass-corner.tr{ top:6px; right:6px; transform: scaleX(-1); }
+    .brass-corner.bl{ bottom:6px; left:6px; transform: scaleY(-1); }
+    .brass-corner.br{ bottom:6px; right:6px; transform: scale(-1,-1); }
+
+    .diary-spine{
+        position:absolute; left:0; top:14px; bottom:14px; width:16px;
+        background: linear-gradient(90deg, rgba(0,0,0,0.55), rgba(0,0,0,0.1) 60%, transparent);
+        border-radius: 6px 0 0 6px;
+        z-index:2;
+    }
+
+    /* ---------- pages ---------- */
+    .diary-pages{
+        background: var(--parchment-lo);
+        margin: 4px 30px 4px 4px;
+        border-radius: 0 14px 14px 0;
+        min-height: 640px;
+        box-shadow: inset 0 0 30px rgba(0,0,0,0.18);
+        position: relative;
+    }
+
+    .diary-paper{
+        background-color: var(--parchment);
+        margin: 22px;
+        padding: 34px 30px 30px 62px;
+        border-radius: 3px;
+        min-height: 560px;
+        position: relative;
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.4) inset,
+            0 12px 24px rgba(0,0,0,0.15);
+    }
+
+    .diary-paper::after{
+        content:'';
+        position:absolute; inset:0; border-radius:3px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+        mix-blend-mode:multiply;
+        pointer-events:none;
+    }
+
+    .diary-paper::before{
+        content:'';
+        position:absolute;
+        left: 48px; top:0; bottom:0; width:1.5px;
+        background: rgba(124,43,40,0.35);
+    }
+
+    .diary-paper .deckle{
+        position:absolute; top:-6px; left:0; right:0; height:12px;
+        background: repeating-linear-gradient(100deg, transparent 0 6px, rgba(0,0,0,0.06) 6px 8px);
+        opacity:0.5; pointer-events:none;
+    }
+
+    .diary-heading{
+        font-family:'Cormorant Garamond', serif;
+        font-size: 1.7rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: var(--wax-dark) !important;
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 10px;
+        margin-bottom: 22px;
+        display:flex;
+        align-items:baseline;
+        justify-content:space-between;
+    }
+    .diary-heading .folio{
+        font-family:'EB Garamond', serif;
+        font-style: italic;
+        font-size: 0.85rem;
+        color: var(--ink-faint) !important;
+    }
+
+    .diary-label{
+        font-family:'EB Garamond', serif;
+        font-variant: small-caps;
+        letter-spacing: 1.5px;
+        font-size: 1rem;
+        color: var(--wax-dark) !important;
+        margin-bottom: 8px;
+        display:flex;
+        align-items:center;
+        gap: 6px;
+    }
+    .diary-label i{ color: var(--brass) !important; }
+
+    /* Screenshot label — distinct color */
+    .diary-label.screenshot-label {
+        color: #8b5cf6 !important;
+    }
+    .diary-label.screenshot-label i { color: #a78bfa !important; }
+
+    .diary-input{
+        background: transparent !important;
+        border: none;
+        border-bottom: 1.5px solid var(--rule) !important;
+        border-radius: 0;
+        padding: 8px 4px;
+        font-family:'Caveat', cursive;
+        font-size: 1.35rem;
+        color: var(--ink) !important;
+        width: 100%;
+    }
+    .diary-input:focus{
+        outline:none;
+        border-bottom-color: var(--wax) !important;
+        background: rgba(255,255,255,0.25) !important;
+    }
+    .diary-input::placeholder{ color: var(--ink-faint) !important; font-family:'EB Garamond', serif; font-style:italic; font-size:1rem; }
+
+    .diary-textarea{
+        background: transparent !important;
+        border:none !important;
+        font-family:'Caveat', cursive;
+        font-size: 1.55rem;
+        line-height: 33px;
+        color: var(--ink) !important;
+        width: 100%;
+        min-height: 320px;
+        padding: 3px 4px;
+        resize: vertical;
+    }
+    .diary-textarea:focus{ outline:none; }
+    .diary-textarea::placeholder{ color: var(--ink-faint) !important; font-family:'EB Garamond', serif; font-style: italic; font-size: 1.05rem; }
+
+    /* ---------- buttons ---------- */
+    .wax-btn{
+        font-family:'Cormorant Garamond', serif;
+        font-size: 1.05rem;
+        letter-spacing: 1px;
+        background:
+            radial-gradient(circle at 35% 30%, #9a3c38, var(--wax) 55%, var(--wax-dark) 100%);
+        color: var(--parchment-hi) !important;
+        border: none;
+        padding: 11px 30px;
+        border-radius: 50px;
+        box-shadow: 0 3px 0 var(--wax-dark), 0 6px 14px rgba(0,0,0,0.35);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .wax-btn:hover{ transform: translateY(-1px); box-shadow: 0 4px 0 var(--wax-dark), 0 10px 18px rgba(0,0,0,0.4); }
+    .wax-btn:active{ transform: translateY(1px); box-shadow: 0 1px 0 var(--wax-dark); }
+
+    .quill-btn{
+        font-family:'EB Garamond', serif;
+        font-style: italic;
+        letter-spacing: 0.5px;
+        background: transparent;
+        border: 1.5px solid var(--wax-dark);
+        color: var(--wax-dark) !important;
+        padding: 10px 26px;
+        border-radius: 50px;
+        transition: all 0.2s;
+    }
+    .quill-btn:hover{ background: var(--wax-dark); color: var(--parchment-hi) !important; }
+
+    /* ═══ Glowing Auto-Write Button ═══ */
+    .btn-auto-write {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 0.92rem;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9, #a855f7, #6d28d9);
+        background-size: 300% 300%;
+        color: #f6ecd4 !important;
+        border: 1.5px solid rgba(168,85,247,0.5);
+        padding: 9px 22px;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s;
+        animation: autoWriteGlow 2.2s ease-in-out infinite, gradientShift 5s ease infinite;
+    }
+    .btn-auto-write:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 24px rgba(139,92,246,0.7), 0 0 48px rgba(109,40,217,0.4);
+        animation: none;
+    }
+    .btn-auto-write:active { transform: translateY(0) scale(0.97); }
+    .btn-auto-write:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        animation: gradientShift 5s ease infinite;
+    }
+    .btn-auto-write .sparkle-icon {
+        display: inline-block;
+        animation: sparkleSpin 2s linear infinite;
+    }
+    @keyframes autoWriteGlow {
+        0%, 100% { box-shadow: 0 0 8px rgba(139,92,246,0.4), 0 0 0 rgba(139,92,246,0); }
+        50% { box-shadow: 0 0 22px rgba(139,92,246,0.85), 0 0 38px rgba(168,85,247,0.5); }
+    }
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    @keyframes sparkleSpin {
+        0% { transform: rotate(0deg) scale(1); }
+        50% { transform: rotate(180deg) scale(1.2); }
+        100% { transform: rotate(360deg) scale(1); }
+    }
+
+    .elite-lock-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        background: rgba(255,179,0,0.15);
+        color: #ffb300 !important;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        border: 1px solid rgba(255,179,0,0.3);
+    }
+
+    /* ═══ Writing Overlay ═══ */
+    .auto-write-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(236, 223, 192, 0.9);
+        z-index: 20;
+        border-radius: 3px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .auto-write-overlay.show { display: flex; }
+
+    .writing-scene { text-align: center; }
+    .writing-quill {
+        font-size: 2.8rem;
+        animation: quillWrite 1.4s ease-in-out infinite;
+        display: block;
+        margin-bottom: 16px;
+    }
+    @keyframes quillWrite {
+        0%, 100% { transform: rotate(-8deg) translateY(0); }
+        25% { transform: rotate(4deg) translateY(-8px); }
+        50% { transform: rotate(-3deg) translateY(-4px); }
+        75% { transform: rotate(6deg) translateY(-10px); }
+    }
+
+    .ink-drops { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+    .ink-drop {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--wax-dark);
+        animation: inkFall 1.6s ease-in-out infinite;
+    }
+    .ink-drop:nth-child(2) { animation-delay: 0.3s; }
+    .ink-drop:nth-child(3) { animation-delay: 0.6s; }
+    .ink-drop:nth-child(4) { animation-delay: 0.9s; }
+    .ink-drop:nth-child(5) { animation-delay: 1.2s; }
+    @keyframes inkFall {
+        0%, 100% { opacity: 0; transform: translateY(-10px); }
+        30% { opacity: 1; }
+        70% { opacity: 0.5; transform: translateY(6px); }
+    }
+
+    .writing-text {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.3rem;
+        color: var(--wax-dark) !important;
+        letter-spacing: 0.5px;
+    }
+    .writing-sub {
+        font-family: 'EB Garamond', serif;
+        font-style: italic;
+        font-size: 0.85rem;
+        color: var(--ink-soft) !important;
+        margin-top: 6px;
+        min-height: 20px;
+        transition: opacity 0.3s;
+    }
+
+    .diary-textarea.flash-highlight {
+        background: rgba(184, 147, 90, 0.25) !important;
+        transition: background 0.6s ease;
+    }
+
+    /* mood stamps */
+    .mood-stamp{
+        font-family:'Cormorant Garamond', serif;
+        font-size: 0.95rem;
+        border: 1.5px solid var(--ink-faint);
+        color: var(--ink-soft) !important;
+        background: transparent;
+        padding: 8px 16px;
+        border-radius: 30px;
+        letter-spacing: 0.5px;
+        transform: rotate(calc(var(--tilt, 0) * 1deg));
+        transition: all 0.2s;
+        position: relative;
+    }
+    .mood-stamp:hover{ border-color: var(--wax); color: var(--wax-dark) !important; }
+    .mood-stamp.active{
+        border-color: var(--wax-dark);
+        color: var(--wax-dark) !important;
+        background: rgba(124,43,40,0.08);
+        box-shadow: 0 0 0 2px rgba(124,43,40,0.15);
+    }
+    .mood-stamp.active::after{
+        content:'✓ inked';
+        position:absolute; bottom:-16px; left:50%; transform: translateX(-50%);
+        font-family:'Caveat', cursive; font-size:0.8rem; color: var(--wax-dark) !important; white-space:nowrap;
+    }
+
+    /* ---------- entry list ---------- */
+    .ledger-header{
+        display:grid;
+        grid-template-columns: 110px 1fr 120px;
+        gap: 12px;
+        font-family:'EB Garamond', serif;
+        font-variant: small-caps;
+        letter-spacing: 1px;
+        font-size: 0.85rem;
+        color: var(--ink-faint) !important;
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 6px;
+        margin-bottom: 6px;
+    }
+
+    .diary-entry-card{
+        background: rgba(255,255,255,0.28);
+        border: none;
+        border-bottom: 1px solid var(--rule);
+        border-radius: 0;
+        padding: 16px 8px;
+        margin-bottom: 0;
+        transition: background 0.2s;
+        display:grid;
+        grid-template-columns: 110px 1fr 120px;
+        gap: 12px;
+        align-items:start;
+    }
+    .diary-entry-card:hover{ background: rgba(255,255,255,0.5); }
+
+    .diary-entry-date{
+        font-family:'Cormorant Garamond', serif;
+        font-weight:600;
+        color: var(--wax-dark) !important;
+        font-size: 1rem;
+    }
+    .diary-entry-card h5{
+        font-family:'Caveat', cursive;
+        font-size: 1.4rem;
+        color: var(--ink) !important;
+        margin-bottom: 3px;
+    }
+    .diary-entry-preview{
+        font-family:'EB Garamond', serif;
+        font-size: 0.92rem;
+        color: var(--ink-soft) !important;
+        line-height: 1.5;
+    }
+    .diary-entry-meta{
+        font-family:'EB Garamond', serif;
+        font-size: 0.82rem;
+        font-style: italic;
+        color: var(--ink-faint) !important;
+        text-align:right;
+    }
+
+    /* ---------- image uploads ---------- */
+    .image-upload-area{ display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; }
+    .image-upload-box{
+        width: 96px; height: 96px;
+        border: 1.5px dashed var(--brass);
+        border-radius: 4px;
+        display:flex; align-items:center; justify-content:center;
+        background: rgba(255,255,255,0.2);
+        transition: all 0.2s;
+    }
+    .image-upload-box:hover{ border-color: var(--wax); background: rgba(255,255,255,0.35); }
+    .image-upload-box i{ font-size: 1.7rem; color: var(--brass) !important; }
+
+    .image-preview{
+        width: 96px; height: 96px; object-fit: cover;
+        border-radius: 2px;
+        border: 3px solid var(--parchment-hi);
+        outline: 1px solid var(--ink-faint);
+        box-shadow: 3px 3px 8px rgba(0,0,0,0.35);
+        transform: rotate(calc(var(--tilt, -2) * 1deg));
+    }
+
+    .remove-image-btn{
+        position:absolute; top:-8px; right:-8px;
+        background: var(--wax-dark); color:#f6ecd4 !important;
+        border:none; border-radius:50%;
+        width:22px; height:22px; font-size:12px;
+        display:flex; align-items:center; justify-content:center; z-index:5;
+    }
+
+    .modal-image-wrapper{ position:relative; display:inline-block; }
+    .modal-image{
+        max-width: 190px;
+        border-radius: 2px;
+        border: 3px solid var(--parchment-hi);
+        outline: 1px solid var(--ink-faint);
+        transition: transform 0.2s;
+    }
+    .modal-image:hover{ transform: scale(1.04) rotate(-1deg); }
+
+    .image-overlay{
+        display:none; position:fixed; inset:0; background: rgba(10,6,3,0.92);
+        z-index:9999; align-items:center; justify-content:center;
+    }
+    .image-overlay.show{ display:flex; }
+    .image-overlay img{ max-width:90%; max-height:90vh; border-radius:4px; box-shadow:0 0 60px rgba(0,0,0,0.6); border: 4px solid var(--parchment-hi); }
+    .image-overlay .close-btn{ position:absolute; top:20px; right:40px; color:#f6ecd4 !important; font-size:38px; }
+
+    small.diary-hint{
+        color: var(--ink-faint) !important;
+        font-family:'EB Garamond', serif;
+        font-style: italic;
+    }
+
+    .empty-page{
+        text-align:center; padding: 60px 20px;
+        font-family:'Cormorant Garamond', serif;
+        color: var(--ink-faint) !important;
+    }
+    .empty-page i{ font-size: 2.4rem; color: var(--brass) !important; }
+    .empty-page p{ margin-top:14px; font-family:'Caveat', cursive; font-size:1.3rem; }
+
+    @media (max-width: 768px){
+        .diary-paper{ margin:12px; padding: 28px 16px 22px 38px; }
+        .diary-paper::before{ left: 26px; }
+        .tab-ribbon-wrap{ flex-direction: column; }
+        .tab-ribbon:first-child { border-radius: 8px 8px 0 0; border-right: 2px solid rgba(184, 147, 90, 0.4); border-bottom: none; }
+        .tab-ribbon:last-child { border-radius: 0 0 8px 8px; }
+        .tab-ribbon{ font-size:0.95rem; padding:10px 20px; }
+        .ledger-header{ display:none; }
+        .diary-entry-card{ grid-template-columns: 1fr; }
+        .diary-entry-meta{ text-align:left; }
+        .btn-auto-write { font-size: 0.78rem; padding: 7px 16px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="diary-wrapper diary-scope">
+
+    <div class="tab-ribbon-wrap">
+        <button class="tab-ribbon active" id="newEntryTab" onclick="showNewEntry()">New Entry</button>
+        <button class="tab-ribbon" id="viewEntriesTab" onclick="showEntries()">My Entries</button>
+    </div>
+
+    <div class="diary-book">
+        <div class="diary-book-stitch"></div>
+        <span class="brass-corner tl"></span>
+        <span class="brass-corner tr"></span>
+        <span class="brass-corner bl"></span>
+        <span class="brass-corner br"></span>
+        <div class="diary-spine"></div>
+
+        <div class="diary-pages">
+            <div class="diary-paper">
+                <div class="deckle"></div>
+
+                <!-- Auto-Write Loading Overlay -->
+                <div class="auto-write-overlay" id="autoWriteOverlay">
+                    <div class="writing-scene">
+                        <span class="writing-quill">🪶</span>
+                        <div class="writing-text">The quill is writing...</div>
+                        <div class="writing-sub" id="autoWriteStatus">Reading today's trades...</div>
+                        <div class="ink-drops">
+                            <span class="ink-drop"></span><span class="ink-drop"></span>
+                            <span class="ink-drop"></span><span class="ink-drop"></span>
+                            <span class="ink-drop"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Entry -->
+                <div id="newEntrySection">
+                    <div class="diary-heading">
+                        <span>Today's Page</span>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if current_user.subscription_tier in ['enterprise', 'elite'] %}
+                            <button type="button" class="btn-auto-write" id="btnAutoWrite" onclick="autoWriteDiary()" title="Let AI write your diary based on today's trades">
+                                <span class="sparkle-icon">✨</span> Auto-Write with AI
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn-auto-write" onclick="showEliteUpgradeAlert()" title="Elite feature" style="opacity:0.6;">
+                                <span class="sparkle-icon">✨</span> Auto-Write with AI
+                            </button>
+                            <span class="elite-lock-badge">🔒 ELITE</span>
+                            {% endif %}
+                            <span class="folio" id="folioDate"></span>
+                        </div>
+                    </div>
+
+                    <form id="diaryForm" enctype="multipart/form-data">
+                        <div class="row mb-4">
+                            <div class="col-sm-5">
+                                <label class="diary-label"><i class="bi bi-calendar-heart"></i> Date</label>
+                                <input type="date" class="diary-input" id="entryDate">
+                            </div>
+                            <div class="col-sm-7">
+                                <label class="diary-label"><i class="bi bi-feather"></i> Title</label>
+                                <input type="text" class="diary-input" id="entryTitle" placeholder="A headline for the day...">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="diary-label"><i class="bi bi-journal-text"></i> Reflection</label>
+                            <textarea class="diary-textarea" id="entryContent" placeholder="Dear diary,&#10;&#10;The market opened and I..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="diary-label screenshot-label"><i class="bi bi-paperclip"></i> Attach screenshots (up to 3)</label>
+                            <div class="image-upload-area" id="imageUploadArea"></div>
+                            <small class="diary-hint">Pin a chart or setup you want to remember.</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="diary-label"><i class="bi bi-droplet"></i> Ink your mood</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="mood-stamp" data-mood="confident" style="--tilt:-2">Confident</button>
+                                <button type="button" class="mood-stamp" data-mood="cautious" style="--tilt:1">Cautious</button>
+                                <button type="button" class="mood-stamp" data-mood="frustrated" style="--tilt:-1">Frustrated</button>
+                                <button type="button" class="mood-stamp" data-mood="excited" style="--tilt:2">Excited</button>
+                                <button type="button" class="mood-stamp" data-mood="neutral" style="--tilt:0">Neutral</button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-3 mt-4">
+                            <button type="submit" class="wax-btn"><i class="bi bi-bookmark-check"></i> Seal this page</button>
+                            <button type="button" class="quill-btn" onclick="clearForm()">Start over</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Entries -->
+                <div id="viewEntriesSection" style="display:none;">
+                    <div class="diary-heading">
+                        <span>Bound Pages</span>
+                        <span class="folio" id="entryCountLabel"></span>
+                    </div>
+                    <div class="ledger-header">
+                        <span>Date</span><span>Entry</span><span style="text-align:right;">Mood</span>
+                    </div>
+                    <div id="diaryEntriesList"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Entry Modal -->
+<div class="modal fade" id="viewEntryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable diary-scope">
+        <div class="modal-content" style="background: var(--parchment); border: 1px solid var(--leather-mid); border-radius:6px;">
+            <div class="modal-header" style="background: linear-gradient(180deg, var(--leather-light) 0%, var(--leather-dark) 100%); border-bottom: 2px solid var(--brass);">
+                <h5 class="modal-title" style="color:#f2e6c8 !important; font-family:'Cormorant Garamond', serif;">
+                    <span id="modalEntryDate"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="background: var(--parchment);">
+                <h3 id="modalEntryTitle" style="font-family:'Cormorant Garamond', serif; color:var(--wax-dark) !important; border-bottom:1px solid var(--rule); padding-bottom:10px;"></h3>
+                <p id="modalEntryContent" style="font-family:'Caveat', cursive; font-size:1.4rem; line-height:33px; color:var(--ink) !important; white-space:pre-wrap;"></p>
+                <div id="modalEntryImages" class="d-flex gap-3 flex-wrap mt-3"></div>
+                <div class="mt-4">
+                    <span id="modalEntryMood" style="font-family:'Cormorant Garamond', serif; border:1.5px solid var(--wax-dark); color:var(--wax-dark) !important; padding:6px 16px; border-radius:30px;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="image-overlay" id="imageOverlay" onclick="closeImageOverlay()">
+    <span class="close-btn">&times;</span>
+    <img id="overlayImage" src="" alt="Expanded image">
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const MAX_IMAGES = 3;
+    let imageFiles = [];
+    let selectedMood = '';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setupImageUpload();
+        loadEntries();
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('entryDate').value = today;
+        document.getElementById('folioDate').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    });
+
+    document.querySelectorAll('.mood-stamp').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.mood-stamp').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedMood = this.dataset.mood;
+        });
+    });
+
+    function setupImageUpload() { updateImageUploadArea(); }
+
+    function updateImageUploadArea() {
+        const area = document.getElementById('imageUploadArea');
+        area.innerHTML = '';
+        imageFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const div = document.createElement('div');
+                div.style.position = 'relative';
+                div.style.setProperty('--tilt', (index % 2 === 0 ? -2 : 2));
+                div.innerHTML = `<img src="${e.target.result}" class="image-preview" onclick="expandImage('${e.target.result}')"><button class="remove-image-btn" onclick="event.stopPropagation(); removeImage(${index})">&times;</button>`;
+                area.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+        if (imageFiles.length < MAX_IMAGES) {
+            const uploadBox = document.createElement('div');
+            uploadBox.className = 'image-upload-box';
+            uploadBox.innerHTML = '<i class="bi bi-plus-lg"></i>';
+            uploadBox.onclick = () => document.getElementById('fileInput').click();
+            area.appendChild(uploadBox);
+        }
+    }
+
+    function removeImage(index) { imageFiles.splice(index, 1); updateImageUploadArea(); }
+
+    function expandImage(src) {
+        document.getElementById('overlayImage').src = src;
+        document.getElementById('imageOverlay').classList.add('show');
+    }
+    function closeImageOverlay() { document.getElementById('imageOverlay').classList.remove('show'); }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImageOverlay(); });
+
+    document.getElementById('diaryForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const entryDate = document.getElementById('entryDate').value;
+        const entryContent = document.getElementById('entryContent').value;
+        if (!entryDate) { alert('Please select a date'); return; }
+        if (!entryContent.trim()) { alert('Please write something in your diary'); return; }
+
+        const formData = new FormData();
+        formData.append('date', entryDate);
+        formData.append('title', document.getElementById('entryTitle').value);
+        formData.append('content', entryContent);
+        formData.append('mood', selectedMood);
+        imageFiles.forEach(file => formData.append('images', file));
+
+        try {
+            const response = await fetch('/user/diary/save', { method: 'POST', body: formData });
+            const result = await response.json();
+            if (result.success) { clearForm(); loadEntries(); showEntries(); }
+            else { alert('Error: ' + result.message); }
+        } catch (error) { alert('Error saving entry: ' + error.message); }
+    });
+
+    function clearForm() {
+        document.getElementById('entryTitle').value = '';
+        document.getElementById('entryContent').value = '';
+        imageFiles = []; selectedMood = '';
+        updateImageUploadArea();
+        document.querySelectorAll('.mood-stamp').forEach(b => b.classList.remove('active'));
+        document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+    }
+
+    async function loadEntries() {
+        try {
+            const response = await fetch('/user/diary/entries');
+            displayEntries(await response.json());
+        } catch (error) { console.error('Error loading entries:', error); }
+    }
+
+    function displayEntries(entries) {
+        const container = document.getElementById('diaryEntriesList');
+        const countLabel = document.getElementById('entryCountLabel');
+        if (!entries || entries.length === 0) {
+            countLabel.textContent = '';
+            container.innerHTML = '<div class="empty-page"><i class="bi bi-journal"></i><p>These pages are still blank. Write the first one.</p></div>';
+            return;
+        }
+        countLabel.textContent = entries.length + (entries.length === 1 ? ' page' : ' pages');
+        container.innerHTML = entries.map(entry => `
+            <div class="diary-entry-card" onclick="viewEntry(${entry.id})">
+                <div class="diary-entry-date"><i class="bi bi-calendar3"></i> ${entry.date}</div>
+                <div><h5>${entry.title || 'Untitled'}</h5><div class="diary-entry-preview">${entry.content ? entry.content.substring(0, 150) + '…' : 'No content'}</div>${entry.image_count > 0 ? '<div class="mt-1"><small class="diary-hint"><i class="bi bi-images"></i> '+entry.image_count+' attachment(s)</small></div>' : ''}</div>
+                <div class="diary-entry-meta">${entry.mood || ''}</div>
+            </div>`).join('');
+    }
+
+    async function viewEntry(entryId) {
+        try {
+            const response = await fetch(`/user/diary/entry/${entryId}`);
+            if (!response.ok) throw new Error('Not found');
+            const entry = await response.json();
+            document.getElementById('modalEntryDate').textContent = entry.date || '';
+            document.getElementById('modalEntryTitle').textContent = entry.title || 'Untitled';
+            document.getElementById('modalEntryContent').textContent = entry.content || '';
+            document.getElementById('modalEntryMood').textContent = entry.mood || '';
+            const imagesDiv = document.getElementById('modalEntryImages');
+            imagesDiv.innerHTML = '';
+            if (entry.images) entry.images.forEach(img => {
+                const w = document.createElement('div'); w.className = 'modal-image-wrapper';
+                w.innerHTML = `<img src="${img}" class="modal-image" onclick="event.stopPropagation(); expandImage('${img}')">`;
+                imagesDiv.appendChild(w);
+            });
+            new bootstrap.Modal(document.getElementById('viewEntryModal')).show();
+        } catch (error) { alert('Error loading entry'); }
+    }
+
+    function showNewEntry() {
+        document.getElementById('newEntrySection').style.display = 'block';
+        document.getElementById('viewEntriesSection').style.display = 'none';
+        document.getElementById('newEntryTab').classList.add('active');
+        document.getElementById('viewEntriesTab').classList.remove('active');
+    }
+
+    function showEntries() {
+        document.getElementById('newEntrySection').style.display = 'none';
+        document.getElementById('viewEntriesSection').style.display = 'block';
+        document.getElementById('viewEntriesTab').classList.add('active');
+        document.getElementById('newEntryTab').classList.remove('active');
+        loadEntries();
+    }
+
+    function showEliteUpgradeAlert() {
+        if (confirm('🔒 Auto-Write Diary is an Elite feature.\n\nUpgrade to Elite (₹799/mo) to unlock:\n• AI Auto-Write Diary\n• AI Coach\n• Goals & Planner\n• Unlimited AI tokens\n\nGo to Subscription page?')) {
+            window.location.href = '/user/subscription';
+        }
+    }
+
+    const AUTO_WRITE_MESSAGES = [
+        "Reading today's trades...", "Understanding your wins & losses...",
+        "Checking your risk management...", "Feeling the market's mood...",
+        "Dipping the quill in ink...", "Crafting your story...",
+        "Adding personal reflections...", "Almost done..."
+    ];
+
+    async function autoWriteDiary() {
+        const btn = document.getElementById('btnAutoWrite');
+        const overlay = document.getElementById('autoWriteOverlay');
+        const statusEl = document.getElementById('autoWriteStatus');
+        if (!btn || !overlay) return;
+        {% if current_user.subscription_tier not in ['enterprise', 'elite'] %}
+        showEliteUpgradeAlert(); return;
+        {% endif %}
+        btn.disabled = true;
+        btn.innerHTML = '<span class="sparkle-icon">⏳</span> Writing...';
+        overlay.classList.add('show');
+        let i = 0;
+        const interval = setInterval(() => {
+            i = (i + 1) % AUTO_WRITE_MESSAGES.length;
+            statusEl.style.opacity = 0;
+            setTimeout(() => { statusEl.textContent = AUTO_WRITE_MESSAGES[i]; statusEl.style.opacity = 1; }, 200);
+        }, 1500);
+        try {
+            const response = await fetch('/user/diary/auto-write', { method: 'POST' });
+            const result = await response.json();
+            clearInterval(interval);
+            if (!result.success) {
+                overlay.classList.remove('show'); btn.disabled = false;
+                btn.innerHTML = '<span class="sparkle-icon">✨</span> Auto-Write with AI';
+                alert(result.message || 'Failed.'); return;
+            }
+            document.getElementById('entryTitle').value = result.title || '';
+            document.getElementById('entryContent').value = result.content || '';
+            if (result.mood) {
+                document.querySelectorAll('.mood-stamp').forEach(b => b.classList.remove('active'));
+                const moodBtn = document.querySelector(`.mood-stamp[data-mood="${result.mood}"]`);
+                if (moodBtn) { moodBtn.classList.add('active'); selectedMood = result.mood; }
+            }
+            overlay.classList.remove('show'); btn.disabled = false;
+            btn.innerHTML = '<span class="sparkle-icon">✨</span> Auto-Write with AI';
+            if (typeof loadTokens === 'function') loadTokens();
+            const textarea = document.getElementById('entryContent');
+            textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            textarea.classList.add('flash-highlight');
+            setTimeout(() => textarea.classList.remove('flash-highlight'), 1200);
+        } catch (error) {
+            clearInterval(interval); overlay.classList.remove('show'); btn.disabled = false;
+            btn.innerHTML = '<span class="sparkle-icon">✨</span> Auto-Write with AI';
+            alert('Connection error. Please try again.');
+        }
+    }
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file'; fileInput.id = 'fileInput'; fileInput.accept = 'image/*'; fileInput.multiple = true; fileInput.style.display = 'none';
+    fileInput.addEventListener('change', function (e) {
+        const newFiles = Array.from(e.target.files);
+        if (newFiles.length > MAX_IMAGES - imageFiles.length) { alert(`Max ${MAX_IMAGES} images.`); return; }
+        imageFiles = [...imageFiles, ...newFiles].slice(0, MAX_IMAGES);
+        updateImageUploadArea(); this.value = '';
+    });
+    document.body.appendChild(fileInput);
+</script>
+{% endblock %}

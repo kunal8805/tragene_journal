@@ -1,0 +1,49 @@
+{% extends "base_user.html" %}
+{% block title %}Payment Cancelled - Tragene Journal{% endblock %}
+{% block page_title %}❌ Payment Cancelled{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cancel-container {
+        max-width: 500px;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .cancel-icon { font-size: 5rem; }
+    .cancel-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 30px;
+        margin-top: 20px;
+    }
+    .btn-back {
+        padding: 12px 30px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cancel-container">
+    <div class="cancel-icon">💳</div>
+    <h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;margin-top:10px;">Payment Was Cancelled</h4>
+    <p style="color:var(--text-muted);">No charges were made to your account.</p>
+    
+    <div class="cancel-card">
+        <p style="font-size:0.85rem;color:var(--text-secondary);">
+            You can try again whenever you're ready. Your current plan remains unchanged.
+        </p>
+    </div>
+    
+    <a href="{{ url_for('user.subscription') }}" class="btn-back">
+        <i class="bi bi-arrow-left"></i> Back to Plans
+    </a>
+</div>
+{% endblock %}

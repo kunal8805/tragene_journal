@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy - TRAGENE Journal{% endblock %}
+
+{% block meta_description %}Read our Privacy Policy to understand how TRAGENE Journal collects, uses, and protects your personal and trading data.{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+    <div class="glass-card p-6 md:p-10">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">Privacy Policy</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">Last Updated: {{ now.strftime('%B %d, %Y') if now else 'January 1, 2025' }}</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        <!-- Introduction -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-6 rounded-lg mb-8">
+            <p class="text-gray-700 dark:text-gray-300 text-lg">
+                Welcome to <strong class="text-blue-600 dark:text-blue-400">TRAGENE Journal</strong> ("Company", "we", "our", or "us"). 
+                Your privacy is important to us. This Privacy Policy explains how we collect, use, store, process, and protect 
+                your information when you access or use the TRAGENE Journal website, dashboard, applications, and related services 
+                (collectively, the "Service").
+            </p>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">
+                By creating an account or using the Service, you acknowledge that you have read and understood this Privacy Policy.
+            </p>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 mb-10">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Table of Contents</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                <a href="#section-1" class="text-blue-600 dark:text-blue-400 hover:underline">1. Information We Collect</a>
+                <a href="#section-2" class="text-blue-600 dark:text-blue-400 hover:underline">2. Cookies</a>
+                <a href="#section-3" class="text-blue-600 dark:text-blue-400 hover:underline">3. How We Use Your Info</a>
+                <a href="#section-4" class="text-blue-600 dark:text-blue-400 hover:underline">4. Trading Data Processing</a>
+                <a href="#section-5" class="text-blue-600 dark:text-blue-400 hover:underline">5. AI Processing</a>
+                <a href="#section-6" class="text-blue-600 dark:text-blue-400 hover:underline">6. Information Sharing</a>
+                <a href="#section-7" class="text-blue-600 dark:text-blue-400 hover:underline">7. Data Security</a>
+                <a href="#section-8" class="text-blue-600 dark:text-blue-400 hover:underline">8. Data Retention</a>
+                <a href="#section-9" class="text-blue-600 dark:text-blue-400 hover:underline">9. Your Rights</a>
+                <a href="#section-10" class="text-blue-600 dark:text-blue-400 hover:underline">10. International Processing</a>
+                <a href="#section-11" class="text-blue-600 dark:text-blue-400 hover:underline">11. Third-Party Services</a>
+                <a href="#section-12" class="text-blue-600 dark:text-blue-400 hover:underline">12. Children's Privacy</a>
+                <a href="#section-13" class="text-blue-600 dark:text-blue-400 hover:underline">13. Marketing Communications</a>
+                <a href="#section-14" class="text-blue-600 dark:text-blue-400 hover:underline">14. Changes to This Policy</a>
+                <a href="#section-15" class="text-blue-600 dark:text-blue-400 hover:underline">15. Contact Us</a>
+            </div>
+        </div>
+
+        <!-- Section 1 -->
+        <div id="section-1" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">1.</span> Information We Collect
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300 mb-3">We collect information that you provide directly, information generated while using the Service, and certain information collected automatically.</p>
+
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-2">1.1 Account Information</h3>
+            <p class="text-gray-700 dark:text-gray-300">When creating an account, we may collect:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>Full Name</li>
+                <li>Username</li>
+                <li>Email Address</li>
+                <li>Password (stored securely in hashed form)</li>
+                <li>Profile Photo (if uploaded)</li>
+                <li>Country</li>
+                <li>Time Zone</li>
+                <li>Preferred Language</li>
+                <li>Account Preferences</li>
+            </ul>
+
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-2">1.2 Trading Information</h3>
+            <p class="text-gray-700 dark:text-gray-300">If you connect a supported trading platform or upload trading information, we may collect:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>Trading Account Number</li>
+                <li>Broker Name</li>
+                <li>Trading Platform Information</li>
+                <li>Account Type</li>
+                <li>Account Currency</li>
+                <li>Trade History</li>
+                <li>Orders</li>
+                <li>Open Positions</li>
+                <li>Closed Positions</li>
+                <li>Trade Entry Price</li>
+                <li>Trade Exit Price</li>
+                <li>Stop Loss</li>
+                <li>Take Profit</li>
+                <li>Trade Volume</li>
+                <li>Profit and Loss</li>
+                <li>Commission</li>
+                <li>Swap</li>
+                <li>Balance History</li>
+                <li>Equity History</li>
+                <li>Margin Information</li>
+                <li>Drawdown Statistics</li>
+                <li>Win Rate</li>
+                <li>Risk Metrics</li>
+                <li>Performance Statistics</li>
+                <li>Tragene Journal Notes</li>
+                <li>Uploaded Trade Screenshots</li>
+                <li>Tags and Categories</li>
+                <li>Custom Notes</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3 text-sm italic">We only collect this information when you voluntarily connect your trading account or upload data.</p>
+
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-2">1.3 AI Feature Data</h3>
+            <p class="text-gray-700 dark:text-gray-300">If you use AI-powered features, we may process information including:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Trading history</li>
+                <li>Trading statistics</li>
+                <li>Journal entries</li>
+                <li>Notes</li>
+                <li>Performance metrics</li>
+                <li>Uploaded screenshots</li>
+                <li>Questions submitted to AI</li>
+                <li>AI-generated reports and summaries</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">This processing enables features such as:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-1">
+                <li>Trade analysis</li>
+                <li>Performance insights</li>
+                <li>Pattern recognition</li>
+                <li>Risk evaluation</li>
+                <li>Trading psychology summaries</li>
+                <li>Personalized analytics</li>
+                <li>Journal assistance</li>
+            </ul>
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 mt-3 rounded">
+                <p class="text-gray-700 dark:text-gray-300 text-sm">AI-generated responses are informational only and should not be considered financial or investment advice.</p>
+            </div>
+
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-2">1.4 Payment Information</h3>
+            <p class="text-gray-700 dark:text-gray-300">When purchasing a subscription, payments are processed by our payment provider.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-1">We do <strong>not</strong> store your complete payment card details.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-1">Depending on the payment provider, we may receive:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-1">
+                <li>Payment Status</li>
+                <li>Transaction ID</li>
+                <li>Purchase Amount</li>
+                <li>Currency</li>
+                <li>Payment Date</li>
+                <li>Subscription Purchased</li>
+            </ul>
+
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-2">1.5 Automatically Collected Information</h3>
+            <p class="text-gray-700 dark:text-gray-300">When using the Service, we may automatically collect:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>IP Address</li>
+                <li>Browser Type</li>
+                <li>Browser Version</li>
+                <li>Device Type</li>
+                <li>Operating System</li>
+                <li>Screen Resolution</li>
+                <li>Language Preferences</li>
+                <li>Time Zone</li>
+                <li>Pages Visited</li>
+                <li>Session Duration</li>
+                <li>Referral Source</li>
+                <li>Click Activity</li>
+                <li>Crash Reports</li>
+                <li>Error Logs</li>
+                <li>Performance Logs</li>
+                <li>Security Logs</li>
+            </ul>
+        </div>
+
+        <!-- Section 2 -->
+        <div id="section-2" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">2.</span> Cookies and Similar Technologies
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We use cookies and similar technologies to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Keep you signed in</li>
+                <li>Remember your preferences</li>
+                <li>Improve website performance</li>
+                <li>Analyze website usage</li>
+                <li>Detect fraud and abuse</li>
+                <li>Maintain security</li>
+                <li>Improve user experience</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">You may disable cookies through your browser settings, although some features may not function correctly.</p>
+        </div>
+
+        <!-- Section 3 -->
+        <div id="section-3" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">3.</span> How We Use Your Information
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We use your information to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>Create and manage your account</li>
+                <li>Authenticate users</li>
+                <li>Provide subscription features</li>
+                <li>Synchronize trading history</li>
+                <li>Generate analytics</li>
+                <li>Calculate trading statistics</li>
+                <li>Produce AI-powered insights</li>
+                <li>Display dashboards and reports</li>
+                <li>Improve platform performance</li>
+                <li>Personalize your experience</li>
+                <li>Respond to support requests</li>
+                <li>Detect fraud or abuse</li>
+                <li>Maintain security</li>
+                <li>Monitor service reliability</li>
+                <li>Comply with legal obligations</li>
+                <li>Improve existing features and develop new ones</li>
+            </ul>
+        </div>
+
+        <!-- Section 4 -->
+        <div id="section-4" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">4.</span> Trading Data Processing
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Your trading data is processed solely to provide the functionality of TRAGENE Journal.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">This includes:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>Trade Journaling</li>
+                <li>AI Analysis</li>
+                <li>Risk Analysis</li>
+                <li>Performance Reports</li>
+                <li>Charts</li>
+                <li>Statistics</li>
+                <li>Trading Insights</li>
+                <li>Trade Review</li>
+                <li>Historical Analysis</li>
+                <li>Dashboard Metrics</li>
+            </ul>
+            <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 mt-3 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">You retain ownership of your trading data.</p>
+                <p class="text-gray-700 dark:text-gray-300 mt-1">By using the Service, you authorize us to process your trading data for the purposes described in this Privacy Policy.</p>
+            </div>
+        </div>
+
+        <!-- Section 5 -->
+        <div id="section-5" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">5.</span> AI Processing
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Some features rely on Artificial Intelligence.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">To generate AI-powered insights, portions of your trading information or journal content may be securely processed using AI technologies operated by us or trusted third-party AI providers.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">We strive to send only the information necessary to generate the requested functionality.</p>
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 mt-3 rounded">
+                <p class="text-gray-700 dark:text-gray-300 text-sm">AI-generated results may contain inaccuracies and should not be relied upon as financial or investment advice.</p>
+            </div>
+        </div>
+
+        <!-- Section 6 -->
+        <div id="section-6" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">6.</span> Information Sharing
+            </h2>
+            <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">We do <strong>not</strong> sell your personal information.</p>
+            </div>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">We may share information only when necessary with trusted service providers that help operate the Service, including:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Cloud hosting providers</li>
+                <li>Payment processors</li>
+                <li>Email delivery services</li>
+                <li>Analytics providers</li>
+                <li>AI service providers</li>
+                <li>Security providers</li>
+                <li>Customer support tools</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">These providers are permitted to use your information only for providing services on our behalf and are expected to protect it appropriately.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">We may also disclose information where required by law or to protect our legal rights, users, or the security of the Service.</p>
+        </div>
+
+        <!-- Section 7 -->
+        <div id="section-7" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">7.</span> Data Security
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We implement reasonable administrative, technical, and organizational safeguards, including:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>HTTPS encryption</li>
+                <li>Password hashing</li>
+                <li>Secure authentication</li>
+                <li>Access controls</li>
+                <li>Server security</li>
+                <li>Database protection</li>
+                <li>Security monitoring</li>
+                <li>Regular backups</li>
+                <li>Protection against unauthorized access</li>
+            </ul>
+            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mt-3 rounded">
+                <p class="text-gray-700 dark:text-gray-300 text-sm">While we take reasonable steps to protect your information, no method of storage or transmission over the Internet is completely secure. Therefore, we cannot guarantee absolute security.</p>
+            </div>
+        </div>
+
+        <!-- Section 8 -->
+        <div id="section-8" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">8.</span> Data Retention
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We retain your information only as long as reasonably necessary to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Provide the Service</li>
+                <li>Maintain your account</li>
+                <li>Comply with legal obligations</li>
+                <li>Resolve disputes</li>
+                <li>Enforce our agreements</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">If you delete your account, your personal information and trading data will be removed from our active systems within a reasonable period, except where retention is required by law or where limited backup copies remain temporarily for disaster recovery purposes.</p>
+        </div>
+
+        <!-- Section 9 -->
+        <div id="section-9" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">9.</span> Your Rights
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Subject to applicable law, you may have the right to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>Access your personal information</li>
+                <li>Update your information</li>
+                <li>Correct inaccurate information</li>
+                <li>Download your data</li>
+                <li>Delete your account</li>
+                <li>Request deletion of your trading data</li>
+                <li>Change your password</li>
+                <li>Disconnect linked trading accounts</li>
+                <li>Contact us regarding your personal information</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3 text-sm italic">We may need to verify your identity before processing certain requests.</p>
+        </div>
+
+        <!-- Section 10 -->
+        <div id="section-10" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">10.</span> International Data Processing
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Depending on the location of our infrastructure or service providers, your information may be processed or stored in countries other than your own.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">By using the Service, you acknowledge that your information may be transferred and processed in accordance with this Privacy Policy.</p>
+        </div>
+
+        <!-- Section 11 -->
+        <div id="section-11" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">11.</span> Third-Party Services
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">The Service may integrate with third-party platforms and services, including but not limited to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Trading platforms</li>
+                <li>Payment providers</li>
+                <li>Cloud hosting services</li>
+                <li>Email providers</li>
+                <li>Analytics platforms</li>
+                <li>AI providers</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">These services operate under their own privacy policies, and we encourage you to review them before using their services.</p>
+        </div>
+
+        <!-- Section 12 -->
+        <div id="section-12" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">12.</span> Children's Privacy
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">The Service is not intended for children below the minimum age permitted by applicable law.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">We do not knowingly collect personal information from children. If we become aware that such information has been collected, we will take appropriate steps to remove it.</p>
+        </div>
+
+        <!-- Section 13 -->
+        <div id="section-13" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">13.</span> Marketing Communications
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">If you subscribe to newsletters or promotional communications, we may send updates about:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>New features</li>
+                <li>Product announcements</li>
+                <li>Platform improvements</li>
+                <li>Offers</li>
+                <li>Educational content</li>
+                <li>Important account notices</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">You may unsubscribe from promotional emails at any time using the unsubscribe option included in those emails. Service-related communications, such as security alerts or billing notices, may still be sent where necessary.</p>
+        </div>
+
+        <!-- Section 14 -->
+        <div id="section-14" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">14.</span> Changes to This Privacy Policy
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We may update this Privacy Policy from time to time to reflect changes in our services, legal requirements, or business practices.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">The revised version will be published on our website with an updated "Last Updated" date.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2 font-semibold">Continued use of the Service after changes become effective constitutes acceptance of the updated Privacy Policy.</p>
+        </div>
+
+        <!-- Section 15 -->
+        <div id="section-15" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">15.</span> Contact Us
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">If you have questions about this Privacy Policy, your personal information, or how your data is processed, please contact us using the official contact information provided on our website.</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 text-center">
+            <p class="text-gray-600 dark:text-gray-400 text-sm">
+                By creating an account or using TRAGENE Journal, you acknowledge that you have read, understood, and agreed to this Privacy Policy.
+            </p>
+            <p class="text-gray-500 dark:text-gray-500 text-xs mt-4">
+                &copy; {{ now.year if now else '2025' }} TRAGENE Journal. All rights reserved.
+            </p>
+            <div class="flex justify-center gap-4 mt-4">
+                <a href="{{ url_for('home') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Home</a>
+                <a href="{{ url_for('terms') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Terms &amp; Conditions</a>
+                <a href="{{ url_for('refund_policy') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Refund Policy</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

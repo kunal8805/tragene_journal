@@ -1,0 +1,62 @@
+{% extends "base_user.html" %}
+{% block title %}Trade #{{ trade.id }} - Tragene Journal{% endblock %}
+{% block page_title %}Trade #{{ trade.id }}{% endblock %}
+{% block content %}
+
+<div class="mb-3 d-flex gap-2">
+    <a href="{{ url_for('user.journal') }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px;">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <a href="{{ url_for('user.edit_trade', trade_id=trade.id) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px;">
+        <i class="bi bi-pencil"></i> Edit
+    </a>
+    <form method="POST" action="{{ url_for('user.delete_trade', trade_id=trade.id) }}" onsubmit="return confirm('Delete this trade?');" class="d-inline">
+        <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius: 8px;">
+            <i class="bi bi-trash"></i> Delete
+        </button>
+    </form>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card p-3">
+            <h6 class="fw-bold mb-3">Trade Details</h6>
+            <div class="row g-2">
+                <div class="col-6 col-md-3"><small class="text-muted">Symbol</small><br><strong>{{ trade.symbol }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Type</small><br><strong class="{% if trade.trade_type == 'buy' %}text-success{% else %}text-danger{% endif %}">{{ trade.trade_type.upper() }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">P&L</small><br>
+                    {% if trade.profit_loss is not none %}
+                        <strong class="{% if trade.profit_loss > 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ '+' if trade.profit_loss > 0 else '' }}{{ '%.2f'|format(trade.profit_loss) }}
+                        </strong>
+                    {% else %}<span class="text-muted">-</span>{% endif %}
+                </div>
+                <div class="col-6 col-md-3"><small class="text-muted">Date</small><br><strong>{{ trade.entry_date.strftime('%d %b %Y') }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Entry</small><br><strong>{{ trade.entry_price }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Exit</small><br><strong>{{ trade.exit_price if trade.exit_price else '-' }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">SL</small><br><strong>{{ trade.stop_loss if trade.stop_loss else '-' }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">TP</small><br><strong>{{ trade.take_profit if trade.take_profit else '-' }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Lot Size</small><br><strong>{{ trade.lot_size }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Session</small><br><strong>{{ trade.session if trade.session else '-' }}</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Source</small><br><span class="badge bg-secondary">{{ trade.import_source }}</span></div>
+            </div>
+        </div>
+        <div class="card p-3 mt-3">
+            <h6 class="fw-bold">Notes</h6>
+            <p class="mb-0 {% if not trade.notes %}text-muted{% endif %}">{{ trade.notes if trade.notes else 'No notes added.' }}</p>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card p-3">
+            <h6 class="fw-bold">Tags</h6>
+            {% if trade.tags %}
+                {% for tag in trade.tags.split(',') %}
+                    <span class="badge bg-secondary me-1">{{ tag.strip() }}</span>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted small mb-0">No tags</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

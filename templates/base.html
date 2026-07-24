@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ page_meta.title if page_meta and page_meta.title else (seo_settings.site_title if seo_settings else 'Tragene Journal') }}{% endblock %}</title>
+    
+    {% if page_meta and page_meta.description %}
+    <meta name="description" content="{{ page_meta.description }}">
+    {% elif seo_settings and seo_settings.default_meta_description %}
+    <meta name="description" content="{{ seo_settings.default_meta_description }}">
+    {% endif %}
+    
+    {% if page_meta and page_meta.keywords %}
+    <meta name="keywords" content="{{ page_meta.keywords }}">
+    {% elif seo_settings and seo_settings.default_keywords %}
+    <meta name="keywords" content="{{ seo_settings.default_keywords }}">
+    {% endif %}
+    
+    {% if page_meta and page_meta.robots %}
+    <meta name="robots" content="{{ page_meta.robots }}">
+    {% endif %}
+    
+    {% if page_meta and page_meta.canonical_url %}
+    <link rel="canonical" href="{{ page_meta.canonical_url }}">
+    {% endif %}
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- ===== CORE STYLES ===== -->
+    <style>
+        /* ===== ROOT VARIABLES ===== */
+        :root {
+            --bg: #0a0e17;
+            --bg-soft: #0d1220;
+            --surface: #131a29;
+            --surface-2: #1a2335;
+            --border: #232e42;
+            --border-soft: rgba(255,255,255,0.08);
+            --text: #eef1f6;
+            --text-dim: #8a93a8;
+            --text-faint: #5c6478;
+            --bull: #26a69a;
+            --bull-glow: rgba(38,166,154,0.35);
+            --bear: #ef5350;
+            --bear-glow: rgba(239,83,80,0.35);
+            --gold: #f2b544;
+            --gold-glow: rgba(242,181,68,0.35);
+            --glass-bg: rgba(255,255,255,0.06);
+            --glass-border: rgba(255,255,255,0.14);
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        /* ===== BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--bull);
+        }
+
+        /* ===== SELECTION ===== */
+        ::selection {
+            background: var(--bull);
+            color: #06110f;
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-display);
+            letter-spacing: -0.01em;
+            color: var(--text);
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--bull);
+            transition: color 0.2s;
+        }
+        a:hover {
+            color: #2db9a8;
+        }
+
+        /* ===== GLASS CARD ===== */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.45);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-glass {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 100px;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            color: var(--text);
+            transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
+            cursor: pointer;
+        }
+        .btn-glass:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+            color: var(--text);
+        }
+
+        .btn-primary-glass {
+            border-color: rgba(38,166,154,0.4);
+            background: linear-gradient(180deg, rgba(38,166,154,0.28), rgba(38,166,154,0.1));
+            box-shadow: 0 8px 28px var(--bull-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+            color: var(--text);
+        }
+        .btn-primary-glass:hover {
+            background: linear-gradient(180deg, rgba(38,166,154,0.4), rgba(38,166,154,0.16));
+            box-shadow: 0 12px 36px var(--bull-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+            color: var(--text);
+        }
+
+        .btn-gold-glass {
+            border-color: rgba(242,181,68,0.45);
+            background: linear-gradient(180deg, rgba(242,181,68,0.26), rgba(242,181,68,0.08));
+            box-shadow: 0 8px 28px var(--gold-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+            color: #ffe9bd;
+        }
+        .btn-gold-glass:hover {
+            color: #fff3d6;
+            box-shadow: 0 12px 36px var(--gold-glow);
+        }
+
+        /* ===== NAVBAR ===== */
+        .tj-nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 14px 0;
+            background: rgba(10,14,23,0.72);
+            backdrop-filter: blur(16px) saturate(160%);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .tj-brand {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .tj-brand:hover {
+            color: var(--text);
+        }
+        
+        /* ===== LOGO CIRCLE STYLES - NAVBAR ===== */
+        .tj-brand .tj-brand-logo {
+            height: 40px;
+            width: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--bull);
+            background: var(--surface);
+            padding: 2px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px var(--bull-glow);
+        }
+        .tj-brand .tj-brand-logo:hover {
+            transform: scale(1.08) rotate(-5deg);
+            box-shadow: 0 0 35px var(--bull-glow);
+            border-color: #2db9a8;
+        }
+        
+        .tj-brand .tj-brand-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .tj-brand .tj-brand-text span {
+            color: var(--bull);
+        }
+        .tj-brand-mark {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(160deg, var(--bull), #0f5f57);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 18px var(--bull-glow);
+            flex-shrink: 0;
+        }
+        .tj-brand-mark i {
+            color: #06110f;
+            font-size: 0.85rem;
+        }
+        .tj-nav-link {
+            color: var(--text-dim) !important;
+            font-weight: 500;
+            font-size: 0.94rem;
+            margin: 0 14px;
+            transition: color 0.2s;
+        }
+        .tj-nav-link:hover {
+            color: var(--text) !important;
+        }
+        .navbar-toggler {
+            border-color: var(--border-soft) !important;
+        }
+        .navbar-toggler-icon {
+            filter: invert(1);
+        }
+
+        /* ===== FOOTER ===== */
+        .tj-footer {
+            background: var(--bg-soft);
+            border-top: 1px solid var(--border-soft);
+            padding: 64px 0 28px;
+            color: var(--text-dim);
+        }
+        .tj-footer .tj-brand {
+            color: var(--text);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* ===== LOGO CIRCLE STYLES - FOOTER ===== */
+        .tj-footer .tj-brand .tj-brand-logo {
+            height: 32px;
+            width: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid var(--bull);
+            background: var(--surface);
+            padding: 2px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        .tj-footer .tj-brand .tj-brand-logo:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 25px var(--bull-glow);
+        }
+        
+        .tj-footer p.tj-foot-desc {
+            font-size: 0.9rem;
+            max-width: 260px;
+            line-height: 1.6;
+        }
+        .tj-footer h6 {
+            color: var(--text);
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 18px;
+        }
+        .tj-footer ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .tj-footer li {
+            margin-bottom: 11px;
+        }
+        .tj-footer a {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .tj-footer a:hover {
+            color: var(--bull);
+        }
+        .tj-social {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .tj-social a {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            transition: all 0.2s;
+        }
+        .tj-social a:hover {
+            border-color: var(--bull);
+            color: var(--bull);
+        }
+        .tj-foot-bottom {
+            border-top: 1px solid var(--border-soft);
+            margin-top: 44px;
+            padding-top: 22px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.82rem;
+            color: var(--text-faint);
+        }
+
+        /* ===== UTILITY ===== */
+        .tj-mono {
+            font-family: var(--font-mono);
+        }
+        .tj-display {
+            font-family: var(--font-display);
+        }
+        .tj-text-glow {
+            text-shadow: 0 0 30px var(--bull-glow);
+        }
+        .tj-text-gold {
+            color: var(--gold);
+        }
+        .tj-text-bull {
+            color: var(--bull);
+        }
+        .tj-bg-soft {
+            background: var(--bg-soft);
+        }
+        .tj-border {
+            border: 1px solid var(--border);
+        }
+        .tj-border-soft {
+            border: 1px solid var(--border-soft);
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .tj-fade-in {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .tj-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 991px) {
+            .tj-nav {
+                padding: 10px 0;
+            }
+            .tj-nav-link {
+                margin: 8px 0;
+            }
+            .tj-footer .row {
+                gap: 30px;
+            }
+            .tj-brand .tj-brand-logo {
+                height: 32px;
+                width: 32px;
+            }
+            .tj-brand .tj-brand-text {
+                font-size: 1rem;
+            }
+            .tj-footer .tj-brand .tj-brand-logo {
+                height: 28px;
+                width: 28px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tj-foot-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .tj-brand .tj-brand-logo {
+                height: 28px;
+                width: 28px;
+            }
+            .tj-brand .tj-brand-text {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* ===== REDUCED MOTION ===== */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+            }
+        }
+    </style>
+    
+    <!-- ===== BLOCK FOR PAGE-SPECIFIC STYLES ===== -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- ===== BLOCK FOR HEAD CONTENT (backward compatibility) ===== -->
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- ===== NAVBAR (Hidden if no_nav is set) ===== -->
+    {% if not no_nav %}
+    <nav class="navbar navbar-expand-lg tj-nav">
+        <div class="container">
+            <a class="tj-brand" href="{{ url_for('home') }}">
+                <!-- ===== LOGO IMAGE (CIRCLE) ===== -->
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tragene Journal" class="tj-brand-logo">
+                <span class="tj-brand-text">Tragene<span>Journal</span> AI</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#tjNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="tjNavbar">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item">
+                        <a class="nav-link tj-nav-link" href="{{ url_for('home') }}#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link tj-nav-link" href="{{ url_for('home') }}#pricing">Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link tj-nav-link" href="{{ url_for('faq') }}">FAQ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link tj-nav-link" href="{{ url_for('contact') }}">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link tj-nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary-glass btn-glass">Get Started Free</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main style="padding-top: {% if no_nav %}0{% else %}80px{% endif %}; min-height: 70vh;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ===== FOOTER (Hidden if no_nav is set) ===== -->
+    {% if not no_nav %}
+    <footer class="tj-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="tj-brand">
+                        <!-- ===== FOOTER LOGO (CIRCLE) ===== -->
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tragene Journal" class="tj-brand-logo">
+                        Tragene Journal
+                    </div>
+                    <p class="tj-foot-desc">An AI-powered Tragene Journal built to help you see your own patterns clearly — and trade better because of it.</p>
+                    <div class="tj-social">
+                        <a href="#" aria-label="Twitter / X"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                        <a href="#" aria-label="Discord"><i class="bi bi-discord"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h6>Product</h6>
+                    <ul>
+                        <li><a href="{{ url_for('home') }}#features">Features</a></li>
+                        <li><a href="{{ url_for('home') }}#pricing">Pricing</a></li>
+                        <li><a href="{{ url_for('faq') }}">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h6>Company</h6>
+                    <ul>
+                        <li><a href="{{ url_for('blog.index') }}">Blog</a></li>
+                        <li><a href="{{ url_for('about') }}">About</a></li>
+                        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h6>Legal</h6>
+                    <ul>
+                        <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
+                        <li><a href="{{ url_for('terms') }}">Terms of Service</a></li>
+                        <li><a href="{{ url_for('refund_policy') }}">Refund Policy</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h6>Account</h6>
+                    <ul>
+                        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                        <li><a href="{{ url_for('auth.register') }}">Sign Up</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="tj-foot-bottom">
+                <span>&copy; 2026 Tragene Journal. All rights reserved.</span>
+                <span>Trading involves risk. Past performance is not indicative of future results.</span>
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // ===== SMOOTH SCROLL FOR ANCHOR LINKS =====
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    const href = this.getAttribute('href');
+                    if (href === '#') return;
+                    
+                    const target = document.querySelector(href);
+                    if (target) {
+                        e.preventDefault();
+                        const navHeight = document.querySelector('.tj-nav')?.offsetHeight || 80;
+                        const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - navHeight;
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // ===== CLOSE MOBILE NAV ON LINK CLICK =====
+            const navLinks = document.querySelectorAll('.tj-nav-link');
+            const navCollapse = document.getElementById('tjNavbar');
+            if (navCollapse) {
+                navLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        const bsCollapse = bootstrap.Collapse.getInstance(navCollapse);
+                        if (bsCollapse) {
+                            bsCollapse.hide();
+                        }
+                    });
+                });
+            }
+        });
+
+        // ===== ACTIVE NAV LINK HIGHLIGHT =====
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.tj-nav-link');
+            
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && href !== '#' && href !== '#features' && href !== '#pricing') {
+                    if (currentPath === href || (href !== '/' && currentPath.startsWith(href))) {
+                        link.style.color = 'var(--bull) !important';
+                    }
+                }
+            });
+        });
+    </script>
+    
+    <!-- ===== BLOCK FOR PAGE-SPECIFIC SCRIPTS ===== -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

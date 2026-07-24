@@ -1,0 +1,451 @@
+{% extends "base_user.html" %}
+{% block title %}Daily Checklist - Tragene Journal{% endblock %}
+{% block page_title %}📋 {{ checklist.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .day-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .date-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+    
+    .date-nav-btn {
+        width: 40px; height: 40px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+    
+    .date-nav-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+    
+    .date-nav-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+    
+    .date-nav-btn:disabled:hover {
+        background: var(--bg-card);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+    }
+    
+    .date-display {
+        text-align: center;
+        min-width: 170px;
+    }
+    
+    .date-display .day-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.5px;
+    }
+    
+    .date-display .day-date {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .btn-today {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--accent);
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.72rem;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .btn-today:hover {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    /* Progress */
+    .progress-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    
+    .progress-text h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin: 0;
+        color: var(--text-primary);
+    }
+    
+    .progress-text span {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .progress-big {
+        margin-left: auto;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+    }
+
+    /* Task Cards */
+    .task-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        cursor: pointer;
+        transition: all 0.25s;
+    }
+    
+    .task-card:hover {
+        border-color: rgba(79,142,247,0.3);
+        transform: translateX(3px);
+    }
+    
+    .task-card.done {
+        border-color: rgba(0,230,118,0.3);
+        background: linear-gradient(135deg, rgba(0,230,118,0.04) 0%, var(--bg-card) 100%);
+    }
+    
+    .task-card.done::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: #00e676;
+        border-radius: 0 4px 4px 0;
+    }
+    
+    .task-check {
+        width: 40px; height: 40px;
+        border-radius: 12px;
+        border: 2px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        transition: all 0.3s;
+        flex-shrink: 0;
+        background: var(--bg-body);
+    }
+    
+    .task-card.done .task-check {
+        background: #00e676;
+        border-color: #00e676;
+        color: #000;
+        box-shadow: 0 4px 16px rgba(0,230,118,0.3);
+    }
+    
+    .task-info {
+        flex: 1;
+    }
+    
+    .task-info .task-name {
+        font-weight: 600;
+        font-size: 0.88rem;
+        color: var(--text-primary);
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .task-card.done .task-name {
+        text-decoration: line-through;
+        opacity: 0.5;
+    }
+    
+    .task-points {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 5px 10px;
+        border-radius: 8px;
+    }
+    
+    .task-points.got { background: rgba(0,230,118,0.1); color: #00e676; }
+    .task-points.not { background: var(--bg-body); color: var(--text-muted); }
+
+    /* Back button */
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.78rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        transition: color 0.2s;
+    }
+    
+    .btn-back:hover {
+        color: var(--accent);
+    }
+
+    /* Toast */
+    .toast-mini {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        padding: 10px 24px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+        animation: toastUp 0.4s ease, toastDown 0.4s ease 1.3s forwards;
+    }
+    
+    @keyframes toastUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    @keyframes toastDown { from { transform: translateX(-50%) translateY(0); opacity: 1; } to { transform: translateX(-50%) translateY(20px); opacity: 0; } }
+
+    @media (max-width: 576px) {
+        .task-card { padding: 12px 14px; }
+        .task-check { width: 34px; height: 34px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="day-container">
+    
+    <a href="{{ url_for('tools.checklist_list') }}" class="btn-back">
+        <i class="bi bi-arrow-left"></i> Back to Calendar
+    </a>
+    
+    <!-- Date Navigator -->
+    <div class="date-nav">
+        <button class="date-nav-btn" onclick="changeDay(-1)" id="prevBtn">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        
+        <div class="date-display">
+            <div class="day-name" id="dayName">{{ target_date.strftime('%A') }}</div>
+            <div class="day-date" id="dayDate">{{ target_date.strftime('%d %B %Y') }}</div>
+        </div>
+        
+        <button class="date-nav-btn" onclick="changeDay(1)" id="nextBtn">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+        
+        <button class="btn-today" onclick="goToToday()">Today</button>
+    </div>
+    
+    <!-- Progress -->
+    <div class="progress-card">
+        <div class="progress-text">
+            <h5>Today's Progress</h5>
+            <span id="progressLabel">0/{{ tasks|length }} done</span>
+        </div>
+        <div class="progress-big" id="progressPct" style="color:#00e676;">0%</div>
+    </div>
+    
+    <!-- Task Cards -->
+    <div id="tasksContainer">
+        {% for task in tasks %}
+        <div class="task-card {% if completions[task.id] %}done{% endif %}" 
+             id="task-{{ task.id }}"
+             onclick="toggleTask({{ task.id }})">
+            <div class="task-check" id="check-{{ task.id }}">
+                {% if completions[task.id] %}
+                    <i class="bi bi-check-lg"></i>
+                {% endif %}
+            </div>
+            <div class="task-info">
+                <div class="task-name">{{ task.task_name }}</div>
+            </div>
+            <span class="task-points {% if completions[task.id] %}got{% else %}not{% endif %}" id="pts-{{ task.id }}">
+                {% if completions[task.id] %}+3 pts{% else %}3 pts{% endif %}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const checklistId = {{ checklist.id }};
+    const startDate = new Date('{{ checklist.start_date.isoformat() }}');
+    const endDate = new Date('{{ checklist.end_date.isoformat() }}');
+    let currentDate = new Date('{{ target_date.isoformat() }}');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        updateNavButtons();
+        updateProgress();
+    });
+    
+    function changeDay(delta) {
+        const newDate = new Date(currentDate);
+        newDate.setDate(newDate.getDate() + delta);
+        
+        if (newDate < startDate || newDate > endDate) return;
+        if (newDate > today) return;
+        
+        currentDate = newDate;
+        const dateStr = currentDate.toISOString().split('T')[0];
+        window.location.href = `/tools/checklist/${checklistId}/day?date=${dateStr}`;
+    }
+    
+    function goToToday() {
+        if (today >= startDate && today <= endDate) {
+            currentDate = today;
+            const dateStr = currentDate.toISOString().split('T')[0];
+            window.location.href = `/tools/checklist/${checklistId}/day?date=${dateStr}`;
+        }
+    }
+    
+    function updateNavButtons() {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        const prevDate = new Date(currentDate);
+        prevDate.setDate(prevDate.getDate() - 1);
+        prevBtn.disabled = prevDate < startDate;
+        
+        const nextDate = new Date(currentDate);
+        nextDate.setDate(nextDate.getDate() + 1);
+        nextBtn.disabled = nextDate > endDate || nextDate > today;
+    }
+    
+    function toggleTask(taskId) {
+        const taskCard = document.getElementById('task-' + taskId);
+        const isDone = taskCard.classList.contains('done');
+        const newStatus = !isDone;
+        
+        // Optimistic update
+        updateTaskUI(taskCard, taskId, newStatus);
+        updateProgress();
+        
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        fetch('/tools/api/checklist/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                checklist_id: checklistId,
+                task_id: taskId,
+                date: dateStr,
+                completed: newStatus
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                updateProgress();
+                const msg = newStatus ? '+3 Points! 🎯' : '-2 Points';
+                const color = newStatus ? '#00e676' : '#ff5252';
+                showToast(msg, color);
+                
+                // Check if all done
+                checkAllDone();
+            } else {
+                // Revert
+                updateTaskUI(taskCard, taskId, !newStatus);
+                updateProgress();
+            }
+        })
+        .catch(err => {
+            updateTaskUI(taskCard, taskId, !newStatus);
+            updateProgress();
+        });
+    }
+    
+    function updateTaskUI(card, taskId, isDone) {
+        const checkEl = document.getElementById('check-' + taskId);
+        const ptsEl = document.getElementById('pts-' + taskId);
+        
+        if (isDone) {
+            card.classList.add('done');
+            checkEl.innerHTML = '<i class="bi bi-check-lg"></i>';
+            ptsEl.textContent = '+3 pts';
+            ptsEl.className = 'task-points got';
+        } else {
+            card.classList.remove('done');
+            checkEl.innerHTML = '';
+            ptsEl.textContent = '3 pts';
+            ptsEl.className = 'task-points not';
+        }
+    }
+    
+    function updateProgress() {
+        const total = document.querySelectorAll('.task-card').length;
+        const done = document.querySelectorAll('.task-card.done').length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        
+        document.getElementById('progressLabel').textContent = `${done}/${total} done`;
+        document.getElementById('progressPct').textContent = pct + '%';
+        
+        const pctEl = document.getElementById('progressPct');
+        if (pct === 100) pctEl.style.color = '#00e676';
+        else if (pct >= 50) pctEl.style.color = '#ffb300';
+        else pctEl.style.color = '#ff5252';
+    }
+    
+    function checkAllDone() {
+        const total = document.querySelectorAll('.task-card').length;
+        const done = document.querySelectorAll('.task-card.done').length;
+        
+        if (total > 0 && done === total) {
+            setTimeout(() => {
+                showToast('🎉 All done! +10 bonus points!', '#ffb300');
+            }, 500);
+        }
+    }
+    
+    function showToast(message, color) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-mini';
+        toast.style.cssText = `
+            background: var(--bg-card);
+            border: 1px solid ${color};
+            color: ${color};
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1800);
+    }
+</script>
+{% endblock %}

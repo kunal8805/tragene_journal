@@ -1,0 +1,797 @@
+{% extends "base_admin.html" %}
+{% block title %}AI Control Center - Admin{% endblock %}
+{% block page_title %}🤖 AI Control Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .ai-admin-container {
+        max-width: 1300px;
+        margin: 0 auto;
+    }
+
+    /* ── Status Bar ── */
+    .status-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .status-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: #00e676;
+        box-shadow: 0 0 10px rgba(0,230,118,0.5);
+        animation: pulse-dot 2s infinite;
+    }
+    
+    @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+    
+    .status-text {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #00e676;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .status-dot.offline { background: #ff5252; box-shadow: 0 0 10px rgba(255,82,82,0.5); }
+    .status-text.offline { color: #ff5252; }
+
+    /* ── Stats Grid ── */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px;
+        text-align: center;
+    }
+    
+    .stat-card .sc-icon {
+        font-size: 1.2rem;
+        margin-bottom: 6px;
+    }
+    
+    .stat-card .sc-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+    
+    .stat-card .sc-label {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 2px;
+    }
+
+    /* ── Section Cards ── */
+    .section-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    
+    .section-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .section-body {
+        padding: 16px 20px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    /* ── Kill Switch ── */
+    .kill-switch-card {
+        background: rgba(255,82,82,0.05);
+        border: 1px solid rgba(255,82,82,0.2);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .kill-switch-card .ks-info h6 {
+        margin: 0;
+        font-weight: 700;
+        color: #ff5252;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .kill-switch-card .ks-info span {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+    
+    .btn-kill {
+        padding: 10px 24px;
+        background: #ff5252;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .btn-kill:hover {
+        background: #d32f2f;
+        box-shadow: 0 4px 16px rgba(255,82,82,0.4);
+    }
+    
+    .btn-enable {
+        padding: 10px 24px;
+        background: #00e676;
+        color: #000;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* ── Table ── */
+    .ai-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+    }
+    
+    .ai-table thead th {
+        background: var(--bg-body);
+        color: var(--text-muted);
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+    }
+    
+    .ai-table tbody td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+    
+    .ai-table tbody tr:hover {
+        background: rgba(255,107,107,0.03);
+    }
+
+    /* ── Buttons ── */
+    .btn-xs {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.62rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        background: var(--bg-body);
+        color: var(--text-secondary);
+        transition: all 0.2s;
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    
+    .btn-xs:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-xs.danger { border-color: rgba(255,82,82,0.3); color: #ff5252; }
+    .btn-xs.danger:hover { background: rgba(255,82,82,0.1); }
+    .btn-xs.success { border-color: rgba(0,230,118,0.3); color: #00e676; }
+    .btn-xs.warning { border-color: rgba(255,179,0,0.3); color: #ffb300; }
+
+    /* ── Badges ── */
+    .badge-sm {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.58rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-sm.free { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+    .badge-sm.basic { background: rgba(0,188,212,0.1); color: #00bcd4; }
+    .badge-sm.pro { background: rgba(79,142,247,0.1); color: #4f8ef7; }
+    .badge-sm.enterprise { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .badge-sm.banned { background: rgba(255,82,82,0.1); color: #ff5252; }
+
+    /* ── Plan Defaults Form ── */
+    .plan-defaults-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+    }
+    
+    .plan-default-card {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px;
+        text-align: center;
+    }
+    
+    .plan-default-card h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+    }
+    
+    .plan-default-card input {
+        width: 100%;
+        padding: 8px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        text-align: center;
+        font-size: 0.8rem;
+        font-family: 'JetBrains Mono', monospace;
+        margin-bottom: 6px;
+    }
+    
+    .plan-default-card input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    
+    .plan-default-card label {
+        font-size: 0.58rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Modal ── */
+    .modal-xl {
+        max-width: 900px;
+    }
+    
+    .modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .raw-code {
+        background: #0d1117;
+        color: #e6edf3;
+        padding: 14px;
+        border-radius: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    /* ── Search ── */
+    .search-box {
+        padding: 8px 14px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        width: 200px;
+    }
+    
+    .search-box:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    /* ── Toast ── */
+    .toast-mini {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        padding: 10px 24px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+        animation: toastUp 0.4s ease, toastDown 0.4s ease 2s forwards;
+    }
+    
+    @keyframes toastUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    @keyframes toastDown { from { transform: translateX(-50%) translateY(0); opacity: 1; } to { transform: translateX(-50%) translateY(20px); opacity: 0; } }
+
+    @media (max-width: 1024px) {
+        .stats-grid { grid-template-columns: repeat(3, 1fr); }
+        .plan-defaults-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (max-width: 640px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .plan-defaults-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="ai-admin-container">
+    
+    <!-- ── Status Bar ── -->
+    <div class="status-bar">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div class="status-dot"></div>
+            <span class="status-text">AI System Online</span>
+        </div>
+        <span style="font-size:0.7rem;color:var(--text-muted);">
+            Last updated: <span id="lastUpdated">just now</span>
+        </span>
+    </div>
+    
+    <!-- ── Stats Grid ── -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="sc-icon">👥</div>
+            <div class="sc-value">{{ total_ai_users }}</div>
+            <div class="sc-label">AI Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="sc-icon">📊</div>
+            <div class="sc-value">{{ today_queries }}</div>
+            <div class="sc-label">Today's Queries</div>
+        </div>
+        <div class="stat-card">
+            <div class="sc-icon">🪙</div>
+            <div class="sc-value">{{ '{:,.0f}'.format(month_tokens) }}</div>
+            <div class="sc-label">Month Tokens</div>
+        </div>
+        <div class="stat-card">
+            <div class="sc-icon">💰</div>
+            <div class="sc-value">${{ '%.2f'|format(month_cost) }}</div>
+            <div class="sc-label">Month Cost</div>
+        </div>
+        <div class="stat-card">
+            <div class="sc-icon">🚫</div>
+            <div class="sc-value text-danger">{{ banned_count }}</div>
+            <div class="sc-label">Banned Users</div>
+        </div>
+    </div>
+    
+    <!-- ── Kill Switch ── -->
+    <div class="kill-switch-card">
+        <div class="ks-info">
+            <h6><i class="bi bi-exclamation-triangle-fill"></i> Global Kill Switch</h6>
+            <span>Emergency stop for all AI features across the platform</span>
+        </div>
+        <div>
+            <button class="btn-kill" onclick="killSwitch(true)">
+                <i class="bi bi-power"></i> DISABLE ALL AI
+            </button>
+            <button class="btn-enable" onclick="killSwitch(false)" style="margin-left:8px;">
+                <i class="bi bi-power"></i> ENABLE ALL AI
+            </button>
+        </div>
+    </div>
+    
+    <!-- ── Plan Defaults ── -->
+    <div class="section-card">
+        <div class="section-header">
+            <span>🎛️ Plan Defaults</span>
+            <button class="btn-xs success" onclick="savePlanDefaults()">💾 Save Changes</button>
+        </div>
+        <div class="section-body">
+            <div class="plan-defaults-grid" id="planDefaultsGrid">
+                {% for plan in plan_defaults %}
+                <div class="plan-default-card">
+                    <h6 style="color:{{ '#ffb300' if plan.plan_tier == 'enterprise' else '#4f8ef7' if plan.plan_tier == 'pro' else '#00bcd4' if plan.plan_tier == 'basic' else '#6e7681' }};">
+                        {{ plan.plan_tier }}
+                    </h6>
+                    <label>Monthly Tokens</label>
+                    <input type="number" class="plan-tokens" data-plan="{{ plan.plan_tier }}" value="{{ plan.monthly_tokens }}">
+                    <label>Queries/Week</label>
+                    <input type="number" class="plan-queries" data-plan="{{ plan.plan_tier }}" value="{{ plan.queries_per_week or '' }}" placeholder="Unlimited">
+                    <label>Reports/Week</label>
+                    <input type="number" class="plan-reports" data-plan="{{ plan.plan_tier }}" value="{{ plan.reports_per_week or '' }}" placeholder="Unlimited">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- ── Top Spenders ── -->
+    <div class="section-card">
+        <div class="section-header">
+            <span>📈 Top Spenders This Month</span>
+        </div>
+        <div class="section-body" style="max-height:300px;">
+            <table class="ai-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>User</th>
+                        <th>Plan</th>
+                        <th>Tokens</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for spender in top_spenders %}
+                    <tr>
+                        <td style="color:var(--text-muted);">#{{ loop.index }}</td>
+                        <td><strong>{{ spender.username }}</strong></td>
+                        <td><span class="badge-sm {{ spender.subscription_tier }}">{{ spender.subscription_tier }}</span></td>
+                        <td style="font-family:'JetBrains Mono',monospace;">{{ '{:,}'.format(spender.total_tokens) }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace;color:#ffb300;">${{ '%.4f'|format(spender.total_cost) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">No data this month</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- ── User Management ── -->
+    <div class="section-card">
+        <div class="section-header">
+            <span>👥 User AI Management</span>
+            <input type="text" class="search-box" id="userSearch" placeholder="🔍 Search users..." onkeyup="filterUsers()">
+        </div>
+        <div class="section-body" style="max-height:600px;">
+            <table class="ai-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Plan</th>
+                        <th>Tokens</th>
+                        <th>Cost/Mo</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr><td colspan="6" style="text-align:center;padding:20px;">
+                        <div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div>
+                        <span style="margin-left:8px;color:var(--text-muted);">Loading users...</span>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+</div>
+
+<!-- ── User Detail Modal ── -->
+<div class="modal fade" id="userDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 style="font-family:'Space Grotesk',sans-serif;font-weight:700;">
+                    <i class="bi bi-person-badge" style="color:var(--accent);"></i> 
+                    <span id="detailUsername">User Details</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userDetailBody" style="max-height:600px;overflow-y:auto;">
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let userDetailModal;
+    let allUsers = [];
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        userDetailModal = new bootstrap.Modal(document.getElementById('userDetailModal'));
+        loadUsers();
+    });
+    
+    function loadUsers() {
+        fetch('/admin/api/ai-users')
+            .then(res => res.json())
+            .then(data => {
+                allUsers = data.users || [];
+                renderUsers(allUsers);
+            });
+    }
+    
+    function renderUsers(users) {
+        const tbody = document.getElementById('userTableBody');
+        
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No users found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = users.map(u => `
+            <tr class="user-row" data-username="${u.username.toLowerCase()}" data-email="${u.email.toLowerCase()}">
+                <td>
+                    <strong>${u.username}</strong>
+                    <div style="font-size:0.65rem;color:var(--text-muted);">${u.email}</div>
+                </td>
+                <td><span class="badge-sm ${u.plan}">${u.plan}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;">
+                    ${u.tokens_remaining.toLocaleString()} / ${u.token_limit.toLocaleString()}
+                    <div style="height:4px;background:var(--bg-body);border-radius:4px;margin-top:4px;">
+                        <div style="width:${(u.tokens_used/u.token_limit*100)||0}%;height:100%;border-radius:4px;
+                            background:${(u.tokens_used/u.token_limit)>0.8?'#ff5252':(u.tokens_used/u.token_limit)>0.5?'#ffb300':'#00e676'};"></div>
+                    </div>
+                </td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;">$${u.monthly_cost.toFixed(4)}</td>
+                <td>
+                    ${u.is_banned ? '<span class="badge-sm banned">BANNED</span>' : '<span style="color:#00e676;">● Active</span>'}
+                    ${u.has_override ? '<span class="badge-sm" style="background:rgba(255,179,0,0.1);color:#ffb300;">OVERRIDE</span>' : ''}
+                </td>
+                <td style="display:flex;gap:4px;flex-wrap:wrap;">
+                    <button class="btn-xs" onclick="viewUserDetail(${u.id})">📊 Logs</button>
+                    <button class="btn-xs" onclick="viewUserReports(${u.id})">📋 Reports</button>
+                    <button class="btn-xs warning" onclick="overrideTokens(${u.id}, ${u.token_limit})">✏️ Tokens</button>
+                    <button class="btn-xs" onclick="resetTokens(${u.id})">🔄 Reset</button>
+                    <button class="btn-xs ${u.is_banned ? 'success' : 'danger'}" onclick="toggleBan(${u.id}, ${!u.is_banned})">
+                        ${u.is_banned ? '✅ Unban' : '⏸️ Ban'}
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    function filterUsers() {
+        const query = document.getElementById('userSearch').value.toLowerCase();
+        const filtered = allUsers.filter(u => 
+            u.username.toLowerCase().includes(query) || 
+            u.email.toLowerCase().includes(query)
+        );
+        renderUsers(filtered);
+    }
+    
+    function toggleBan(userId, ban) {
+        const reason = ban ? prompt('Reason for banning:') : '';
+        
+        fetch('/admin/api/ai-users/' + userId + '/ban', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ban: ban, reason: reason })
+        })
+        .then(res => res.json())
+        .then(data => {
+            showToast(data.message, ban ? '#ff5252' : '#00e676');
+            loadUsers();
+        });
+    }
+    
+    function overrideTokens(userId, currentLimit) {
+        const tokens = prompt('Enter new token limit (or leave blank to use plan default):', currentLimit);
+        if (tokens === null) return;
+        
+        fetch('/admin/api/ai-users/' + userId + '/override-tokens', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                tokens: tokens === '' ? null : parseInt(tokens),
+                reason: 'Admin override'
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            showToast(data.message, '#ffb300');
+            loadUsers();
+        });
+    }
+    
+    function resetTokens(userId) {
+        if (!confirm('Reset this user\'s monthly token usage to 0?')) return;
+        
+        fetch('/admin/api/ai-users/' + userId + '/reset-tokens', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                showToast(data.message, '#00e676');
+                loadUsers();
+            });
+    }
+    
+    function viewUserDetail(userId) {
+        document.getElementById('detailUsername').textContent = 'Loading...';
+        document.getElementById('userDetailBody').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div>
+            </div>
+        `;
+        userDetailModal.show();
+        
+        fetch('/admin/api/ai-users/' + userId + '/logs')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('detailUsername').textContent = 
+                    `${data.user.username} — AI Usage Logs`;
+                
+                if (data.logs.length === 0) {
+                    document.getElementById('userDetailBody').innerHTML = 
+                        '<p class="text-center" style="color:var(--text-muted);padding:20px;">No AI usage logs found.</p>';
+                    return;
+                }
+                
+                document.getElementById('userDetailBody').innerHTML = `
+                    <table class="ai-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Model</th>
+                                <th>Tokens</th>
+                                <th>Cost</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.logs.map(log => `
+                                <tr>
+                                    <td style="font-size:0.7rem;">${new Date(log.date).toLocaleString()}</td>
+                                    <td>${log.type}</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;">${log.model}</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;">${log.tokens.toLocaleString()}</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;">$${log.cost.toFixed(4)}</td>
+                                    <td>${log.status === 'success' ? '✅' : '❌'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            });
+    }
+    
+    function viewUserReports(userId) {
+        document.getElementById('detailUsername').textContent = 'Loading Reports...';
+        document.getElementById('userDetailBody').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div>
+            </div>
+        `;
+        userDetailModal.show();
+        
+        fetch('/admin/api/ai-users/' + userId + '/reports')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('detailUsername').textContent = 
+                    `${data.user.username} — Raw AI Reports`;
+                
+                if (data.reports.length === 0) {
+                    document.getElementById('userDetailBody').innerHTML = 
+                        '<p class="text-center" style="color:var(--text-muted);padding:20px;">No reports found.</p>';
+                    return;
+                }
+                
+                document.getElementById('userDetailBody').innerHTML = data.reports.map(r => `
+                    <div style="margin-bottom:20px;border:1px solid var(--border-color);border-radius:12px;padding:14px;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                            <strong>${r.date}</strong>
+                            <span>Score: ${r.score}/10 | ${r.trades_analyzed} trades | ${r.tokens_used} tokens</span>
+                        </div>
+                        <p style="font-size:0.8rem;">${r.summary || 'No summary'}</p>
+                        <details style="margin-top:8px;">
+                            <summary style="cursor:pointer;color:var(--accent);font-size:0.75rem;font-weight:600;">
+                                🔍 View Raw Prompt & Response
+                            </summary>
+                            <div style="margin-top:8px;">
+                                <strong style="font-size:0.7rem;color:#ff5252;">RAW PROMPT:</strong>
+                                <div class="raw-code">${r.raw_prompt || 'N/A'}</div>
+                                <strong style="font-size:0.7rem;color:#00e676;margin-top:8px;display:block;">RAW RESPONSE:</strong>
+                                <div class="raw-code">${r.raw_response || 'N/A'}</div>
+                            </div>
+                        </details>
+                    </div>
+                `).join('');
+            });
+    }
+    
+    function killSwitch(disable) {
+        const action = disable ? 'DISABLE' : 'ENABLE';
+        const reason = disable ? prompt('Reason for disabling all AI:') : '';
+        
+        if (disable && !confirm(`Are you sure you want to ${action} AI for ALL users?`)) return;
+        
+        fetch('/admin/api/ai-kill-switch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ disable_all: disable, reason: reason })
+        })
+        .then(res => res.json())
+        .then(data => {
+            showToast(data.message, disable ? '#ff5252' : '#00e676');
+            loadUsers();
+        });
+    }
+    
+    function savePlanDefaults() {
+        const defaults = [];
+        document.querySelectorAll('.plan-default-card').forEach(card => {
+            const plan = card.querySelector('.plan-tokens').dataset.plan;
+            defaults.push({
+                plan_tier: plan,
+                monthly_tokens: parseInt(card.querySelector('.plan-tokens').value) || 0,
+                queries_per_week: card.querySelector('.plan-queries').value ? parseInt(card.querySelector('.plan-queries').value) : null,
+                reports_per_week: card.querySelector('.plan-reports').value ? parseInt(card.querySelector('.plan-reports').value) : null
+            });
+        });
+        
+        fetch('/admin/api/ai-plan-defaults', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ defaults: defaults })
+        })
+        .then(res => res.json())
+        .then(data => {
+            showToast('✅ ' + data.message, '#00e676');
+        });
+    }
+    
+    function showToast(message, color) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-mini';
+        toast.style.cssText = `
+            background: var(--bg-card);
+            border: 1px solid ${color};
+            color: ${color};
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,324 @@
+{% extends "base_user.html" %}
+{% block title %}Ticket {{ ticket.ticket_number }} - Tragene Journal{% endblock %}
+{% block page_title %}🎫 Ticket {{ ticket.ticket_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .ticket-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .ticket-header-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        padding: 18px 22px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .ticket-header-card .th-left h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        margin: 0;
+        color: var(--text-primary);
+    }
+
+    .ticket-header-card .th-left span {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+
+    .ticket-status-badge {
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ticket-status-badge.open { background: rgba(0,230,118,0.1); color: #00e676; border: 1px solid rgba(0,230,118,0.2); }
+    .ticket-status-badge.in_progress { background: rgba(255,179,0,0.1); color: #ffb300; border: 1px solid rgba(255,179,0,0.2); }
+    .ticket-status-badge.resolved { background: rgba(79,142,247,0.1); color: var(--accent); border: 1px solid rgba(79,142,247,0.2); }
+    .ticket-status-badge.closed { background: var(--bg-body); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+    .chat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 55vh;
+        min-height: 400px;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        background: var(--bg-body);
+    }
+
+    .chat-msg {
+        display: flex;
+        gap: 10px;
+        max-width: 80%;
+    }
+
+    .chat-msg.user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    .chat-msg.admin {
+        align-self: flex-start;
+    }
+
+    .chat-msg .msg-avatar {
+        width: 32px; height: 32px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .msg-avatar.user-av {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+    }
+
+    .msg-avatar.admin-av {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .chat-msg .msg-bubble {
+        padding: 12px 16px;
+        border-radius: 14px;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+
+    .chat-msg.user .msg-bubble {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .chat-msg.admin .msg-bubble {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+
+    .chat-msg .msg-time {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .chat-msg.user .msg-time { text-align: right; }
+
+    .chat-input-area {
+        padding: 14px 20px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        gap: 10px;
+        background: var(--bg-card);
+    }
+
+    .chat-input-area input {
+        flex: 1;
+        padding: 10px 16px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 25px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .chat-input-area input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .btn-send {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-close-ticket {
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid rgba(255,82,82,0.3);
+        color: #ff5252;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .btn-close-ticket:hover {
+        background: rgba(255,82,82,0.1);
+    }
+
+    .closed-banner {
+        text-align: center;
+        padding: 14px;
+        background: var(--bg-body);
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 14px;
+    }
+
+    .back-link:hover { color: var(--accent); }
+
+    @media (max-width: 576px) {
+        .chat-msg { max-width: 90%; }
+        .ticket-header-card { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="ticket-container">
+    
+    <a href="{{ url_for('user.support') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Support
+    </a>
+
+    <!-- Ticket Header -->
+    <div class="ticket-header-card">
+        <div class="th-left">
+            <h6>{{ ticket.subject }}</h6>
+            <span>{{ ticket.ticket_number }} • {{ ticket.category | replace('_', ' ') | title }} • {{ ticket.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <span class="ticket-status-badge {{ ticket.status }}">{{ ticket.status | replace('_', ' ') }}</span>
+            {% if ticket.status != 'closed' %}
+            <button class="btn-close-ticket" onclick="closeTicket()">Close</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-card">
+        <div class="chat-messages" id="chatMessages">
+            {% for reply in ticket.replies %}
+            <div class="chat-msg {{ 'admin' if reply.is_admin_reply else 'user' }}">
+                <div class="msg-avatar {{ 'admin-av' if reply.is_admin_reply else 'user-av' }}">
+                    {{ '🧠' if reply.is_admin_reply else '👤' }}
+                </div>
+                <div>
+                    <div class="msg-bubble">{{ reply.message }}</div>
+                    {% if reply.attachment_url %}
+                    <div style="margin-top:8px;">
+                        <a href="/{{ reply.attachment_url }}" target="_blank" 
+                           style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg-body);border-radius:8px;text-decoration:none;font-size:0.75rem;">
+                            <i class="bi bi-paperclip"></i> View Attachment
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div class="msg-time">{{ reply.created_at.strftime('%d %b, %H:%M') }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if ticket.status != 'closed' %}
+        <div class="chat-input-area">
+            <input type="text" id="replyInput" placeholder="Type your reply..." onkeypress="if(event.key==='Enter')sendReply()">
+            <button class="btn-send" id="sendBtn" onclick="sendReply()">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+        {% else %}
+        <div class="closed-banner">
+            🔒 This ticket is closed. <a href="{{ url_for('user.support_create') }}" style="color:var(--accent);">Create a new ticket</a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function sendReply() {
+        const input = document.getElementById('replyInput');
+        const message = input.value.trim();
+        if (!message) return;
+
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+
+        fetch('/user/api/support/{{ ticket.ticket_number }}/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .finally(() => { btn.disabled = false; });
+    }
+
+    function closeTicket() {
+        if (!confirm('Close this ticket? You can create a new one if needed.')) return;
+        
+        fetch('/user/api/support/{{ ticket.ticket_number }}/close', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) location.reload();
+            });
+    }
+
+    // Scroll to bottom
+    const chat = document.getElementById('chatMessages');
+    chat.scrollTop = chat.scrollHeight;
+</script>
+{% endblock %}

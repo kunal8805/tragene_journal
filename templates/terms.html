@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+
+{% block title %}Terms & Conditions - TRAGENE Journal{% endblock %}
+
+{% block meta_description %}Read our Terms and Conditions for using TRAGENE Journal Tragene Journal and analytics platform.{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+    <div class="glass-card p-6 md:p-10">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">Terms &amp; Conditions</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">Last Updated: {{ now.strftime('%B %d, %Y') if now else 'January 1, 2025' }}</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        <!-- Introduction -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-6 rounded-lg mb-8">
+            <p class="text-gray-700 dark:text-gray-300 text-lg">
+                Welcome to <strong class="text-blue-600 dark:text-blue-400">TRAGENE Journal</strong> ("Company", "we", "our", or "us"). 
+                These Terms &amp; Conditions ("Terms") govern your access to and use of the TRAGENE Journal website, dashboard, 
+                applications, and related services (collectively, the "Service").
+            </p>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">
+                By creating an account, purchasing a subscription, or using our Service, you acknowledge that you have read, 
+                understood, and agree to be legally bound by these Terms. If you do not agree with these Terms, you must not use the Service.
+            </p>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 mb-10">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Table of Contents</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                <a href="#section-1" class="text-blue-600 dark:text-blue-400 hover:underline">1. About the Service</a>
+                <a href="#section-2" class="text-blue-600 dark:text-blue-400 hover:underline">2. Eligibility</a>
+                <a href="#section-3" class="text-blue-600 dark:text-blue-400 hover:underline">3. User Account</a>
+                <a href="#section-4" class="text-blue-600 dark:text-blue-400 hover:underline">4. Trading Data</a>
+                <a href="#section-5" class="text-blue-600 dark:text-blue-400 hover:underline">5. AI Features</a>
+                <a href="#section-6" class="text-blue-600 dark:text-blue-400 hover:underline">6. Subscription Plans</a>
+                <a href="#section-7" class="text-blue-600 dark:text-blue-400 hover:underline">7. Billing</a>
+                <a href="#section-8" class="text-blue-600 dark:text-blue-400 hover:underline">8. Subscription Renewal</a>
+                <a href="#section-9" class="text-blue-600 dark:text-blue-400 hover:underline">9. Cancellation</a>
+                <a href="#section-10" class="text-blue-600 dark:text-blue-400 hover:underline">10. Switching Plans</a>
+                <a href="#section-11" class="text-blue-600 dark:text-blue-400 hover:underline">11. Refund Policy</a>
+                <a href="#section-12" class="text-blue-600 dark:text-blue-400 hover:underline">12. Taxes</a>
+                <a href="#section-13" class="text-blue-600 dark:text-blue-400 hover:underline">13. Intellectual Property</a>
+                <a href="#section-14" class="text-blue-600 dark:text-blue-400 hover:underline">14. Acceptable Use</a>
+                <a href="#section-15" class="text-blue-600 dark:text-blue-400 hover:underline">15. No Financial Advice</a>
+                <a href="#section-16" class="text-blue-600 dark:text-blue-400 hover:underline">16. Risk Disclosure</a>
+                <a href="#section-17" class="text-blue-600 dark:text-blue-400 hover:underline">17. Limitation of Liability</a>
+                <a href="#section-18" class="text-blue-600 dark:text-blue-400 hover:underline">18. Third-Party Services</a>
+                <a href="#section-19" class="text-blue-600 dark:text-blue-400 hover:underline">19. Suspension and Termination</a>
+                <a href="#section-20" class="text-blue-600 dark:text-blue-400 hover:underline">20. Changes to the Service</a>
+                <a href="#section-21" class="text-blue-600 dark:text-blue-400 hover:underline">21. Changes to These Terms</a>
+                <a href="#section-22" class="text-blue-600 dark:text-blue-400 hover:underline">22. Governing Law</a>
+                <a href="#section-23" class="text-blue-600 dark:text-blue-400 hover:underline">23. Contact</a>
+            </div>
+        </div>
+
+        <!-- Section 1 -->
+        <div id="section-1" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">1.</span> About the Service
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300 mb-3">TRAGENE Journal is a cloud-based Tragene Journal and analytics platform designed to help traders record, organize, analyze, and review their trading activity.</p>
+            <p class="text-gray-700 dark:text-gray-300 mb-3">The Service may include features such as:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4">
+                <li>Trade Journaling</li>
+                <li>AI-powered Trading Analysis</li>
+                <li>Performance Analytics</li>
+                <li>Trading Statistics</li>
+                <li>Risk Analysis</li>
+                <li>Drawdown Analysis</li>
+                <li>Trading Reports</li>
+                <li>MT5 Data Synchronization</li>
+                <li>Charts and Performance Visualizations</li>
+                <li>Journal Notes</li>
+                <li>Screenshots</li>
+                <li>Trade Reviews</li>
+                <li>Other related tools and services</li>
+            </ul>
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 mt-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">The Service is intended solely as a journaling and analytics platform.</p>
+                <p class="text-gray-700 dark:text-gray-300 mt-2">TRAGENE Journal is <strong>not</strong>:</p>
+                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 ml-4 mt-1">
+                    <li>A brokerage</li>
+                    <li>A financial advisor</li>
+                    <li>An investment advisor</li>
+                    <li>A portfolio manager</li>
+                    <li>A copy trading platform</li>
+                    <li>A signal provider</li>
+                </ul>
+                <p class="text-gray-700 dark:text-gray-300 mt-2 font-semibold">Nothing provided through the Service should be interpreted as financial, legal, tax, or investment advice.</p>
+            </div>
+        </div>
+
+        <!-- Section 2 -->
+        <div id="section-2" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">2.</span> Eligibility
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">You must be legally capable of entering into a binding agreement under the laws applicable to you.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">By using the Service, you represent that:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>The information you provide is accurate.</li>
+                <li>You will maintain accurate account information.</li>
+                <li>You are responsible for your account activities.</li>
+            </ul>
+        </div>
+
+        <!-- Section 3 -->
+        <div id="section-3" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">3.</span> User Account
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">You are responsible for maintaining the confidentiality of your account credentials.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">You agree not to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Share your account with others.</li>
+                <li>Attempt unauthorized access.</li>
+                <li>Circumvent security systems.</li>
+                <li>Use automated tools to abuse the Service.</li>
+                <li>Upload malicious software.</li>
+                <li>Reverse engineer the platform.</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">We reserve the right to suspend or terminate accounts involved in fraudulent, abusive, illegal, or unauthorized activities.</p>
+        </div>
+
+        <!-- Section 4 -->
+        <div id="section-4" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">4.</span> Trading Data
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">When you connect your trading account or upload trading information, you retain ownership of your trading data.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">By using the Service, you grant TRAGENE Journal a worldwide, non-exclusive license to collect, store, process, analyze, display, and use your trading data solely for operating and improving the Service.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Trading data may include, but is not limited to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>Trade History</li>
+                <li>Orders</li>
+                <li>Positions</li>
+                <li>Symbols</li>
+                <li>Entry Price</li>
+                <li>Exit Price</li>
+                <li>Stop Loss</li>
+                <li>Take Profit</li>
+                <li>Profit/Loss</li>
+                <li>Balance</li>
+                <li>Equity</li>
+                <li>Margin</li>
+                <li>Drawdown</li>
+                <li>Trading Statistics</li>
+                <li>Journal Notes</li>
+                <li>Uploaded Screenshots</li>
+                <li>AI Analysis Data</li>
+                <li>Performance Reports</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">This data is processed exclusively to provide features such as analytics, dashboards, reports, AI-generated insights, journal functionality, and platform improvements.</p>
+        </div>
+
+        <!-- Section 5 -->
+        <div id="section-5" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">5.</span> AI Features
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Certain features use Artificial Intelligence (AI) to generate summaries, analytics, reports, and trading insights.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">AI-generated content:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>May contain inaccuracies.</li>
+                <li>Is provided for informational purposes only.</li>
+                <li>Does not constitute financial advice.</li>
+                <li>Should not be relied upon as the sole basis for trading decisions.</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3 font-semibold">You remain solely responsible for every trading decision you make.</p>
+        </div>
+
+        <!-- Section 6 -->
+        <div id="section-6" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">6.</span> Subscription Plans
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">TRAGENE Journal offers subscription plans that may include monthly and yearly billing options.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Subscription plans and their features are displayed on:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>The Website Home Page</li>
+                <li>The User Dashboard</li>
+                <li>Pricing Pages</li>
+                <li>Other official TRAGENE Journal pages</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Available plans, features, and pricing may change from time to time.</p>
+        </div>
+
+        <!-- Section 7 -->
+        <div id="section-7" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">7.</span> Billing
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Payment is required before access to paid features is granted.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Prices displayed at checkout are the applicable prices at the time of purchase.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Applicable taxes, duties, or government charges may be added where required by law.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2 font-semibold">Failure to complete payment will prevent activation or renewal of paid features.</p>
+        </div>
+
+        <!-- Section 8 -->
+        <div id="section-8" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">8.</span> Subscription Renewal
+            </h2>
+            <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">TRAGENE Journal does <strong>not</strong> use automatic recurring billing or automatic payment renewals.</p>
+                <p class="text-gray-700 dark:text-gray-300 mt-2">When your subscription expires:</p>
+                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 ml-4 mt-1">
+                    <li>Your paid subscription ends automatically.</li>
+                    <li>Your payment method will not be charged again.</li>
+                    <li>If you wish to continue using premium features, you must manually purchase a new subscription through the official website.</li>
+                </ul>
+                <p class="text-gray-700 dark:text-gray-300 mt-2">No automatic renewal authorization is requested or stored by TRAGENE Journal.</p>
+            </div>
+        </div>
+
+        <!-- Section 9 -->
+        <div id="section-9" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">9.</span> Cancellation
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">After purchasing a subscription:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>The subscription cannot be cancelled before its expiration date.</li>
+                <li>Access remains available until the subscription period ends.</li>
+                <li>Cancelling an account does not automatically create a refund entitlement.</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Users may discontinue using the Service at any time; however, purchased subscription periods remain non-cancellable.</p>
+        </div>
+
+        <!-- Section 10 -->
+        <div id="section-10" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">10.</span> Switching Plans
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Users may choose to purchase a different subscription plan at any time.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Switching plans does not automatically generate a refund for any existing subscription.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Pricing adjustments, if any, will be handled according to the pricing available at the time of purchase.</p>
+        </div>
+
+        <!-- Section 11 -->
+        <div id="section-11" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">11.</span> Refund Policy
+            </h2>
+            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">All subscription purchases are generally <strong>final and non-refundable</strong>.</p>
+            </div>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">Refunds are <strong>not</strong> provided for reasons including, but not limited to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Change of mind</li>
+                <li>Lack of usage</li>
+                <li>Accidental purchase</li>
+                <li>User error</li>
+                <li>Trading losses</li>
+                <li>Dissatisfaction with trading performance</li>
+                <li>Failure to understand platform features</li>
+                <li>Subscription expiration</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">A refund may only be considered if TRAGENE Journal determines, in its sole discretion, that the Service could not be provided due to a verified technical issue, prolonged server outage, billing error, or other fault directly caused by our systems.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Approval of any refund request is entirely at our discretion after investigation.</p>
+        </div>
+
+        <!-- Section 12 -->
+        <div id="section-12" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">12.</span> Taxes
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Users are responsible for any taxes, duties, or governmental charges applicable under their local laws.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Where required, taxes may be included in or added to the purchase price during checkout.</p>
+        </div>
+
+        <!-- Section 13 -->
+        <div id="section-13" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">13.</span> Intellectual Property
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">All content, software, source code, graphics, designs, trademarks, logos, branding, AI systems, databases, and platform features remain the exclusive property of TRAGENE Journal unless otherwise stated.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2 font-semibold">No ownership rights are transferred through use of the Service.</p>
+        </div>
+
+        <!-- Section 14 -->
+        <div id="section-14" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">14.</span> Acceptable Use
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Users agree not to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Attempt unauthorized access.</li>
+                <li>Interfere with platform security.</li>
+                <li>Distribute malware.</li>
+                <li>Abuse APIs.</li>
+                <li>Scrape website content.</li>
+                <li>Use bots for abusive activity.</li>
+                <li>Violate applicable laws.</li>
+                <li>Upload unlawful or infringing material.</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">Violation of these Terms may result in account suspension or permanent termination.</p>
+        </div>
+
+        <!-- Section 15 -->
+        <div id="section-15" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">15.</span> No Financial Advice
+            </h2>
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">The Service provides software tools only.</p>
+                <p class="text-gray-700 dark:text-gray-300 mt-2">Nothing within TRAGENE Journal should be interpreted as:</p>
+                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 ml-4 mt-1">
+                    <li>Investment advice</li>
+                    <li>Financial advice</li>
+                    <li>Tax advice</li>
+                    <li>Legal advice</li>
+                    <li>Portfolio management</li>
+                    <li>Trading recommendations</li>
+                </ul>
+                <p class="text-gray-700 dark:text-gray-300 mt-2 font-semibold">All trading decisions remain solely your responsibility.</p>
+            </div>
+        </div>
+
+        <!-- Section 16 -->
+        <div id="section-16" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">16.</span> Risk Disclosure
+            </h2>
+            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">Trading financial markets involves substantial risk.</p>
+                <p class="text-gray-700 dark:text-gray-300 mt-2">Past performance does not guarantee future results.</p>
+                <p class="text-gray-700 dark:text-gray-300 mt-2">You acknowledge that:</p>
+                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 ml-4 mt-1">
+                    <li>You may lose part or all of your capital.</li>
+                    <li>Trading carries significant financial risk.</li>
+                    <li>TRAGENE Journal is not responsible for trading outcomes.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Section 17 -->
+        <div id="section-17" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">17.</span> Limitation of Liability
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">To the fullest extent permitted by law, TRAGENE Journal shall not be liable for:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>Trading losses</li>
+                <li>Missed trading opportunities</li>
+                <li>Broker failures</li>
+                <li>Exchange outages</li>
+                <li>Internet interruptions</li>
+                <li>Third-party service failures</li>
+                <li>API interruptions</li>
+                <li>Data delays</li>
+                <li>Software bugs</li>
+                <li>Device failures</li>
+                <li>Indirect, incidental, special, or consequential damages</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-3 font-semibold">Use of the Service is entirely at your own risk.</p>
+        </div>
+
+        <!-- Section 18 -->
+        <div id="section-18" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">18.</span> Third-Party Services
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">The Service may integrate with third-party providers, including but not limited to:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Trading platforms</li>
+                <li>Payment processors</li>
+                <li>Cloud hosting providers</li>
+                <li>Email services</li>
+                <li>Analytics providers</li>
+                <li>AI providers</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Your use of such services may also be governed by their respective terms and privacy policies.</p>
+        </div>
+
+        <!-- Section 19 -->
+        <div id="section-19" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">19.</span> Suspension and Termination
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We reserve the right to suspend or terminate accounts that:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Violate these Terms.</li>
+                <li>Engage in fraud.</li>
+                <li>Abuse the platform.</li>
+                <li>Threaten platform security.</li>
+                <li>Violate applicable laws.</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Termination does not automatically entitle a user to a refund.</p>
+        </div>
+
+        <!-- Section 20 -->
+        <div id="section-20" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">20.</span> Changes to the Service
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We may update, modify, improve, discontinue, or replace any part of the Service at any time.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">We may also introduce new subscription plans, pricing, or features.</p>
+        </div>
+
+        <!-- Section 21 -->
+        <div id="section-21" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">21.</span> Changes to These Terms
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We may revise these Terms from time to time.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">The updated version becomes effective upon publication on our website unless otherwise stated.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2 font-semibold">Continued use of the Service after updates constitutes acceptance of the revised Terms.</p>
+        </div>
+
+        <!-- Section 22 -->
+        <div id="section-22" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">22.</span> Governing Law
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">These Terms shall be governed by and interpreted in accordance with the laws applicable to the jurisdiction in which TRAGENE Journal operates, without regard to conflict of law principles.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Any disputes shall be subject to the exclusive jurisdiction of the competent courts of that jurisdiction.</p>
+        </div>
+
+        <!-- Section 23 -->
+        <div id="section-23" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">23.</span> Contact
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">For questions regarding these Terms &amp; Conditions, billing, subscriptions, or legal matters, please contact us through the official contact information provided on our website.</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 text-center">
+            <p class="text-gray-600 dark:text-gray-400 text-sm">
+                By creating an account, purchasing a subscription, or continuing to use TRAGENE Journal, 
+                you acknowledge that you have read, understood, and agreed to these Terms &amp; Conditions.
+            </p>
+            <p class="text-gray-500 dark:text-gray-500 text-xs mt-4">
+                &copy; {{ now.year if now else '2025' }} TRAGENE Journal. All rights reserved.
+            </p>
+            <div class="flex justify-center gap-4 mt-4">
+                <a href="{{ url_for('home') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Home</a>
+                <a href="{{ url_for('privacy') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Privacy Policy</a>
+                <a href="{{ url_for('refund_policy') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Refund Policy</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

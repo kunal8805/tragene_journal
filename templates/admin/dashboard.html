@@ -1,0 +1,19 @@
+{% extends "base_admin.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="card stat-card p-3 text-center"><div class="label">Total Users</div><h2 class="mt-1">{{ total_users }}</h2></div></div>
+    <div class="col-6 col-md-3"><div class="card stat-card p-3 text-center"><div class="label">Total Trades</div><h2 class="mt-1">{{ total_trades }}</h2></div></div>
+    <div class="col-6 col-md-3"><div class="card stat-card p-3 text-center"><div class="label">Active Subs</div><h2 class="mt-1">{{ basic_users + pro_users }}</h2></div></div>
+    <div class="col-6 col-md-3"><div class="card stat-card p-3 text-center"><div class="label">Revenue</div><h2 class="mt-1">₹{{ revenue }}</h2></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Free</div><h2 class="mt-1">{{ free_users }}</h2></div></div>
+    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Basic</div><h2 class="mt-1">{{ basic_users }}</h2></div></div>
+    <div class="col-4"><div class="card stat-card p-3 text-center"><div class="label">Pro</div><h2 class="mt-1">{{ pro_users }}</h2></div></div>
+</div>
+
+{% endblock %}

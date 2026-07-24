@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact & Support | TRAGENE Journal</title>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Google Fonts (Inter & Space Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== ROOT VARIABLES (Futuristic Dark Theme) ===== */
+    :root {
+      --bg: #0a0f0e;
+      --surface: #111917;
+      --surface-2: #16201e;
+      --border: rgba(38, 166, 154, 0.25);
+      --border-soft: rgba(38, 166, 154, 0.12);
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --text: #eaf0f0;
+      --text-dim: #a8c0be;
+      --text-faint: #5d7a78;
+      --bull: #26a69a;
+      --bull-glow: rgba(38, 166, 154, 0.35);
+      --bear: #ef5350;
+      --gold: #f2b544;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Space Mono', 'SF Mono', monospace;
+    }
+
+    /* ===== RESET & BASE ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      background-image: radial-gradient(circle at 10% 30%, rgba(38,166,154,0.03) 0%, transparent 60%);
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* ===== GLASS & CARDS ===== */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(2px);
+      border: 1px solid var(--border-soft);
+      border-radius: 24px;
+      transition: all 0.25s ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(38, 166, 154, 0.3);
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    .text-bull { color: var(--bull); }
+    .text-gold { color: var(--gold); }
+    .text-dim { color: var(--text-dim); }
+    .text-faint { color: var(--text-faint); }
+
+    .fw-600 { font-weight: 600; }
+
+    /* ===== LAYOUT UTILITIES ===== */
+    .max-w-6xl { max-width: 1280px; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    .px-4 { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .py-5 { padding-top: 2rem; padding-bottom: 2rem; }
+    .mb-12 { margin-bottom: 3rem; }
+    .mb-8 { margin-bottom: 2rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mt-3 { margin-top: 0.75rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+
+    .text-center { text-align: center; }
+    .text-white { color: #fff; }
+    .text-gray-400 { color: var(--text-dim); }
+    .text-gray-500 { color: var(--text-faint); }
+
+    .grid { display: grid; }
+    .grid-cols-1 { grid-template-columns: 1fr; }
+    .md\:grid-cols-2 { grid-template-columns: 1fr; }
+    .md\:grid-cols-4 { grid-template-columns: 1fr; }
+
+    .inline-flex { display: inline-flex; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .flex { display: flex; }
+    .flex-wrap { flex-wrap: wrap; }
+    .w-full { width: 100%; }
+    .w-16 { width: 4rem; }
+    .h-1 { height: 0.25rem; }
+    .rounded-full { border-radius: 9999px; }
+    .rounded-xl { border-radius: 0.75rem; }
+
+    .shadow-lg { box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+    .shadow-bull\/20 { box-shadow: 0 8px 30px rgba(38,166,154,0.2); }
+
+    /* ===== HERO ICON ===== */
+    .contact-hero-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(38,166,154,0.2), rgba(38,166,154,0.05));
+      border: 2px solid rgba(38,166,154,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 60px var(--bull-glow);
+    }
+    .contact-hero-icon i {
+      font-size: 2.5rem;
+      color: var(--bull);
+    }
+
+    /* ===== EMAIL CARD ===== */
+    .email-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .email-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at center, rgba(38,166,154,0.03), transparent 70%);
+      animation: rotateBg 20s linear infinite;
+    }
+    @keyframes rotateBg {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .email-card:hover {
+      border-color: rgba(38,166,154,0.4);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      transform: translateY(-4px);
+    }
+    .email-card .email-icon-wrap {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(38,166,154,0.2), rgba(38,166,154,0.05));
+      border: 2px solid rgba(38,166,154,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .email-card .email-icon-wrap i {
+      font-size: 2rem;
+      color: var(--bull);
+    }
+    .email-card .email-address {
+      font-family: var(--font-mono);
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--text);
+      position: relative;
+      z-index: 1;
+    }
+    .email-card .email-address a {
+      color: var(--bull);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .email-card .email-address a:hover {
+      color: #2db9a8;
+    }
+    .email-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .email-tags .tag {
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: var(--glass-bg);
+      border: 1px solid var(--border-soft);
+      color: var(--text-dim);
+      transition: all 0.2s;
+      cursor: default;
+    }
+    .email-tags .tag:hover {
+      background: rgba(38,166,154,0.1);
+      border-color: rgba(38,166,154,0.3);
+      color: var(--text);
+    }
+    .btn-copy {
+      background: var(--glass-bg);
+      border: 1px solid var(--border-soft);
+      color: var(--text-dim);
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+    }
+    .btn-copy:hover {
+      background: rgba(38,166,154,0.1);
+      border-color: rgba(38,166,154,0.3);
+      color: var(--text);
+    }
+    .btn-email {
+      background: var(--bull);
+      border: none;
+      color: #06110f;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+    }
+    .btn-email:hover {
+      background: #2db9a8;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--bull-glow);
+    }
+
+    /* ===== SUPPORT CARDS ===== */
+    .support-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 30px 24px;
+      text-align: center;
+      transition: all 0.3s ease;
+      height: 100%;
+    }
+    .support-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(38,166,154,0.3);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+    }
+    .support-card .icon-wrap {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 1.5rem;
+    }
+    .support-card .icon-wrap.green {
+      background: rgba(38,166,154,0.12);
+      color: var(--bull);
+      border: 1px solid rgba(38,166,154,0.2);
+    }
+    .support-card .icon-wrap.blue {
+      background: rgba(0,150,255,0.12);
+      color: #4a9eff;
+      border: 1px solid rgba(0,150,255,0.2);
+    }
+    .support-card .icon-wrap.purple {
+      background: rgba(160,80,255,0.12);
+      color: #a05aff;
+      border: 1px solid rgba(160,80,255,0.2);
+    }
+    .support-card .icon-wrap.gold {
+      background: rgba(242,181,68,0.12);
+      color: var(--gold);
+      border: 1px solid rgba(242,181,68,0.2);
+    }
+    .support-card h4 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .support-card p {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    /* ===== RESPONSE BADGE ===== */
+    .response-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+    .response-badge.fast {
+      background: rgba(38,166,154,0.12);
+      color: var(--bull);
+      border: 1px solid rgba(38,166,154,0.2);
+    }
+    .response-badge.medium {
+      background: rgba(242,181,68,0.12);
+      color: var(--gold);
+      border: 1px solid rgba(242,181,68,0.2);
+    }
+
+    /* ===== FEATURED SUPPORT ===== */
+    .featured-support {
+      background: linear-gradient(135deg, rgba(38,166,154,0.08), rgba(0,150,255,0.05));
+      border: 1px solid rgba(38,166,154,0.2);
+      border-radius: 24px;
+      padding: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .featured-support::before {
+      content: '';
+      position: absolute;
+      top: -100%;
+      right: -100%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(38,166,154,0.05), transparent 70%);
+      border-radius: 50%;
+    }
+    .featured-support .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin: 24px 0;
+    }
+    .featured-support .feature-item {
+      background: var(--glass-bg);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      transition: all 0.2s;
+    }
+    .featured-support .feature-item:hover {
+      background: rgba(38,166,154,0.05);
+      border-color: rgba(38,166,154,0.2);
+      color: var(--text);
+    }
+    .featured-support .feature-item i {
+      display: block;
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+      color: var(--bull);
+    }
+
+    /* ===== CATEGORY GRID ===== */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .category-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 16px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+    .category-item:hover {
+      transform: translateY(-4px);
+      border-color: rgba(38,166,154,0.3);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    .category-item i {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .category-item .cat-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .category-item .cat-desc {
+      font-size: 0.7rem;
+      color: var(--text-faint);
+      margin-top: 2px;
+    }
+    .cat-icon-blue { color: #4a9eff; }
+    .cat-icon-green { color: var(--bull); }
+    .cat-icon-gold { color: var(--gold); }
+    .cat-icon-purple { color: #a05aff; }
+    .cat-icon-red { color: #ef5350; }
+    .cat-icon-orange { color: #f57c00; }
+    .cat-icon-cyan { color: #00bcd4; }
+    .cat-icon-indigo { color: #5c6bc0; }
+    .cat-icon-gray { color: var(--text-faint); }
+    .cat-icon-pink { color: #ec407a; }
+
+    /* ===== FORM ===== */
+    .contact-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+    }
+    .contact-form .form-control,
+    .contact-form .form-select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      padding: 14px 18px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      width: 100%;
+      font-family: var(--font);
+    }
+    .contact-form .form-control:focus,
+    .contact-form .form-select:focus {
+      border-color: var(--bull);
+      box-shadow: 0 0 0 4px rgba(38,166,154,0.1);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+    }
+    .contact-form .form-control::placeholder {
+      color: var(--text-faint);
+    }
+    .contact-form .form-label {
+      color: var(--text-dim);
+      font-weight: 500;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .contact-form textarea.form-control {
+      min-height: 150px;
+      resize: vertical;
+    }
+    .contact-form .btn-submit {
+      background: linear-gradient(135deg, var(--bull), #0f5f57);
+      border: none;
+      color: #06110f;
+      font-weight: 600;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      width: 100%;
+      cursor: pointer;
+    }
+    .contact-form .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px var(--bull-glow);
+      background: linear-gradient(135deg, #2db9a8, #0f5f57);
+    }
+    .contact-form .btn-submit:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .contact-form input[type="file"] {
+      padding: 12px;
+      background: var(--bg);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+    .contact-form input[type="file"]::file-selector-button {
+      background: rgba(38,166,154,0.15);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: var(--bull);
+      font-weight: 500;
+      transition: 0.2s;
+      cursor: pointer;
+    }
+    .contact-form input[type="file"]::file-selector-button:hover {
+      background: rgba(38,166,154,0.25);
+    }
+
+    /* ===== SCOPE CARDS ===== */
+    .scope-card {
+      padding: 24px 28px;
+      border-radius: 20px;
+      height: 100%;
+      border-left: 4px solid;
+    }
+    .scope-card.positive {
+      background: rgba(38,166,154,0.04);
+      border-color: var(--bull);
+      border-left-color: var(--bull);
+    }
+    .scope-card.negative {
+      background: rgba(239,83,80,0.04);
+      border-color: var(--bear);
+      border-left-color: var(--bear);
+    }
+    .scope-card h4 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .scope-card.positive h4 { color: var(--bull); }
+    .scope-card.negative h4 { color: var(--bear); }
+    .scope-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .scope-card ul li {
+      padding: 4px 0;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .scope-card ul li i {
+      font-size: 0.5rem;
+      opacity: 0.6;
+    }
+    .scope-card.positive ul li i { color: var(--bull); }
+    .scope-card.negative ul li i { color: var(--bear); }
+
+    /* ===== SUCCESS MODAL ===== */
+    .success-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(12px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .success-modal-overlay.active { display: flex; }
+    .success-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      animation: modalPop 0.4s ease-out;
+    }
+    @keyframes modalPop {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .success-modal .check-wrap {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(38,166,154,0.12);
+      border: 2px solid var(--bull);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 60px var(--bull-glow);
+    }
+    .success-modal .check-wrap i {
+      font-size: 2.5rem;
+      color: var(--bull);
+    }
+    .success-modal h3 {
+      font-size: 1.5rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .success-modal p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+    .success-modal .btn-close-modal {
+      background: var(--bull);
+      border: none;
+      color: #06110f;
+      font-weight: 600;
+      padding: 12px 36px;
+      border-radius: 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .success-modal .btn-close-modal:hover {
+      background: #2db9a8;
+      transform: translateY(-2px);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (min-width: 768px) {
+      .md\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+      .md\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      .email-card { padding: 24px; }
+      .email-card .email-address { font-size: 1.1rem; }
+      .featured-support { padding: 24px; }
+      .featured-support .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .category-grid { grid-template-columns: repeat(2, 1fr); }
+      .contact-form { padding: 24px; }
+      .scope-card { padding: 18px 20px; }
+      .support-card { padding: 20px 16px; }
+      body { padding: 1rem 0.5rem; }
+    }
+
+    @media (max-width: 480px) {
+      .category-grid { grid-template-columns: 1fr 1fr; }
+      .featured-support .features-grid { grid-template-columns: 1fr 1fr; }
+      .email-tags .tag { font-size: 0.65rem; padding: 3px 10px; }
+      .contact-hero-icon { width: 64px; height: 64px; }
+      .contact-hero-icon i { font-size: 2rem; }
+    }
+
+    /* ===== FAQ PREVIEW LINKS ===== */
+    .faq-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.75rem;
+      border-radius: 0.75rem;
+      transition: all 0.2s;
+      color: var(--text-dim);
+    }
+    .faq-link:hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+    .faq-link i {
+      color: var(--bull);
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+    .faq-link:hover i {
+      transform: translateX(4px);
+    }
+
+    .border-amber-500\/20 { border-color: rgba(242,181,68,0.2); }
+    .bg-amber-500\/5 { background: rgba(242,181,68,0.05); }
+    .text-amber-400 { color: #fbbf24; }
+  </style>
+</head>
+<body>
+
+<div class="container px-4 py-5 max-w-6xl mx-auto">
+
+  <!-- ===== HERO ===== -->
+  <div class="text-center mb-12">
+    <div class="contact-hero-icon">
+      <i class="bi bi-headset"></i>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-bold text-white mb-3">Contact &amp; Support</h1>
+    <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+      At <strong class="text-bull">TRAGENE Journal</strong>, we're committed to providing fast, reliable, and secure support for every trader. Whether you need help with your account, subscriptions, payments, MT5 synchronization, AI features, or technical issues, our team is here to assist you.
+    </p>
+    <div class="w-16 h-1 bg-gradient-to-r from-bull to-blue-500 mx-auto mt-4 rounded-full"></div>
+  </div>
+
+  <!-- ===== EMAIL CONTACT ===== -->
+  <div class="email-card mb-12">
+    <div class="email-icon-wrap">
+      <i class="bi bi-envelope-fill"></i>
+    </div>
+    <div class="email-address">
+      <a href="mailto:tragene.co@gmail.com">tragene.co@gmail.com</a>
+    </div>
+    <div class="email-tags">
+      <span class="tag">Account Assistance</span>
+      <span class="tag">Subscription Questions</span>
+      <span class="tag">Payment Issues</span>
+      <span class="tag">MT5 Connection</span>
+      <span class="tag">Data Sync</span>
+      <span class="tag">Technical Support</span>
+      <span class="tag">Bug Reports</span>
+      <span class="tag">General Inquiries</span>
+    </div>
+    <div class="flex gap-3 justify-center mt-4">
+      <button onclick="copyEmail('tragene.co@gmail.com')" class="btn-copy">
+        <i class="bi bi-copy me-2"></i>Copy Email
+      </button>
+      <a href="mailto:tragene.co@gmail.com" class="btn-email">
+        <i class="bi bi-envelope me-2"></i>Open Email
+      </a>
+    </div>
+  </div>
+
+  <!-- ===== SUPPORT CARDS ===== -->
+  <div class="grid md:grid-cols-4 gap-4 mb-12">
+    <div class="support-card">
+      <div class="icon-wrap green"><i class="bi bi-shield-lock-fill"></i></div>
+      <h4>Secure Communication</h4>
+      <p>Your data is protected with enterprise-grade security</p>
+    </div>
+    <div class="support-card">
+      <div class="icon-wrap blue"><i class="bi bi-lightning-fill"></i></div>
+      <h4>Fast Responses</h4>
+      <p>Quick resolution times for all support requests</p>
+    </div>
+    <div class="support-card">
+      <div class="icon-wrap purple"><i class="bi bi-person-badge-fill"></i></div>
+      <h4>User Privacy</h4>
+      <p>Your information stays private and confidential</p>
+    </div>
+    <div class="support-card">
+      <div class="icon-wrap gold"><i class="bi bi-handshake-fill"></i></div>
+      <h4>Dedicated Assistance</h4>
+      <p>Personalized support from our expert team</p>
+    </div>
+  </div>
+
+  <!-- ===== FEATURED SUPPORT CTA ===== -->
+  <div class="featured-support mb-12">
+    <div class="text-center">
+      <div class="inline-flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/20 px-4 py-1.5 rounded-full text-sm font-medium mb-3">
+        <i class="bi bi-star-fill text-green-400"></i>
+        Recommended
+      </div>
+      <h2 class="text-2xl font-bold text-white">🚀 Built-in Support System</h2>
+      <p class="text-gray-400 max-w-2xl mx-auto">
+        For the fastest and most organized support experience, use our built-in <strong class="text-bull">Help Center</strong> with ticket system inside your TRAGENE Journal dashboard.
+      </p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-item"><i class="bi bi-search"></i>Browse FAQs</div>
+      <div class="feature-item"><i class="bi bi-ticket-perforated"></i>Create Support Tickets</div>
+      <div class="feature-item"><i class="bi bi-graph-up"></i>Track Ticket Status</div>
+      <div class="feature-item"><i class="bi bi-clock-history"></i>View Conversations</div>
+      <div class="feature-item"><i class="bi bi-bell"></i>Receive Notifications</div>
+      <div class="feature-item"><i class="bi bi-layers"></i>Manage All Requests</div>
+    </div>
+    <div class="text-center">
+      <a href="#" class="inline-flex items-center gap-2 bg-bull text-[#06110f] hover:bg-[#2db9a8] font-semibold px-8 py-3 rounded-xl transition-all duration-300 hover:translate-y-[-2px] shadow-lg shadow-bull/20">
+        <i class="bi bi-box-arrow-in-right"></i>
+        Go to Dashboard Help Center
+      </a>
+    </div>
+  </div>
+
+  <!-- ===== RESPONSE TIMES ===== -->
+  <div class="grid md:grid-cols-2 gap-6 mb-12">
+    <div class="support-card">
+      <div class="icon-wrap green"><i class="bi bi-clock-fill"></i></div>
+      <h4>Dashboard Support</h4>
+      <p>Fastest response through our ticket system</p>
+      <div class="response-badge fast">
+        <i class="bi bi-check-circle-fill"></i>
+        5–6 Hours (Business Hours)
+      </div>
+    </div>
+    <div class="support-card">
+      <div class="icon-wrap blue"><i class="bi bi-envelope-fill"></i></div>
+      <h4>Email Support</h4>
+      <p>For non-urgent inquiries and detailed issues</p>
+      <div class="response-badge medium">
+        <i class="bi bi-clock-fill"></i>
+        Under 24 Hours
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FAQ PREVIEW ===== -->
+  <div class="glass-card p-6 md:p-8 mb-12">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-bold text-white">📖 Frequently Asked Questions</h2>
+      <a href="#" class="text-bull hover:text-[#2db9a8] text-sm font-medium transition">
+        View all FAQs <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+    <div class="grid md:grid-cols-2 gap-2">
+      <a href="#" class="faq-link">
+        <i class="bi bi-chevron-right"></i>
+        <span>How do I connect my MT5 account?</span>
+      </a>
+      <a href="#" class="faq-link">
+        <i class="bi bi-chevron-right"></i>
+        <span>Which password should I use?</span>
+      </a>
+      <a href="#" class="faq-link">
+        <i class="bi bi-chevron-right"></i>
+        <span>Why aren't my trades syncing?</span>
+      </a>
+      <a href="#" class="faq-link">
+        <i class="bi bi-chevron-right"></i>
+        <span>How do subscriptions work?</span>
+      </a>
+      <a href="#" class="faq-link">
+        <i class="bi bi-chevron-right"></i>
+        <span>How can I switch plans?</span>
+      </a>
+      <a href="#" class="faq-link">
+        <i class="bi bi-chevron-right"></i>
+        <span>Can I export my trading data?</span>
+      </a>
+      <a href="#" class="faq-link">
+        <i class="bi bi-chevron-right"></i>
+        <span>How do AI insights work?</span>
+      </a>
+      <a href="#" class="faq-link">
+        <i class="bi bi-chevron-right"></i>
+        <span>How do I delete my account?</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ===== SUPPORT CATEGORIES ===== -->
+  <div class="mb-12">
+    <h2 class="text-2xl font-bold text-white text-center mb-8">Support Categories</h2>
+    <div class="category-grid">
+      <div class="category-item">
+        <i class="bi bi-person-fill cat-icon-blue"></i>
+        <div class="cat-name">Account Support</div>
+        <div class="cat-desc">Manage your account</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-credit-card cat-icon-green"></i>
+        <div class="cat-name">Subscription &amp; Billing</div>
+        <div class="cat-desc">Payments &amp; plans</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-cash-stack cat-icon-gold"></i>
+        <div class="cat-name">Payments</div>
+        <div class="cat-desc">Transaction support</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-arrow-repeat cat-icon-purple"></i>
+        <div class="cat-name">Trading Data Sync</div>
+        <div class="cat-desc">Import your trades</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-server cat-icon-indigo"></i>
+        <div class="cat-name">MT5 Connection</div>
+        <div class="cat-desc">Platform connectivity</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-robot cat-icon-cyan"></i>
+        <div class="cat-name">AI Features</div>
+        <div class="cat-desc">AI insights &amp; analysis</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-bug-fill cat-icon-red"></i>
+        <div class="cat-name">Bug Reports</div>
+        <div class="cat-desc">Report issues</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-gear-fill cat-icon-gray"></i>
+        <div class="cat-name">Technical Issues</div>
+        <div class="cat-desc">Technical support</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-question-circle-fill cat-icon-orange"></i>
+        <div class="cat-name">General Questions</div>
+        <div class="cat-desc">Quick inquiries</div>
+      </div>
+      <div class="category-item">
+        <i class="bi bi-lightbulb-fill cat-icon-gold"></i>
+        <div class="cat-name">Feature Requests</div>
+        <div class="cat-desc">Suggest new features</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BEFORE CONTACTING ===== -->
+  <div class="glass-card p-6 md:p-8 mb-12 border-amber-500/20 bg-amber-500/5">
+    <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+      <i class="bi bi-info-circle-fill text-amber-400"></i>
+      Before Contacting Support
+    </h3>
+    <p class="text-gray-400 mb-3">
+      To help us resolve your issue faster, please include as much information as possible:
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">📧 Registered Email Address</span>
+      <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">🔢 Trading Account Number</span>
+      <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">📸 Screenshots</span>
+      <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">⚠️ Error Messages</span>
+      <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">🌐 Browser Information</span>
+      <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">📱 Device Information</span>
+      <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">📋 Steps to Reproduce</span>
+    </div>
+    <p class="text-sm text-gray-500 mt-3">Providing complete information helps us resolve your issue more quickly.</p>
+  </div>
+
+  <!-- ===== SUPPORT SCOPE ===== -->
+  <div class="grid md:grid-cols-2 gap-6 mb-12">
+    <div class="scope-card positive">
+      <h4><i class="bi bi-check-circle-fill"></i> Support Scope</h4>
+      <p class="text-gray-400 text-sm mb-3">Our support team can assist with:</p>
+      <ul>
+        <li><i class="bi bi-dot"></i> Account Issues</li>
+        <li><i class="bi bi-dot"></i> Subscription Questions</li>
+        <li><i class="bi bi-dot"></i> Payment Verification</li>
+        <li><i class="bi bi-dot"></i> MT5 Connection Assistance</li>
+        <li><i class="bi bi-dot"></i> Trade Synchronization</li>
+        <li><i class="bi bi-dot"></i> Technical Errors</li>
+        <li><i class="bi bi-dot"></i> AI Feature Questions</li>
+        <li><i class="bi bi-dot"></i> Dashboard Issues</li>
+      </ul>
+    </div>
+    <div class="scope-card negative">
+      <h4><i class="bi bi-x-circle-fill"></i> Not Covered</h4>
+      <p class="text-gray-400 text-sm mb-3">Our support team cannot provide:</p>
+      <ul>
+        <li><i class="bi bi-dot"></i> Financial Advice</li>
+        <li><i class="bi bi-dot"></i> Trading Signals</li>
+        <li><i class="bi bi-dot"></i> Investment Recommendations</li>
+        <li><i class="bi bi-dot"></i> Portfolio Management</li>
+        <li><i class="bi bi-dot"></i> Broker Support</li>
+        <li><i class="bi bi-dot"></i> Trading Strategy Advice</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== CONTACT FORM ===== -->
+  <div class="contact-form">
+    <h2 class="text-2xl font-bold text-white text-center mb-6">📩 Send Us a Message</h2>
+    
+    <form id="contactForm" method="POST" action="#" enctype="multipart/form-data">
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label for="fullName" class="form-label">Full Name <span class="text-red-400">*</span></label>
+          <input type="text" id="fullName" name="full_name" required placeholder="John Doe"
+                 class="form-control">
+        </div>
+        <div>
+          <label for="email" class="form-label">Email Address <span class="text-red-400">*</span></label>
+          <input type="email" id="email" name="email" required placeholder="john@example.com"
+                 class="form-control">
+        </div>
+      </div>
+      <div class="mb-4">
+        <label for="subject" class="form-label">Subject <span class="text-red-400">*</span></label>
+        <input type="text" id="subject" name="subject" required placeholder="Brief description of your issue"
+               class="form-control">
+      </div>
+      <div class="mb-4">
+        <label for="category" class="form-label">Category <span class="text-red-400">*</span></label>
+        <select id="category" name="category" required class="form-select">
+          <option value="">Select a category...</option>
+          <option value="account">Account Support</option>
+          <option value="subscription">Subscription &amp; Billing</option>
+          <option value="payment">Payments</option>
+          <option value="sync">Trading Data Sync</option>
+          <option value="mt5">MT5 Connection</option>
+          <option value="ai">AI Features</option>
+          <option value="bug">Bug Report</option>
+          <option value="technical">Technical Issue</option>
+          <option value="general">General Question</option>
+          <option value="feature">Feature Request</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label for="message" class="form-label">Message <span class="text-red-400">*</span></label>
+        <textarea id="message" name="message" rows="5" required placeholder="Describe your issue in detail..."
+                  class="form-control"></textarea>
+      </div>
+      <div class="mb-4">
+        <label for="screenshot" class="form-label">Screenshot <span class="text-gray-500 text-sm">(Optional)</span></label>
+        <input type="file" id="screenshot" name="screenshot" accept="image/*"
+               class="form-control">
+      </div>
+      <button type="submit" class="btn-submit">
+        <i class="bi bi-send-fill me-2"></i>Send Message
+      </button>
+    </form>
+  </div>
+
+</div>
+
+<!-- ===== SUCCESS MODAL ===== -->
+<div id="successModal" class="success-modal-overlay">
+  <div class="success-modal">
+    <div class="check-wrap">
+      <i class="bi bi-check-lg"></i>
+    </div>
+    <h3>✅ Message Sent!</h3>
+    <p>Thank you for contacting TRAGENE Journal. Our support team will get back to you as soon as possible.</p>
+    <button onclick="closeModal()" class="btn-close-modal">
+      <i class="bi bi-x-lg me-2"></i>Close
+    </button>
+  </div>
+</div>
+
+<script>
+  // ===== COPY EMAIL =====
+  function copyEmail(email) {
+    navigator.clipboard.writeText(email).then(() => {
+      const btn = document.activeElement;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Copied!';
+      btn.style.borderColor = 'var(--bull)';
+      btn.style.color = 'var(--bull)';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      }, 2000);
+    }).catch(() => {
+      const input = document.createElement('input');
+      input.value = email;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      alert('Email copied to clipboard!');
+    });
+  }
+
+  // ===== FORM SUBMISSION =====
+  document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector('.btn-submit');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat bi-spin me-2"></i>Sending...';
+    submitBtn.disabled = true;
+    
+    // Simulate submission (replace with actual AJAX)
+    setTimeout(() => {
+      document.getElementById('successModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      this.reset();
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+    }, 1500);
+  });
+
+  // ===== CLOSE MODAL =====
+  function closeModal() {
+    document.getElementById('successModal').classList.remove('active');
+    document.body.style.overflow = 'auto';
+  }
+
+  document.getElementById('successModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+</script>
+
+</body>
+</html>

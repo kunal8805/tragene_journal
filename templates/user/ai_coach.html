@@ -1,0 +1,520 @@
+{% extends "base_user.html" %}
+{% block title %}AI Coach - Tragene Journal{% endblock %}
+{% block page_title %}🧠 AI Coach{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .coach-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* ── Elite Badge ── */
+    .elite-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: linear-gradient(135deg, rgba(255,179,0,0.15), rgba(255,143,0,0.1));
+        border: 1px solid rgba(255,179,0,0.3);
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #ffb300;
+        margin-bottom: 20px;
+    }
+
+    /* ── Coach Greeting Card ── */
+    .coach-greeting {
+        background: linear-gradient(135deg, var(--bg-card) 0%, rgba(139,92,246,0.05) 100%);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .coach-greeting::before {
+        content: '';
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .coach-avatar {
+        width: 56px; height: 56px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 14px;
+        box-shadow: 0 8px 25px rgba(139,92,246,0.3);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .coach-greeting h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 6px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .coach-greeting .greeting-text {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ── Insights Grid ── */
+    .insights-section-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .insights-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    
+    .insight-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .insight-card:hover {
+        border-color: rgba(139,92,246,0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    
+    .insight-card .ic-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .ic-icon {
+        width: 32px; height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    
+    .ic-icon.positive { background: rgba(0,230,118,0.12); color: #00e676; }
+    .ic-icon.warning { background: rgba(255,179,0,0.12); color: #ffb300; }
+    .ic-icon.critical { background: rgba(255,82,82,0.12); color: #ff5252; }
+    .ic-icon.info { background: rgba(79,142,247,0.12); color: var(--accent); }
+    
+    .insight-card .ic-title {
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .insight-card .ic-desc {
+        font-size: 0.73rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+    }
+    
+    .insight-card .ic-time {
+        font-size: 0.62rem;
+        color: var(--text-muted);
+        margin-top: 8px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .insight-card.unread {
+        border-left: 3px solid #8b5cf6;
+    }
+
+    /* ── Chat Section ── */
+    .chat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .chat-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .chat-messages {
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+    
+    .chat-msg {
+        display: flex;
+        gap: 10px;
+        max-width: 85%;
+    }
+    
+    .chat-msg.coach {
+        align-self: flex-start;
+    }
+    
+    .chat-msg.user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+    
+    .chat-msg .msg-avatar {
+        width: 34px; height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    
+    .msg-avatar.coach-av {
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        color: #fff;
+    }
+    
+    .msg-avatar.user-av {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+    
+    .chat-msg .msg-bubble {
+        padding: 12px 16px;
+        border-radius: 14px;
+        font-size: 0.82rem;
+        line-height: 1.5;
+    }
+    
+    .chat-msg.coach .msg-bubble {
+        background: var(--bg-body);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .chat-msg.user .msg-bubble {
+        background: var(--accent);
+        color: #fff;
+    }
+    
+    .chat-input-row {
+        padding: 14px 20px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        gap: 10px;
+    }
+    
+    .chat-input-row input {
+        flex: 1;
+        padding: 12px 16px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .chat-input-row input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+    }
+    
+    .chat-input-row input::placeholder {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+    
+    .btn-send {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-send:hover {
+        box-shadow: 0 4px 16px rgba(139,92,246,0.4);
+    }
+    
+    .btn-send:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .chat-hint {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        padding: 0 20px 6px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 14px;
+        opacity: 0.3;
+    }
+    
+    .empty-state h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+        .insights-grid { grid-template-columns: 1fr; }
+        .chat-msg { max-width: 90%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="coach-container">
+    
+    <!-- ── Elite Badge ── -->
+    <div class="elite-badge">
+        <i class="bi bi-star-fill"></i> Elite Feature
+    </div>
+    
+    <!-- ── Coach Greeting ── -->
+    <div class="coach-greeting">
+        <div class="coach-avatar">🧠</div>
+        <h5>Hey {{ current_user.username }}! 👋</h5>
+        <p class="greeting-text">
+            I'm your personal AI trading coach. I watch your trades, track your patterns, and help you become a consistently profitable trader. Here's what I've noticed recently...
+        </p>
+    </div>
+    
+    <!-- ── Auto Insights ── -->
+    <div class="insights-section-title">
+        <i class="bi bi-lightbulb" style="color:#ffb300;"></i> Recent Insights
+    </div>
+    
+    <div class="insights-grid" id="insightsGrid">
+        {% if insights %}
+            {% for insight in insights %}
+            <div class="insight-card {% if not insight.is_read %}unread{% endif %}" onclick="markRead({{ insight.id }})">
+                <div class="ic-header">
+                    <div class="ic-icon {{ insight.severity }}">
+                        {% if insight.severity == 'positive' %}✅
+                        {% elif insight.severity == 'warning' %}⚠️
+                        {% elif insight.severity == 'critical' %}🔴
+                        {% else %}💡{% endif %}
+                    </div>
+                    <span class="ic-title">{{ insight.title }}</span>
+                </div>
+                <div class="ic-desc">{{ insight.description[:150] }}{% if insight.description|length > 150 %}...{% endif %}</div>
+                <div class="ic-time">{{ insight.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="grid-column:1/-1;">
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h5>No Insights Yet</h5>
+                    <p>Generate an AI report first, and I'll start giving you personalized coaching insights.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- ── Chat Section ── -->
+    <div class="insights-section-title">
+        <i class="bi bi-chat-dots" style="color:#8b5cf6;"></i> Chat with Your Coach
+    </div>
+    
+    <div class="chat-card">
+        <div class="chat-header">
+            <span style="font-size:1.2rem;">🧠</span> TRAGENE AI Coach
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg coach">
+                <div class="msg-avatar coach-av">🧠</div>
+                <div class="msg-bubble">
+                    Hey! I'm your trading coach. Ask me anything about your trading performance, patterns, risk management, or how to improve. I'm here to help! 🚀
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-hint" id="chatHint">
+            <span id="tokenHint">🪙 Ask me anything about your trades!</span>
+        </div>
+        
+        <div class="chat-input-row">
+            <input type="text" id="chatInput" placeholder="e.g., How can I improve my win rate?" 
+                   onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const question = input.value.trim();
+        
+        if (!question) return;
+        
+        // Add user message
+        addMessage(question, 'user');
+        input.value = '';
+        
+        // Disable button
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        
+        // Show typing
+        addTypingIndicator();
+        
+        // Send to API
+        fetch('/ai/coach-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: question })
+        })
+        .then(res => res.json())
+        .then(data => {
+            removeTypingIndicator();
+            
+            if (data.success) {
+                addMessage(data.response, 'coach');
+                document.getElementById('tokenHint').innerHTML = 
+                    `🪙 ${data.tokens_used.toLocaleString()} tokens used | ${data.remaining.toLocaleString()} remaining`;
+            } else {
+                addMessage('Sorry, ' + data.message, 'coach');
+            }
+        })
+        .catch(err => {
+            removeTypingIndicator();
+            addMessage('Sorry, I\'m having trouble connecting. Please try again.', 'coach');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            input.focus();
+        });
+    }
+    
+    function addMessage(text, sender) {
+        const container = document.getElementById('chatMessages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg ' + sender;
+        
+        const avatar = sender === 'coach' 
+            ? '<div class="msg-avatar coach-av">🧠</div>'
+            : '<div class="msg-avatar user-av">👤</div>';
+        
+        msgDiv.innerHTML = `
+            ${avatar}
+            <div class="msg-bubble">${text}</div>
+        `;
+        
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function addTypingIndicator() {
+        const container = document.getElementById('chatMessages');
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'chat-msg coach';
+        typingDiv.id = 'typingIndicator';
+        typingDiv.innerHTML = `
+            <div class="msg-avatar coach-av">🧠</div>
+            <div class="msg-bubble" style="padding:10px 16px;">
+                <span style="display:flex;gap:4px;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:bounce 1.4s infinite;"></span>
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:bounce 1.4s 0.2s infinite;"></span>
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:bounce 1.4s 0.4s infinite;"></span>
+                </span>
+            </div>
+        `;
+        container.appendChild(typingDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function removeTypingIndicator() {
+        const typing = document.getElementById('typingIndicator');
+        if (typing) typing.remove();
+    }
+    
+    function markRead(insightId) {
+        const card = document.querySelector(`.insight-card`);
+        // Remove unread styling
+        document.querySelectorAll('.insight-card.unread').forEach(c => c.classList.remove('unread'));
+    }
+    
+    // Add bounce animation
+    const style = document.createElement('style');
+    style.textContent = '@keyframes bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-4px); } }';
+    document.head.appendChild(style);
+</script>
+{% endblock %}

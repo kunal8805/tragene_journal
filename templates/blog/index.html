@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Blog | Tragene Journal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .blog-hero {
+        padding: 80px 0;
+        background: linear-gradient(135deg, #111820 0%, #0d1117 100%);
+        border-bottom: 1px solid #21262d;
+    }
+    .blog-card {
+        background: #161b22;
+        border: 1px solid #21262d;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+        height: 100%;
+    }
+    .blog-card:hover {
+        transform: translateY(-5px);
+        border-color: #4f8ef7;
+    }
+    .blog-image {
+        height: 200px;
+        background-color: #21262d;
+        background-size: cover;
+        background-position: center;
+    }
+    .blog-content {
+        padding: 24px;
+    }
+    .blog-title {
+        color: #e6edf3;
+        font-weight: 700;
+        font-size: 1.25rem;
+        margin-bottom: 12px;
+        text-decoration: none;
+        display: block;
+    }
+    .blog-title:hover {
+        color: #4f8ef7;
+    }
+    .blog-excerpt {
+        color: #8b949e;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    .blog-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #6e7681;
+        font-size: 0.85rem;
+    }
+    .category-badge {
+        background: rgba(79, 142, 247, 0.1);
+        color: #4f8ef7;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .newsletter-box {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(109, 40, 217, 0.05));
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 16px;
+        padding: 32px;
+        text-align: center;
+        margin-top: 60px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Nav placeholder for public site -->
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/">
+      <i class="bi bi-graph-up-arrow text-primary"></i> Tragene Journal
+    </a>
+  </div>
+</nav>
+
+<div class="blog-hero text-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold text-light mb-4">Trading Insights & Analytics</h1>
+        <p class="lead text-muted mx-auto" style="max-width: 600px;">
+            Master your trading psychology, discover new strategies, and learn how to leverage AI for better market performance.
+        </p>
+        
+        <form class="mt-4 mx-auto" style="max-width: 500px;" action="{{ url_for('blog.index') }}" method="GET">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control form-control-lg bg-dark text-light border-secondary" placeholder="Search articles..." value="{{ search_query }}">
+                <button class="btn btn-primary px-4" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="container py-5">
+    {% if featured_post %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <h5 class="text-light mb-4"><i class="bi bi-star-fill text-warning"></i> Featured Post</h5>
+            <div class="blog-card d-flex flex-column flex-md-row">
+                <div class="col-md-6" style="background-image: url('{{ featured_post.featured_image or 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800' }}'); background-size: cover; background-position: center; min-height: 300px;"></div>
+                <div class="col-md-6 p-4 d-flex flex-column justify-content-center">
+                    {% if featured_post.category %}
+                    <div class="mb-3"><a href="{{ url_for('blog.category', slug=featured_post.category.slug) }}" class="category-badge">{{ featured_post.category.name }}</a></div>
+                    {% endif %}
+                    <a href="{{ url_for('blog.post', slug=featured_post.slug) }}" class="blog-title fs-3">{{ featured_post.title }}</a>
+                    <p class="blog-excerpt fs-6">{{ featured_post.excerpt or featured_post.meta_description }}</p>
+                    <div class="blog-meta mt-auto">
+                        <span><i class="bi bi-calendar3"></i> {{ featured_post.published_at.strftime('%b %d, %Y') if featured_post.published_at else featured_post.created_at.strftime('%b %d, %Y') }}</span>
+                        <span><i class="bi bi-clock"></i> {{ featured_post.estimated_reading_time }} min read</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        {% for blog in blogs %}
+        <div class="col-md-6 col-lg-4">
+            <div class="blog-card">
+                <div class="blog-image" style="background-image: url('{{ blog.featured_image or 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800' }}');"></div>
+                <div class="blog-content">
+                    {% if blog.category %}
+                    <div class="mb-3"><a href="{{ url_for('blog.category', slug=blog.category.slug) }}" class="category-badge">{{ blog.category.name }}</a></div>
+                    {% endif %}
+                    <a href="{{ url_for('blog.post', slug=blog.slug) }}" class="blog-title">{{ blog.title }}</a>
+                    <p class="blog-excerpt">{{ (blog.excerpt or blog.meta_description or '')[:100] }}...</p>
+                    <div class="blog-meta">
+                        <span><i class="bi bi-calendar3"></i> {{ blog.published_at.strftime('%b %d, %Y') if blog.published_at else blog.created_at.strftime('%b %d, %Y') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted fs-5">No articles found.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Newsletter -->
+    <div class="newsletter-box">
+        <h3 class="text-light fw-bold mb-3">Never miss a trade insight</h3>
+        <p class="text-muted mb-4">Get the latest trading psychology and strategy articles delivered to your inbox.</p>
+        <form class="d-flex justify-content-center gap-2 mx-auto" style="max-width: 400px;">
+            <input type="email" class="form-control bg-dark border-secondary text-light" placeholder="Email address" required>
+            <button class="btn btn-primary px-4" type="button" onclick="alert('Subscribed!')">Subscribe</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

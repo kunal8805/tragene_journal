@@ -1,0 +1,443 @@
+{% extends "base_user.html" %}
+{% set analyse_page_key = 'insights' %}
+{% block title %}Trading Insights - Tragene Journal{% endblock %}
+{% block page_title %}💡 Trading Insights{% endblock %}
+
+{% block extra_css %}
+<style>
+    .insights-container { max-width: 1200px; margin: 0 auto; }
+    
+    /* Report Buttons */
+    .report-btns {
+        display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    
+    .report-btn {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        color: var(--text-primary); padding: 8px 16px; border-radius: 8px;
+        cursor: pointer; font-size: 0.8rem; font-weight: 600;
+        display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+        text-decoration: none;
+    }
+    
+    .report-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    
+    /* Stats Grid */
+    .insights-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .insight-stat-card {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 12px; padding: 16px; transition: all 0.2s;
+    }
+    
+    .insight-stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .insight-stat-card .stat-icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .insight-stat-card .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+    .insight-stat-card .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
+    
+    .insight-stat-card.win { border-left: 3px solid #00e676; }
+    .insight-stat-card.loss { border-left: 3px solid #ff5252; }
+    .insight-stat-card.info { border-left: 3px solid var(--accent); }
+    .insight-stat-card.warn { border-left: 3px solid #ffb300; }
+    
+    /* Symbol Cards */
+    .symbol-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .symbol-card {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 12px; padding: 16px;
+    }
+    
+    .symbol-card .symbol-name {
+        font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 10px;
+    }
+    
+    .symbol-card .symbol-stats {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    
+    .symbol-stat-item {
+        text-align: center;
+    }
+    
+    .symbol-stat-item .val {
+        font-size: 1rem; font-weight: 700; color: var(--text-primary);
+    }
+    
+    .symbol-stat-item .lbl {
+        font-size: 0.6rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;
+    }
+    
+    /* Contribution Graph */
+    .contrib-card {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 12px; padding: 20px; margin-bottom: 20px;
+    }
+    
+    .contrib-title {
+        font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    
+    .contrib-grid {
+        display: flex; gap: 3px; overflow-x: auto; padding-bottom: 10px;
+    }
+    
+    .contrib-week {
+        display: flex; flex-direction: column; gap: 3px;
+    }
+    
+    .contrib-day-label {
+        font-size: 0.55rem; color: var(--text-muted); text-align: center;
+        height: 12px; line-height: 12px;
+    }
+    
+    .contrib-box {
+        width: 12px; height: 12px; border-radius: 2px;
+        background: var(--bg-body); border: 1px solid var(--border-color);
+        transition: all 0.2s; cursor: pointer; position: relative;
+    }
+    
+    .contrib-box:hover { transform: scale(1.5); z-index: 10; }
+    
+    .contrib-box.level-0 { background: var(--bg-body); border-color: var(--border-color); }
+    .contrib-box.level-1 { background: rgba(0,230,118,0.2); border-color: rgba(0,230,118,0.4); }
+    .contrib-box.level-2 { background: rgba(0,230,118,0.4); border-color: rgba(0,230,118,0.6); }
+    .contrib-box.level-3 { background: rgba(0,230,118,0.6); border-color: rgba(0,230,118,0.8); }
+    .contrib-box.level-4 { background: rgba(0,230,118,0.9); border-color: #00e676; }
+    
+    .contrib-box.neg-level-1 { background: rgba(255,82,82,0.2); border-color: rgba(255,82,82,0.4); }
+    .contrib-box.neg-level-2 { background: rgba(255,82,82,0.4); border-color: rgba(255,82,82,0.6); }
+    .contrib-box.neg-level-3 { background: rgba(255,82,82,0.6); border-color: rgba(255,82,82,0.8); }
+    .contrib-box.neg-level-4 { background: rgba(255,82,82,0.9); border-color: #ff5252; }
+    
+    .contrib-legend {
+        display: flex; align-items: center; gap: 4px; margin-top: 12px;
+        font-size: 0.6rem; color: var(--text-muted);
+    }
+    
+    .contrib-legend .box {
+        width: 10px; height: 10px; border-radius: 2px; display: inline-block;
+    }
+    
+    /* Tooltip */
+    .contrib-tooltip {
+        display: none; position: fixed; background: var(--bg-card);
+        border: 1px solid var(--border-color); border-radius: 8px;
+        padding: 8px 12px; font-size: 0.7rem; z-index: 9999;
+        pointer-events: none; white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        color: var(--text-primary);
+    }
+    
+    /* Weekly/Monthly Sections */
+    .period-section {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 12px; padding: 16px; margin-bottom: 16px;
+    }
+    
+    .period-title {
+        font-size: 0.85rem; font-weight: 700; color: var(--text-primary);
+        margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+    }
+    
+    .period-stats {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 8px;
+    }
+    
+    .period-stat {
+        text-align: center; padding: 8px; background: var(--bg-body);
+        border-radius: 8px;
+    }
+    
+    .period-stat .val { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+    .period-stat .lbl { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    @media (max-width: 768px) {
+        .insights-stats { grid-template-columns: repeat(2, 1fr); }
+        .symbol-cards { grid-template-columns: 1fr; }
+        .contrib-box { width: 10px; height: 10px; }
+        .report-btns { flex-direction: column; }
+        .report-btn { justify-content: center; }
+    }
+    
+    @media (max-width: 480px) {
+        .insight-stat-card .stat-value { font-size: 1.2rem; }
+        .contrib-box { width: 8px; height: 8px; }
+        .contrib-grid { gap: 2px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="insights-container">
+    
+    <!-- Download Report Buttons -->
+    <div class="report-btns">
+        <a href="{{ url_for('user.generate_report', period='week') }}" class="report-btn">
+            <i class="bi bi-download"></i> Weekly Report
+        </a>
+        <a href="{{ url_for('user.generate_report', period='month') }}" class="report-btn">
+            <i class="bi bi-download"></i> Monthly Report
+        </a>
+        <a href="{{ url_for('user.generate_report', period='year') }}" class="report-btn">
+            <i class="bi bi-download"></i> Yearly Report
+        </a>
+        <a href="{{ url_for('user.generate_report', period='all') }}" class="report-btn">
+            <i class="bi bi-download"></i> All-Time Report
+        </a>
+    </div>
+    
+    <!-- Main Stats -->
+    <div class="insights-stats">
+        <div class="insight-stat-card info">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value">{{ total_trades }}</div>
+            <div class="stat-label">Total Trades</div>
+        </div>
+        <div class="insight-stat-card win">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value">{{ total_wins }}</div>
+            <div class="stat-label">Wins ({{ win_rate }}%)</div>
+        </div>
+        <div class="insight-stat-card loss">
+            <div class="stat-icon">❌</div>
+            <div class="stat-value">{{ total_losses }}</div>
+            <div class="stat-label">Losses</div>
+        </div>
+        <div class="insight-stat-card {% if total_pnl >= 0 %}win{% else %}loss{% endif %}">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value" style="color: {% if total_pnl >= 0 %}#00e676{% else %}#ff5252{% endif %}">${{ '%.2f'|format(total_pnl) }}</div>
+            <div class="stat-label">Net P&L</div>
+        </div>
+        <div class="insight-stat-card win">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-value">{{ max_win_streak }}</div>
+            <div class="stat-label">Best Win Streak</div>
+        </div>
+        <div class="insight-stat-card loss">
+            <div class="stat-icon">💀</div>
+            <div class="stat-value">{{ max_loss_streak }}</div>
+            <div class="stat-label">Worst Loss Streak</div>
+        </div>
+        <div class="insight-stat-card info">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value">{{ profit_factor }}</div>
+            <div class="stat-label">Profit Factor</div>
+        </div>
+        <div class="insight-stat-card warn">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value">{{ trading_days }}</div>
+            <div class="stat-label">Trading Days</div>
+        </div>
+        <div class="insight-stat-card info">
+            <div class="stat-icon">😴</div>
+            <div class="stat-value">{{ inactive_days }}</div>
+            <div class="stat-label">Inactive Days</div>
+        </div>
+        <div class="insight-stat-card info">
+            <div class="stat-icon">📝</div>
+            <div class="stat-value">{{ diary_count }}</div>
+            <div class="stat-label">Diary Entries</div>
+        </div>
+        <div class="insight-stat-card info">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value">{{ notes_count }}</div>
+            <div class="stat-label">Day Notes</div>
+        </div>
+        <div class="insight-stat-card info">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value">{{ avg_trades_per_day }}</div>
+            <div class="stat-label">Avg Trades/Day</div>
+        </div>
+    </div>
+    
+    <!-- Contribution Graph -->
+    <div class="contrib-card">
+        <div class="contrib-title">
+            <i class="bi bi-grid-3x3-gap"></i>
+            {{ today.year }} Trading Activity
+        </div>
+        <div class="contrib-grid" id="contribGrid">
+            <!-- Generated by JS -->
+        </div>
+        <div class="contrib-legend">
+            <span style="color:var(--text-muted);">Less</span>
+            <span class="box" style="background:var(--bg-body);border:1px solid var(--border-color);"></span>
+            <span class="box" style="background:rgba(0,230,118,0.2);"></span>
+            <span class="box" style="background:rgba(0,230,118,0.5);"></span>
+            <span class="box" style="background:rgba(0,230,118,0.8);"></span>
+            <span style="color:var(--text-muted);">More Profitable</span>
+            <span style="margin: 0 8px;">|</span>
+            <span class="box" style="background:rgba(255,82,82,0.3);"></span>
+            <span class="box" style="background:rgba(255,82,82,0.6);"></span>
+            <span class="box" style="background:rgba(255,82,82,0.9);"></span>
+            <span style="color:var(--text-muted);">More Losses</span>
+        </div>
+    </div>
+    
+    <!-- Tooltip -->
+    <div class="contrib-tooltip" id="contribTooltip"></div>
+    
+    <!-- Symbol Analysis -->
+    <div class="period-section">
+        <div class="period-title"><i class="bi bi-pie-chart"></i> Symbol Performance</div>
+        <div class="symbol-cards">
+            {% for sym, stats in symbol_stats.items() %}
+            <div class="symbol-card">
+                <div class="symbol-name">{{ sym }}</div>
+                <div class="symbol-stats">
+                    <div class="symbol-stat-item">
+                        <div class="val">{{ stats.count }}</div>
+                        <div class="lbl">Trades</div>
+                    </div>
+                    <div class="symbol-stat-item">
+                        <div class="val" style="color:{% if stats.pnl >= 0 %}#00e676{% else %}#ff5252{% endif %}">${{ '%.0f'|format(stats.pnl) }}</div>
+                        <div class="lbl">P&L</div>
+                    </div>
+                    <div class="symbol-stat-item">
+                        <div class="val" style="color:#00e676;">{{ stats.wins }}</div>
+                        <div class="lbl">Wins</div>
+                    </div>
+                    <div class="symbol-stat-item">
+                        <div class="val" style="color:#ff5252;">{{ stats.losses }}</div>
+                        <div class="lbl">Losses</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Contribution Data
+    const contributionData = {{ contribution_data | tojson | safe }};
+    
+    function renderContributionGrid() {
+        const grid = document.getElementById('contribGrid');
+        const tooltip = document.getElementById('contribTooltip');
+        
+        // Group by weeks
+        const weeks = [];
+        let currentWeek = [];
+        
+        // Add empty cells for days before Jan 1
+        const firstDay = new Date(contributionData[0]?.date + 'T00:00:00');
+        if (firstDay && firstDay.getDay() > 0) {
+            for (let i = 0; i < firstDay.getDay(); i++) {
+                currentWeek.push(null);
+            }
+        }
+        
+        contributionData.forEach((day, index) => {
+            const date = new Date(day.date + 'T00:00:00');
+            currentWeek.push(day);
+            
+            if (date.getDay() === 6 || index === contributionData.length - 1) {
+                weeks.push([...currentWeek]);
+                currentWeek = [];
+            }
+        });
+        
+        // Add remaining days
+        if (currentWeek.length > 0) {
+            weeks.push(currentWeek);
+        }
+        
+        // Day labels
+        const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
+        
+        // Render
+        let html = '';
+        
+        // Day labels column
+        html += '<div class="contrib-week">';
+        dayLabels.forEach(label => {
+            html += `<div class="contrib-day-label">${label}</div>`;
+        });
+        html += '</div>';
+        
+        // Week columns
+        weeks.forEach(week => {
+            html += '<div class="contrib-week">';
+            for (let d = 0; d < 7; d++) {
+                const day = week[d] || null;
+                
+                if (!day) {
+                    html += '<div class="contrib-box level-0"></div>';
+                } else {
+                    let level = 'level-0';
+                    
+                    if (day.count > 0) {
+                        if (day.pnl >= 0) {
+                            if (day.count >= 5) level = 'level-4';
+                            else if (day.count >= 3) level = 'level-3';
+                            else if (day.count >= 2) level = 'level-2';
+                            else level = 'level-1';
+                        } else {
+                            if (Math.abs(day.pnl) >= 500) level = 'neg-level-4';
+                            else if (Math.abs(day.pnl) >= 200) level = 'neg-level-3';
+                            else if (Math.abs(day.pnl) >= 50) level = 'neg-level-2';
+                            else level = 'neg-level-1';
+                        }
+                    }
+                    
+                    const dateObj = new Date(day.date + 'T00:00:00');
+                    const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    
+                    html += `
+                        <div class="contrib-box ${level}" 
+                             data-date="${dateStr}"
+                             data-trades="${day.count}"
+                             data-pnl="${day.pnl}"
+                             onmouseenter="showTooltip(event, this)"
+                             onmouseleave="hideTooltip()">
+                        </div>
+                    `;
+                }
+            }
+            html += '</div>';
+        });
+        
+        grid.innerHTML = html;
+    }
+    
+    function showTooltip(event, box) {
+        const tooltip = document.getElementById('contribTooltip');
+        const date = box.dataset.date;
+        const trades = box.dataset.trades;
+        const pnl = parseFloat(box.dataset.pnl);
+        
+        tooltip.innerHTML = `
+            <strong>${date}</strong><br>
+            Trades: ${trades}<br>
+            P&L: <span style="color:${pnl >= 0 ? '#00e676' : '#ff5252'}">$${pnl.toFixed(2)}</span>
+        `;
+        tooltip.style.display = 'block';
+        tooltip.style.left = (event.clientX + 15) + 'px';
+        tooltip.style.top = (event.clientY - 40) + 'px';
+    }
+    
+    function hideTooltip() {
+        document.getElementById('contribTooltip').style.display = 'none';
+    }
+    
+    // Initialize
+    renderContributionGrid();
+</script>
+{% endblock %}

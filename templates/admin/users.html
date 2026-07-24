@@ -1,0 +1,28 @@
+{% extends "base_admin.html" %}
+{% block title %}Users - Admin{% endblock %}
+{% block page_title %}Users ({{ users|length }}){% endblock %}
+{% block content %}
+
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Tier</th><th>Admin</th><th>Joined</th></tr></thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email }}</td>
+                    <td><span class="badge {% if user.subscription_tier=='pro' %}bg-warning text-dark{% elif user.subscription_tier=='basic' %}bg-primary{% else %}bg-secondary{% endif %}">{{ user.subscription_tier|upper }}</span></td>
+                    <td>{% if user.is_admin %}<span class="badge bg-danger">Admin</span>{% else %}<span class="badge bg-light text-dark">User</span>{% endif %}</td>
+                    <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center py-4 text-muted">No users yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

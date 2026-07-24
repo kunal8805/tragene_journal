@@ -1,0 +1,365 @@
+{% extends "base_admin.html" %}
+{% block title %}FAQ Management - Admin{% endblock %}
+{% block page_title %}📚 FAQ Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .faq-admin-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .btn-add {
+        padding: 10px 20px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+        font-family: 'Space Grotesk', sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .faq-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .faq-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 14px 18px;
+        transition: all 0.2s;
+    }
+
+    .faq-card:hover { border-color: rgba(255,107,107,0.3); }
+    .faq-card.inactive { opacity: 0.5; }
+
+    .faq-card .faq-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        gap: 10px;
+    }
+
+    .faq-card .faq-q {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .faq-card .faq-meta {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 4px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .faq-card .faq-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .btn-icon {
+        width: 30px; height: 30px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-body);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+    }
+
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon.delete:hover { border-color: #ff5252; color: #ff5252; background: rgba(255,82,82,0.05); }
+
+    .faq-card .faq-answer-preview {
+        display: none;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    .faq-card.expanded .faq-answer-preview { display: block; }
+
+    /* Modal */
+    .modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--border-color);
+    }
+
+    .form-group {
+        margin-bottom: 14px;
+    }
+
+    .form-group label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .category-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 6px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .cat-general { background: rgba(79,142,247,0.1); color: #4f8ef7; }
+    .cat-account { background: rgba(0,230,118,0.1); color: #00e676; }
+    .cat-trading { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .cat-billing { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+    .cat-ai { background: rgba(0,188,212,0.1); color: #00bcd4; }
+    .cat-technical { background: rgba(255,82,82,0.1); color: #ff5252; }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px;
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="faq-admin-container">
+    
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;margin:0;color:var(--text-primary);">
+            {{ faqs|length }} FAQs
+        </h6>
+        <button class="btn-add" onclick="showCreateModal()">
+            <i class="bi bi-plus-circle"></i> Add FAQ
+        </button>
+    </div>
+
+    <div class="faq-list">
+        {% if faqs %}
+            {% for faq in faqs %}
+            <div class="faq-card {% if not faq.is_active %}inactive{% endif %}" id="faq-{{ faq.id }}">
+                <div class="faq-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div>
+                        <div class="faq-q">{{ faq.question }}</div>
+                        <div class="faq-meta">
+                            <span class="category-badge cat-{{ faq.category.lower() }}">{{ faq.category }}</span>
+                            <span>Order: {{ faq.display_order }}</span>
+                            <span>{{ 'Active' if faq.is_active else 'Inactive' }}</span>
+                        </div>
+                    </div>
+                    <div class="faq-actions">
+                        <button class="btn-icon" onclick="event.stopPropagation();showEditModal({{ faq.id }}, '{{ faq.question | e }}', '{{ faq.answer | e }}', '{{ faq.category }}', {{ faq.display_order }}, {{ 'true' if faq.is_active else 'false' }})" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn-icon delete" onclick="event.stopPropagation();deleteFAQ({{ faq.id }})" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="faq-answer-preview">{{ faq.answer[:300] }}{% if faq.answer|length > 300 %}...{% endif %}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-inbox" style="font-size:2.5rem;opacity:0.3;"></i>
+                <p>No FAQs yet. Click "Add FAQ" to create one.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="faqModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 style="font-family:'Space Grotesk',sans-serif;font-weight:700;" id="faqModalTitle">Add FAQ</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editFaqId">
+                <div class="form-group">
+                    <label>Question *</label>
+                    <input type="text" id="faqQuestion" placeholder="Enter the question" maxlength="300">
+                </div>
+                <div class="form-group">
+                    <label>Answer *</label>
+                    <textarea id="faqAnswer" placeholder="Enter the answer"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label>Category</label>
+                        <select id="faqCategory">
+                            <option value="General">General</option>
+                            <option value="Account">Account</option>
+                            <option value="Trading">Trading</option>
+                            <option value="Billing">Billing</option>
+                            <option value="AI">AI / TRAGENE</option>
+                            <option value="Technical">Technical</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label>Order</label>
+                        <input type="number" id="faqOrder" value="0" min="0">
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label>Active</label>
+                        <select id="faqActive">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:8px;">Cancel</button>
+                <button type="button" class="btn btn-sm text-white" style="background:var(--accent);border-radius:8px;" id="saveFaqBtn" onclick="saveFAQ()">
+                    <i class="bi bi-check-lg"></i> Save FAQ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let faqModal;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        faqModal = new bootstrap.Modal(document.getElementById('faqModal'));
+    });
+
+    function showCreateModal() {
+        document.getElementById('faqModalTitle').textContent = 'Add FAQ';
+        document.getElementById('editFaqId').value = '';
+        document.getElementById('faqQuestion').value = '';
+        document.getElementById('faqAnswer').value = '';
+        document.getElementById('faqCategory').value = 'General';
+        document.getElementById('faqOrder').value = '0';
+        document.getElementById('faqActive').value = 'true';
+        document.getElementById('saveFaqBtn').innerHTML = '<i class="bi bi-check-lg"></i> Create FAQ';
+        faqModal.show();
+    }
+
+    function showEditModal(id, question, answer, category, order, isActive) {
+        document.getElementById('faqModalTitle').textContent = 'Edit FAQ';
+        document.getElementById('editFaqId').value = id;
+        document.getElementById('faqQuestion').value = question;
+        document.getElementById('faqAnswer').value = answer;
+        document.getElementById('faqCategory').value = category;
+        document.getElementById('faqOrder').value = order;
+        document.getElementById('faqActive').value = isActive ? 'true' : 'false';
+        document.getElementById('saveFaqBtn').innerHTML = '<i class="bi bi-check-lg"></i> Update FAQ';
+        faqModal.show();
+    }
+
+    function saveFAQ() {
+        const id = document.getElementById('editFaqId').value;
+        const question = document.getElementById('faqQuestion').value.trim();
+        const answer = document.getElementById('faqAnswer').value.trim();
+        const category = document.getElementById('faqCategory').value;
+        const order = document.getElementById('faqOrder').value;
+        const isActive = document.getElementById('faqActive').value === 'true';
+
+        if (!question || !answer) {
+            alert('Question and answer are required.');
+            return;
+        }
+
+        const url = id ? `/admin/api/faq/${id}/update` : '/admin/api/faq/create';
+        
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question, answer, category, display_order: parseInt(order), is_active: isActive })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                faqModal.hide();
+                location.reload();
+            }
+        });
+    }
+
+    function deleteFAQ(id) {
+        if (!confirm('Delete this FAQ?')) return;
+        
+        fetch(`/admin/api/faq/${id}/delete`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const card = document.getElementById('faq-' + id);
+                    card.style.opacity = '0';
+                    card.style.transition = 'all 0.3s';
+                    setTimeout(() => card.remove(), 300);
+                }
+            });
+    }
+</script>
+{% endblock %}

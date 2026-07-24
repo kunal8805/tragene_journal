@@ -1,0 +1,880 @@
+from extensions import db
+from flask_login import UserMixin
+from datetime import datetime, timedelta, timezone
+from werkzeug.security import generate_password_hash, check_password_hash
+import json
+
+
+class TradingAccount(db.Model):
+    """Separate trading accounts for different markets/styles"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False, default='Default Account')
+    broker = db.Column(db.String(100))
+    account_type = db.Column(db.String(20), default='live')
+    currency = db.Column(db.String(10), default='USD')
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    trades = db.relationship('Trade', backref='account', lazy=True, foreign_keys='Trade.account_id')
+    day_notes = db.relationship('DayNote', backref='account', lazy=True, foreign_keys='DayNote.account_id')
+    diary_entries = db.relationship('DiaryEntry', backref='account', lazy=True, foreign_keys='DiaryEntry.account_id')
+    import_history = db.relationship('ImportHistory', backref='account', lazy=True, foreign_keys='ImportHistory.account_id')
+    
+    def __repr__(self):
+        return f'<TradingAccount {self.name}>'
+    
+    @property
+    def trade_count(self):
+        return len(self.trades)
+    
+    @property
+    def total_pnl(self):
+        return sum(t.profit_loss for t in self.trades if t.profit_loss is not None)
+    
+    def get_stats(self):
+        trades = self.trades
+        wins = [t for t in trades if t.is_win]
+        total = len(trades)
+        win_rate = round((len(wins) / total) * 100, 1) if total > 0 else 0
+        pnl = self.total_pnl
+        return {'count': total, 'wins': len(wins), 'win_rate': win_rate, 'pnl': pnl}
+
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    
+    # ===== NEW REGISTRATION FIELDS =====
+    first_name = db.Column(db.String(80), nullable=True)
+    last_name = db.Column(db.String(80), nullable=True)
+    phone_number = db.Column(db.String(20), nullable=True)
+    date_of_birth = db.Column(db.Date, nullable=True)
+    country = db.Column(db.String(100), nullable=True)
+    state = db.Column(db.String(100), nullable=True)
+    # ===================================
+    
+    is_admin = db.Column(db.Boolean, default=False)
+    subscription_tier = db.Column(db.String(20), default='free')
+    subscription_active = db.Column(db.Boolean, default=True)
+    current_account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    trading_style = db.Column(db.String(50))
+    preferred_session = db.Column(db.String(20))
+    account_currency = db.Column(db.String(10), default='USD')
+    last_csv_import = db.Column(db.DateTime, nullable=True)
+    last_analyzed_date = db.Column(db.Date, nullable=True)
+    email_verified = db.Column(db.Boolean, default=False)
+    email_verified_at = db.Column(db.DateTime, nullable=True)
+    
+    trades = db.relationship('Trade', backref='trader', lazy=True, foreign_keys='Trade.user_id')
+    imports = db.relationship('ImportHistory', backref='importer', lazy=True, foreign_keys='ImportHistory.user_id')
+    day_notes = db.relationship('DayNote', backref='author', lazy=True, foreign_keys='DayNote.user_id')
+    accounts = db.relationship('TradingAccount', backref='owner', lazy=True, foreign_keys='TradingAccount.user_id')
+    diary_entries = db.relationship('DiaryEntry', backref='author_ref', lazy=True, foreign_keys='DiaryEntry.user_id')
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    @property
+    def full_name(self):
+        """Return full name"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        elif self.first_name:
+            return self.first_name
+        elif self.last_name:
+            return self.last_name
+        return self.username
+    
+    def get_max_accounts(self):
+        tier_limits = {'free': 2, 'basic': 5, 'pro': 10, 'enterprise': 999}
+        return tier_limits.get(self.subscription_tier, 2)
+    
+    def get_account_count(self):
+        return TradingAccount.query.filter_by(user_id=self.id).count()
+    
+    def can_create_account(self):
+        return self.get_account_count() < self.get_max_accounts()
+    
+    def get_active_account(self):
+        if self.current_account_id:
+            account = TradingAccount.query.get(self.current_account_id)
+            if account and account.user_id == self.id and account.is_active:
+                return account
+        first_account = TradingAccount.query.filter_by(user_id=self.id, is_active=True).order_by(TradingAccount.created_at).first()
+        if first_account:
+            self.current_account_id = first_account.id
+            db.session.commit()
+        return first_account
+    
+    def switch_account(self, account_id):
+        account = TradingAccount.query.filter_by(id=account_id, user_id=self.id, is_active=True).first()
+        if account:
+            self.current_account_id = account.id
+            db.session.commit()
+            return True
+        return False
+    
+    def create_default_account(self):
+        if self.get_account_count() == 0:
+            account = TradingAccount(user_id=self.id, name='My First Account', account_type='live', currency=self.account_currency)
+            db.session.add(account)
+            db.session.flush()
+            self.current_account_id = account.id
+            db.session.commit()
+            return account
+        return None
+    
+    def can_upload_csv(self):
+        if self.subscription_tier in ['basic', 'pro', 'enterprise']:
+            return True, None
+        if self.last_csv_import is None:
+            return True, None
+        days_since = (datetime.utcnow() - self.last_csv_import).days
+        if days_since >= 7:
+            return True, None
+        return False, 7 - days_since
+    
+    def csv_upload_label(self):
+        if self.subscription_tier in ['basic', 'pro', 'enterprise']:
+            return "Upload CSV", True
+        can, days = self.can_upload_csv()
+        if can:
+            return "Upload CSV", True
+        return f"Available in {days} day{'s' if days > 1 else ''}", False
+    
+    def get_token_limit(self):
+        override = AIUserOverride.query.filter_by(user_id=self.id).first()
+        if override and override.override_tokens is not None:
+            return override.override_tokens
+        plan_default = AIPlanDefaults.query.filter_by(plan_tier=self.subscription_tier, is_active=True).first()
+        if plan_default:
+            return plan_default.monthly_tokens
+        tier_limits = {'free': 2000, 'basic': 20000, 'pro': 50000, 'enterprise': 150000}
+        return tier_limits.get(self.subscription_tier, 2000)
+    
+    def get_used_tokens(self):
+        month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        return db.session.query(db.func.sum(AIUsageLog.total_tokens)).filter(AIUsageLog.user_id == self.id, AIUsageLog.created_at >= month_start).scalar() or 0
+    
+    def get_remaining_tokens(self):
+        return self.get_token_limit() - self.get_used_tokens()
+    
+    def get_queries_per_week(self):
+        override = AIUserOverride.query.filter_by(user_id=self.id).first()
+        if override and override.override_queries_per_week is not None:
+            return override.override_queries_per_week
+        plan_default = AIPlanDefaults.query.filter_by(plan_tier=self.subscription_tier).first()
+        if plan_default:
+            return plan_default.queries_per_week
+        return 2
+    
+    def get_queries_used_this_week(self):
+        today = datetime.utcnow().date()
+        week_start = today - timedelta(days=today.weekday())
+        return AIUsageLog.query.filter_by(user_id=self.id).filter(db.func.date(AIUsageLog.created_at) >= week_start).count()
+    
+    def can_use_ai(self):
+        override = AIUserOverride.query.filter_by(user_id=self.id).first()
+        if override and override.is_banned:
+            return False, "AI access has been restricted. Contact support."
+        if self.subscription_tier == 'free':
+            queries_used = self.get_queries_used_this_week()
+            max_queries = self.get_queries_per_week()
+            if max_queries and queries_used >= max_queries:
+                return False, f"Weekly limit reached ({queries_used}/{max_queries}). Upgrade for more."
+        remaining = self.get_remaining_tokens()
+        if remaining <= 0:
+            return False, "Monthly token limit reached. Resets next month."
+        return True, f"🪙 {remaining:,} tokens remaining"
+    
+    def is_ai_banned(self):
+        override = AIUserOverride.query.filter_by(user_id=self.id).first()
+        return override.is_banned if override else False
+    
+    def can_access_coach(self):
+        return self.subscription_tier in ['enterprise', 'elite']
+    
+    def can_access_goals(self):
+        return self.subscription_tier in ['enterprise', 'elite']
+
+
+class Trade(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    symbol = db.Column(db.String(20), nullable=False)
+    trade_type = db.Column(db.String(10), nullable=False)
+    entry_price = db.Column(db.Float, nullable=False)
+    exit_price = db.Column(db.Float)
+    stop_loss = db.Column(db.Float)
+    take_profit = db.Column(db.Float)
+    lot_size = db.Column(db.Float, default=1.0)
+    profit_loss = db.Column(db.Float)
+    profit_loss_pips = db.Column(db.Float)
+    entry_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    exit_date = db.Column(db.DateTime)
+    session = db.Column(db.String(20))
+    notes = db.Column(db.Text)
+    tags = db.Column(db.String(200))
+    screenshot_path = db.Column(db.String(500))
+    risk_reward_ratio = db.Column(db.Float)
+    is_win = db.Column(db.Boolean)
+    import_source = db.Column(db.String(20), default='manual')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def calculate_pnl(self):
+        if self.exit_price and self.entry_price:
+            symbol_upper = self.symbol.upper() if self.symbol else ''
+            if 'XAU' in symbol_upper or 'GOLD' in symbol_upper:
+                pip_multiplier, value_per_pip = 100, 10
+            elif any(x in symbol_upper for x in ['US30', 'NAS100', 'NAS', 'SPX', 'DJI', 'DAX', 'GER30', 'UK100']):
+                pip_multiplier, value_per_pip = 1, 10
+            elif any(x in symbol_upper for x in ['BTC', 'ETH', 'XRP', 'SOL']):
+                pip_multiplier, value_per_pip = 1, 1
+            elif 'JPY' in symbol_upper:
+                pip_multiplier, value_per_pip = 100, 10
+            else:
+                pip_multiplier, value_per_pip = 10000, 10
+            
+            if self.trade_type == 'buy':
+                self.profit_loss_pips = round((self.exit_price - self.entry_price) * pip_multiplier, 2)
+            else:
+                self.profit_loss_pips = round((self.entry_price - self.exit_price) * pip_multiplier, 2)
+            
+            self.profit_loss = round(self.profit_loss_pips * self.lot_size * value_per_pip, 2)
+            self.is_win = self.profit_loss > 0
+            
+            if self.stop_loss and self.take_profit and self.entry_price:
+                if self.trade_type == 'buy':
+                    risk = self.entry_price - self.stop_loss
+                    reward = self.take_profit - self.entry_price
+                else:
+                    risk = self.stop_loss - self.entry_price
+                    reward = self.entry_price - self.take_profit
+                if risk > 0 and reward > 0:
+                    self.risk_reward_ratio = round(reward / risk, 2)
+
+
+class ImportHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    import_type = db.Column(db.String(20), nullable=False)
+    file_name = db.Column(db.String(200))
+    trades_imported = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class DayNote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    note_date = db.Column(db.Date, nullable=False)
+    note = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class DiaryEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    entry_date = db.Column(db.Date, nullable=False)
+    title = db.Column(db.String(200))
+    content = db.Column(db.Text)
+    mood = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    images = db.relationship('DiaryImage', backref='entry', lazy=True, cascade='all, delete-orphan')
+
+
+class DiaryImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    entry_id = db.Column(db.Integer, db.ForeignKey('diary_entry.id'), nullable=False)
+    filename = db.Column(db.String(200), nullable=False)
+    filepath = db.Column(db.String(500), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# ═══════════════════════════════════════════════════════════
+# 🛠️ TOOLS MODELS
+# ═══════════════════════════════════════════════════════════
+
+class TradingRule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    name = db.Column(db.String(100), nullable=False)
+    rule_type = db.Column(db.String(30), nullable=False)
+    description = db.Column(db.Text)
+    config_json = db.Column(db.Text)
+    is_template = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    checks = db.relationship('TradeRuleCheck', backref='rule', lazy=True, cascade='all, delete-orphan')
+
+
+class TradeRuleCheck(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    trade_id = db.Column(db.Integer, db.ForeignKey('trade.id'), nullable=False)
+    rule_id = db.Column(db.Integer, db.ForeignKey('trading_rule.id'), nullable=False)
+    passed = db.Column(db.Boolean, default=True)
+    details = db.Column(db.Text)
+    checked_at = db.Column(db.DateTime, default=datetime.utcnow)
+    trade = db.relationship('Trade', backref='rule_checks')
+
+
+class Checklist(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    name = db.Column(db.String(100), nullable=False)
+    checklist_type = db.Column(db.String(20), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    is_editable = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    tasks = db.relationship('ChecklistTask', backref='checklist', lazy=True, cascade='all, delete-orphan', order_by='ChecklistTask.task_order')
+    completions = db.relationship('ChecklistCompletion', backref='checklist', lazy=True, cascade='all, delete-orphan')
+
+
+class ChecklistTask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    checklist_id = db.Column(db.Integer, db.ForeignKey('checklist.id'), nullable=False)
+    task_name = db.Column(db.String(200), nullable=False)
+    task_order = db.Column(db.Integer, default=1)
+    applies_to = db.Column(db.String(20), default='all_days')
+
+
+class ChecklistCompletion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    checklist_id = db.Column(db.Integer, db.ForeignKey('checklist.id'), nullable=False)
+    task_id = db.Column(db.Integer, db.ForeignKey('checklist_task.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    completed = db.Column(db.Boolean, default=False)
+    skipped_reason = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    task = db.relationship('ChecklistTask', backref='completions')
+
+
+class TragenePoints(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    points = db.Column(db.Integer, nullable=False)
+    source = db.Column(db.String(50), nullable=False)
+    source_id = db.Column(db.Integer)
+    description = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='tragene_points')
+
+
+# ═══════════════════════════════════════════════════════════
+# 🤖 AI MODELS
+# ═══════════════════════════════════════════════════════════
+
+class AIChatSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    title = db.Column(db.String(100), default='New Chat')
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    messages = db.relationship('AIChatMessage', backref='session', lazy=True, cascade='all, delete-orphan', order_by='AIChatMessage.created_at')
+    user = db.relationship('User', backref='ai_chat_sessions')
+
+
+class AIChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('ai_chat_session.id'), nullable=False)
+    role = db.Column(db.String(20), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    tokens_used = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class AIReport(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    report_date = db.Column(db.Date, nullable=False)
+    period_start = db.Column(db.Date, nullable=False)
+    period_end = db.Column(db.Date, nullable=False)
+    trades_analyzed = db.Column(db.Integer, default=0)
+    diary_entries_analyzed = db.Column(db.Integer, default=0)
+    checklist_days_analyzed = db.Column(db.Integer, default=0)
+    user_summary = db.Column(db.Text)
+    strengths = db.Column(db.Text)
+    warnings = db.Column(db.Text)
+    action_items = db.Column(db.Text)
+    performance_score = db.Column(db.Integer)
+    raw_prompt = db.Column(db.Text)
+    raw_response = db.Column(db.Text)
+    model_used = db.Column(db.String(50))
+    prompt_tokens = db.Column(db.Integer)
+    completion_tokens = db.Column(db.Integer)
+    total_tokens = db.Column(db.Integer)
+    api_cost = db.Column(db.Float)
+    ai_context = db.Column(db.Text)
+    report_type = db.Column(db.String(30), default='manual')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='ai_reports')
+
+
+class AIUsageLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    report_id = db.Column(db.Integer, db.ForeignKey('ai_report.id'), nullable=True)
+    analysis_type = db.Column(db.String(50))
+    model_used = db.Column(db.String(50))
+    prompt_tokens = db.Column(db.Integer)
+    completion_tokens = db.Column(db.Integer)
+    total_tokens = db.Column(db.Integer)
+    api_cost = db.Column(db.Float)
+    api_latency_ms = db.Column(db.Integer)
+    status = db.Column(db.String(20))
+    error_message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='ai_usage_logs')
+
+
+class AIPlanDefaults(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    plan_tier = db.Column(db.String(20), unique=True, nullable=False)
+    monthly_tokens = db.Column(db.Integer, default=2000)
+    queries_per_week = db.Column(db.Integer, nullable=True)
+    reports_per_week = db.Column(db.Integer, default=2)
+    is_active = db.Column(db.Boolean, default=True)
+    updated_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AIUserOverride(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
+    override_tokens = db.Column(db.Integer, nullable=True)
+    override_queries_per_week = db.Column(db.Integer, nullable=True)
+    override_reports_per_week = db.Column(db.Integer, nullable=True)
+    is_banned = db.Column(db.Boolean, default=False)
+    is_rate_limited = db.Column(db.Boolean, default=False)
+    rate_limit_per_hour = db.Column(db.Integer, default=10)
+    reason = db.Column(db.Text)
+    set_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user = db.relationship('User', backref='ai_override', foreign_keys=[user_id])
+
+
+class TradingGoal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    goal_type = db.Column(db.String(50), nullable=False)
+    target_value = db.Column(db.Float, nullable=False)
+    current_value = db.Column(db.Float, default=0)
+    timeframe = db.Column(db.String(20), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    is_completed = db.Column(db.Boolean, default=False)
+    is_achieved = db.Column(db.Boolean, nullable=True)
+    ai_insight = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user = db.relationship('User', backref='trading_goals')
+
+
+class CoachInsight(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    insight_type = db.Column(db.String(50))
+    title = db.Column(db.String(200))
+    description = db.Column(db.Text)
+    severity = db.Column(db.String(20))
+    is_read = db.Column(db.Boolean, default=False)
+    related_report_id = db.Column(db.Integer, db.ForeignKey('ai_report.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='coach_insights')
+
+
+# ═══════════════════════════════════════════════════════════
+# 📄 PER-PAGE AI ANALYSIS MODEL
+# ═══════════════════════════════════════════════════════════
+
+class AIPageAnalysis(db.Model):
+    """Cached per-page AI analyses — one per user/account/page.
+    Caches results so users can re-view without re-spending tokens."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    
+    # What was analyzed
+    page_key = db.Column(db.String(30), nullable=False)  # journal, analytics, calendar_day, insights, diary, goals, dashboard
+    sub_id = db.Column(db.String(100), nullable=True)     # calendar date string, goal_id, etc.
+    
+    # Date range analyzed
+    date_range_start = db.Column(db.Date, nullable=True)
+    date_range_end = db.Column(db.Date, nullable=True)
+    data_window_note = db.Column(db.String(200), nullable=True)  # "Showing last 15 days — you have more data..."
+    
+    # Content sections
+    content = db.Column(db.Text)           # Full AI response (cleaned)
+    summary = db.Column(db.Text)           # 1-2 line summary
+    standout_wins = db.Column(db.Text)     # JSON array of strings
+    standout_losses = db.Column(db.Text)   # JSON array of strings
+    money_leaks = db.Column(db.Text)       # JSON array: unprotected losses, oversized risk
+    suggestions = db.Column(db.Text)       # JSON array: action items
+    score = db.Column(db.Integer, nullable=True)  # 1-10, NULL for calendar/diary pages
+    
+    # Token tracking
+    tokens_used = db.Column(db.Integer)
+    api_cost = db.Column(db.Float)
+    model_used = db.Column(db.String(50))
+    
+    # Data counts analyzed
+    trades_analyzed = db.Column(db.Integer, default=0)
+    entries_analyzed = db.Column(db.Integer, default=0)  # For diary entries
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='page_analyses')
+    
+    def get_standout_wins(self):
+        """Parse JSON back to list"""
+        try:
+            return json.loads(self.standout_wins) if self.standout_wins else []
+        except:
+            return []
+    
+    def get_standout_losses(self):
+        """Parse JSON back to list"""
+        try:
+            return json.loads(self.standout_losses) if self.standout_losses else []
+        except:
+            return []
+    
+    def get_money_leaks(self):
+        """Parse JSON back to list"""
+        try:
+            return json.loads(self.money_leaks) if self.money_leaks else []
+        except:
+            return []
+    
+    def get_suggestions(self):
+        """Parse JSON back to list"""
+        try:
+            return json.loads(self.suggestions) if self.suggestions else []
+        except:
+            return []
+    
+    @property
+    def page_title(self):
+        """Human-readable page title"""
+        titles = {
+            'journal': '📊 Journal Analysis',
+            'analytics': '📈 Analytics Deep-Dive',
+            'calendar_day': '📅 Day Analysis',
+            'insights': '💡 Insights Analysis',
+            'diary': '📖 Diary Analysis',
+            'goals': '🎯 Goals Analysis',
+            'dashboard': '🏠 Dashboard Snapshot',
+        }
+        return titles.get(self.page_key, 'Analysis')
+
+
+# ═══════════════════════════════════════════════════════════
+# 💳 SUBSCRIPTION & PAYMENT MODELS
+# ═══════════════════════════════════════════════════════════
+
+class Subscription(db.Model):
+    """User subscription plans"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
+    plan_tier = db.Column(db.String(20), default='free')  # free, pro, elite
+    plan_type = db.Column(db.String(20), default='monthly')  # monthly, yearly
+    start_date = db.Column(db.DateTime, default=datetime.utcnow)
+    end_date = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    auto_renew = db.Column(db.Boolean, default=True)
+    cancel_reason = db.Column(db.Text, nullable=True)
+    cancelled_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='subscription', foreign_keys=[user_id])
+    payments = db.relationship('Payment', backref='subscription', lazy=True)
+
+
+class Payment(db.Model):
+    """Payment records for subscriptions"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    subscription_id = db.Column(db.Integer, db.ForeignKey('subscription.id'), nullable=True)
+    
+    # Cashfree details
+    cashfree_order_id = db.Column(db.String(100), unique=True)
+    cashfree_payment_id = db.Column(db.String(100), nullable=True)
+    cashfree_session_id = db.Column(db.String(200), nullable=True)
+    cashfree_signature = db.Column(db.String(500), nullable=True)
+    
+    # Amount details (in paise)
+    base_amount = db.Column(db.Integer, nullable=False)  # Plan price in paise
+    gateway_fee = db.Column(db.Integer, default=0)  # 2% fee in paise
+    total_amount = db.Column(db.Integer, nullable=False)  # base + fee in paise
+    currency = db.Column(db.String(10), default='INR')
+    
+    # Plan info
+    plan_tier = db.Column(db.String(20), nullable=False)  # pro, elite
+    plan_type = db.Column(db.String(20), nullable=False)  # monthly, yearly
+    
+    # Status
+    status = db.Column(db.String(30), default='PENDING')  # PENDING, SUCCESS, FAILED, CANCELLED, REFUNDED
+    webhook_response = db.Column(db.Text, nullable=True)  # Full webhook JSON
+    error_message = db.Column(db.Text, nullable=True)
+    
+    # Timestamps
+    payment_completed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='payments', foreign_keys=[user_id])
+
+
+# ═══════════════════════════════════════════════════════════
+# 📧 EMAIL VERIFICATION
+# ═══════════════════════════════════════════════════════════
+
+class EmailVerification(db.Model):
+    """Email verification tokens"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    token = db.Column(db.String(100), unique=True, nullable=False)
+    new_email = db.Column(db.String(120), nullable=True)  # For email change requests
+    type = db.Column(db.String(20), default='verify')  # 'verify' or 'change'
+    is_used = db.Column(db.Boolean, default=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='email_verifications')
+
+
+# ═══════════════════════════════════════════════════════════
+# 📚 FAQ & SUPPORT MODELS
+# ═══════════════════════════════════════════════════════════
+
+class FAQ(db.Model):
+    """Frequently Asked Questions - managed by admin"""
+    id = db.Column(db.Integer, primary_key=True)
+    question = db.Column(db.String(300), nullable=False)
+    answer = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), default='General')  # General, Account, Trading, Billing, AI, Technical
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class SupportTicket(db.Model):
+    """User support tickets"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    ticket_number = db.Column(db.String(20), unique=True, nullable=False)  # TK-001
+    subject = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50), nullable=False)  # bug, feature, account, billing, ai, trading, other
+    status = db.Column(db.String(20), default='open')  # open, in_progress, resolved, closed
+    priority = db.Column(db.String(20), default='medium')  # low, medium, high
+    admin_note = db.Column(db.Text, nullable=True)  # Private admin notes
+    resolved_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='support_tickets')
+    replies = db.relationship('TicketReply', backref='ticket', lazy=True, cascade='all, delete-orphan', order_by='TicketReply.created_at')
+
+
+class TicketReply(db.Model):
+    """Replies in a support ticket thread"""
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('support_ticket.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # NULL = admin reply
+    message = db.Column(db.Text, nullable=False)
+    attachment_url = db.Column(db.String(500), nullable=True)
+    is_admin_reply = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='ticket_replies')
+
+
+# ═══════════════════════════════════════════════════════════
+# 📝 CONTACT MESSAGES (NEW)
+# ═══════════════════════════════════════════════════════════
+
+class ContactMessage(db.Model):
+    """Contact form submissions"""
+    __tablename__ = 'contact_messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    ip_address = db.Column(db.String(50), nullable=True)
+    user_agent = db.Column(db.String(300), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False)
+    
+    def __repr__(self):
+        return f"<ContactMessage {self.id}: {self.subject[:50]}>"
+
+
+# ═══════════════════════════════════════════════════════════
+# 📝 BLOG & CMS MODELS
+# ═══════════════════════════════════════════════════════════
+
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    slug = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    blogs = db.relationship('Blog', backref='category', lazy=True)
+
+
+class Tag(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    slug = db.Column(db.String(50), unique=True, nullable=False)
+
+
+# Association table for Blog and Tag
+blog_tag = db.Table('blog_tag',
+    db.Column('blog_id', db.Integer, db.ForeignKey('blog.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
+)
+
+
+class Blog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(255), unique=True, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    markdown_content = db.Column(db.Text, nullable=True)
+    excerpt = db.Column(db.Text, nullable=True)
+    
+    # SEO Fields
+    meta_title = db.Column(db.String(255), nullable=True)
+    meta_description = db.Column(db.String(300), nullable=True)
+    focus_keyword = db.Column(db.String(100), nullable=True)
+    canonical_url = db.Column(db.String(255), nullable=True)
+    
+    # Relations
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Media
+    featured_image = db.Column(db.String(255), nullable=True)
+    
+    # Status & Dates
+    status = db.Column(db.String(20), default='draft') # draft, published, scheduled, archived
+    published_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Metrics
+    views = db.Column(db.Integer, default=0)
+    estimated_reading_time = db.Column(db.Integer, default=1) # in minutes
+    is_featured = db.Column(db.Boolean, default=False)
+    
+    author = db.relationship('User', backref='blogs')
+    tags = db.relationship('Tag', secondary=blog_tag, lazy='subquery',
+        backref=db.backref('blogs', lazy=True))
+
+
+# ═══════════════════════════════════════════════════════════
+# 🚀 SEO & SITE SETTINGS MODELS
+# ═══════════════════════════════════════════════════════════
+
+class SEOSettings(db.Model):
+    """Global site-wide SEO settings"""
+    id = db.Column(db.Integer, primary_key=True)
+    site_title = db.Column(db.String(255), default="Tragene Journal")
+    default_meta_description = db.Column(db.String(300), nullable=True)
+    default_keywords = db.Column(db.String(300), nullable=True)
+    
+    site_logo = db.Column(db.String(255), nullable=True)
+    favicon = db.Column(db.String(255), nullable=True)
+    default_og_image = db.Column(db.String(255), nullable=True)
+    default_twitter_image = db.Column(db.String(255), nullable=True)
+    
+    robots_txt_content = db.Column(db.Text, nullable=True)
+    
+    # Verifications
+    google_verification = db.Column(db.String(100), nullable=True)
+    bing_verification = db.Column(db.String(100), nullable=True)
+    yandex_verification = db.Column(db.String(100), nullable=True)
+    
+    # Analytics
+    google_analytics_id = db.Column(db.String(50), nullable=True)
+    google_tag_manager_id = db.Column(db.String(50), nullable=True)
+    microsoft_clarity_id = db.Column(db.String(50), nullable=True)
+    facebook_pixel_id = db.Column(db.String(50), nullable=True)
+
+
+class PageMetadata(db.Model):
+    """SEO overrides for custom Landing Pages"""
+    id = db.Column(db.Integer, primary_key=True)
+    page_route = db.Column(db.String(255), unique=True, nullable=False) # e.g. 'index', 'pricing', 'features'
+    title = db.Column(db.String(255), nullable=True)
+    description = db.Column(db.String(300), nullable=True)
+    keywords = db.Column(db.String(300), nullable=True)
+    canonical_url = db.Column(db.String(255), nullable=True)
+    robots = db.Column(db.String(100), default='index, follow')
+    og_image = db.Column(db.String(255), nullable=True)
+    schema_type = db.Column(db.String(100), nullable=True) # e.g. SoftwareApplication, WebSite
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Redirect(db.Model):
+    """301/302 Redirect Manager"""
+    id = db.Column(db.Integer, primary_key=True)
+    old_path = db.Column(db.String(255), unique=True, nullable=False)
+    new_path = db.Column(db.String(255), nullable=False)
+    status_code = db.Column(db.Integer, default=301)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class NewsletterSubscriber(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    subscribed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class MediaLibrary(db.Model):
+    """Track uploaded images (for WebP conversion and Alt text)"""
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    filepath = db.Column(db.String(500), nullable=False)
+    alt_text = db.Column(db.String(255), nullable=True)
+    mime_type = db.Column(db.String(50), nullable=True)
+    size_bytes = db.Column(db.Integer, nullable=True)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)

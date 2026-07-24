@@ -1,0 +1,167 @@
+{% extends "base_user.html" %}
+{% block title %}Import Trades - Tragene Journal{% endblock %}
+{% block page_title %}Add Trades{% endblock %}
+{% block content %}
+
+<style>
+    .import-card {
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+    .import-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent) !important;
+    }
+    .import-card.locked {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+    .import-card.locked:hover {
+        transform: none;
+        border-color: var(--border-color) !important;
+    }
+    .import-card .icon-circle {
+        width: 56px; height: 56px;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; margin-bottom: 12px;
+    }
+    .icon-sync { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+    .icon-csv { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+    .icon-manual { background: rgba(0,200,83,0.15); color: #00c853; }
+    .pro-badge {
+        position: absolute; top: 12px; right: 12px;
+        background: linear-gradient(135deg, #ff6b6b, #e55a5a);
+        color: #fff; padding: 4px 10px; border-radius: 20px;
+        font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px;
+    }
+    .free-badge {
+        position: absolute; top: 12px; right: 12px;
+        background: rgba(0,200,83,0.2); color: #00c853;
+        padding: 4px 10px; border-radius: 20px;
+        font-size: 0.7rem; font-weight: 600;
+    }
+</style>
+
+<div class="mb-3">
+    <a href="{{ url_for('user.journal') }}" class="text-decoration-none" style="color: var(--text-secondary);">
+        <i class="bi bi-arrow-left"></i> Back to Journal
+    </a>
+</div>
+
+<h5 class="fw-bold mb-1">Choose Import Method</h5>
+<p class="text-muted mb-4">Select how you want to add your trades</p>
+
+<div class="row g-3">
+    
+    <!-- Auto Sync Card -->
+    <div class="col-md-4">
+        <div class="card import-card p-4 h-100 {% if current_user.subscription_tier == 'free' %}locked{% endif %}" 
+             onclick="{% if current_user.subscription_tier == 'pro' %}window.location.href='#'{% else %}showUpgrade(){% endif %}">
+            <span class="pro-badge">PRO</span>
+            <div class="icon-circle icon-sync">
+                <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <h6 class="fw-bold">Auto Sync</h6>
+            <p class="text-muted small mb-0">Connect MT5/MT4<br>Automatic trade imports<br>Real-time sync</p>
+            {% if current_user.subscription_tier != 'pro' %}
+                <button class="btn btn-sm mt-3 text-white" style="background: var(--accent); border-radius: 8px; border: none;" onclick="event.stopPropagation(); showUpgrade();">
+                    <i class="bi bi-lock"></i> Upgrade to Pro
+                </button>
+            {% else %}
+                <button class="btn btn-sm btn-outline-secondary mt-3" style="border-radius: 8px;" onclick="event.stopPropagation();">
+                    Connect MT5 <small class="text-muted">(soon)</small>
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- CSV Upload Card -->
+    <div class="col-md-4">
+        <div class="card import-card p-4 h-100" onclick="window.location.href='{{ url_for('user.import_csv') }}'">
+            {% if current_user.subscription_tier == 'free' %}
+                <span class="free-badge">1/week</span>
+            {% else %}
+                <span class="free-badge" style="background: rgba(79,142,247,0.2); color: #4f8ef7;">UNLIMITED</span>
+            {% endif %}
+            <div class="icon-circle icon-csv">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+            </div>
+            <h6 class="fw-bold">CSV Upload</h6>
+            <p class="text-muted small mb-0">
+                Upload trade history<br>
+                MT4/MT5/cTrader CSV<br>
+                {% if current_user.subscription_tier == 'free' %}
+                    1 upload every 7 days
+                {% else %}
+                    Unlimited uploads
+                {% endif %}
+            </p>
+            <button class="btn btn-sm btn-outline-secondary mt-3" style="border-radius: 8px;" 
+                    onclick="event.stopPropagation(); window.location.href='{{ url_for('user.import_csv') }}';"
+                    {% if not csv_enabled %}disabled{% endif %}>
+                {% if csv_enabled %}
+                    <i class="bi bi-cloud-upload"></i> {{ csv_label }}
+                {% else %}
+                    <i class="bi bi-clock"></i> {{ csv_label }}
+                {% endif %}
+            </button>
+        </div>
+    </div>
+
+    <!-- Manual Entry Card -->
+    <div class="col-md-4">
+        <div class="card import-card p-4 h-100" onclick="window.location.href='{{ url_for('user.add_trade') }}'">
+            <span class="free-badge">UNLIMITED</span>
+            <div class="icon-circle icon-manual">
+                <i class="bi bi-pencil-square"></i>
+            </div>
+            <h6 class="fw-bold">Manual Entry</h6>
+            <p class="text-muted small mb-0">
+                Add trades one by one<br>
+                Full control over details<br>
+                Always free & unlimited
+            </p>
+            <button class="btn btn-sm btn-outline-secondary mt-3" style="border-radius: 8px;"
+                    onclick="event.stopPropagation(); window.location.href='{{ url_for('user.add_trade') }}';">
+                <i class="bi bi-plus-circle"></i> Add Manually
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Upgrade Modal -->
+<div class="modal fade" id="upgradeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border-color);">
+            <div class="modal-header" style="border-color: var(--border-color);">
+                <h6 class="fw-bold mb-0"><i class="bi bi-lock-fill" style="color: #ff6b6b;"></i> Pro Feature</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2"><strong>Auto Sync</strong> is available on Pro plan.</p>
+                <ul class="small text-muted">
+                    <li>Unlimited CSV imports</li>
+                    <li>Automatic MT5 sync</li>
+                    <li>AI reports & coaching</li>
+                    <li>Mistake detection</li>
+                    <li>Strategy playbook</li>
+                </ul>
+            </div>
+            <div class="modal-footer" style="border-color: var(--border-color);">
+                <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Maybe Later</button>
+                <a href="{{ url_for('user.subscription') }}" class="btn btn-sm text-white" style="background: var(--accent); border-radius: 8px;">Upgrade Now - ₹999/mo</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showUpgrade() {
+        new bootstrap.Modal(document.getElementById('upgradeModal')).show();
+    }
+</script>
+{% endblock %}

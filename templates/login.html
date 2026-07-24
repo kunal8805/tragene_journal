@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Tragene Journal{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== LOGIN PAGE SPECIFIC STYLES ===== */
+    .login-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        position: relative;
+        background: #0b1215;
+        background-image: radial-gradient(circle at 20% 30%, rgba(0, 180, 216, 0.04) 0%, transparent 60%),
+                          radial-gradient(circle at 80% 70%, rgba(100, 80, 255, 0.04) 0%, transparent 50%);
+    }
+    
+    /* ===== FLOATING PARTICLES ===== */
+    .particle {
+        position: fixed;
+        border-radius: 50%;
+        background: rgba(0, 200, 220, 0.04);
+        animation: floatParticle 15s infinite ease-in-out;
+        z-index: 0;
+        pointer-events: none;
+    }
+    .particle:nth-child(1) { width: 300px; height: 300px; top: -100px; right: -100px; animation-delay: 0s; }
+    .particle:nth-child(2) { width: 200px; height: 200px; bottom: -50px; left: -50px; animation-delay: -5s; }
+    .particle:nth-child(3) { width: 150px; height: 150px; top: 50%; right: -50px; animation-delay: -10s; }
+    @keyframes floatParticle {
+        0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+        25% { transform: translate(30px, -40px) scale(1.1); opacity: 0.5; }
+        50% { transform: translate(-20px, 20px) scale(0.9); opacity: 0.3; }
+        75% { transform: translate(40px, 30px) scale(1.05); opacity: 0.4; }
+    }
+
+    /* ===== LOGIN CARD ===== */
+    .login-card {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 440px;
+        background: rgba(14, 26, 30, 0.78);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(0, 200, 220, 0.10);
+        border-radius: 44px;
+        padding: 2.8rem 2.4rem;
+        box-shadow: 0 40px 80px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(0, 200, 220, 0.04) inset;
+        transition: all 0.3s ease;
+    }
+    .login-card:hover {
+        border-color: rgba(0, 200, 220, 0.20);
+        box-shadow: 0 50px 100px -20px rgba(0,0,0,0.9);
+    }
+
+    /* ===== HEADER ===== */
+    .login-header {
+        text-align: center;
+        margin-bottom: 2.2rem;
+    }
+    .login-header h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        background: linear-gradient(to right, #f0f9ff, #b6e6f0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.2rem;
+    }
+    .login-header p {
+        color: #8bb4c2;
+        font-size: 1rem;
+        font-weight: 400;
+    }
+
+    /* ===== FORM ELEMENTS ===== */
+    .form-group {
+        margin-bottom: 1.2rem;
+    }
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #b8d4de;
+        margin-bottom: 0.35rem;
+        letter-spacing: 0.01em;
+    }
+    .input-group-custom {
+        display: flex;
+        align-items: center;
+        background: rgba(6, 16, 20, 0.6);
+        border: 1px solid rgba(0, 200, 220, 0.08);
+        border-radius: 16px;
+        transition: all 0.25s ease;
+        padding: 0 0.2rem 0 1rem;
+    }
+    .input-group-custom:focus-within {
+        border-color: #4dd0e1;
+        box-shadow: 0 0 0 4px rgba(77, 208, 225, 0.04), 0 8px 30px rgba(0,0,0,0.3);
+        background: rgba(4, 14, 18, 0.7);
+    }
+    .input-group-custom i {
+        color: #4a7a88;
+        font-size: 1rem;
+        width: 1.2rem;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .input-group-custom input {
+        width: 100%;
+        padding: 0.85rem 0.8rem;
+        background: transparent;
+        border: none;
+        color: #eef6f9;
+        font-size: 0.95rem;
+        font-weight: 400;
+        outline: none;
+        font-family: inherit;
+    }
+    .input-group-custom input::placeholder {
+        color: #4a6e7a;
+        font-weight: 300;
+    }
+
+    /* ===== PASSWORD TOGGLE ===== */
+    .toggle-password {
+        background: none;
+        border: none;
+        color: #4a7a88;
+        cursor: pointer;
+        padding: 0.5rem;
+        transition: color 0.2s;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .toggle-password:hover {
+        color: #8bb4c2;
+    }
+
+    /* ===== REMEMBER ME ===== */
+    .remember-check {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        margin: 1.2rem 0 1.6rem;
+    }
+    .remember-check input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #4dd0e1;
+        background: rgba(6, 16, 20, 0.6);
+        border: 1px solid rgba(0, 200, 220, 0.2);
+        border-radius: 6px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    .remember-check label {
+        font-size: 0.9rem;
+        color: #b8d4de;
+        cursor: pointer;
+    }
+
+    /* ===== SUBMIT BUTTON ===== */
+    .btn-submit {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: 60px;
+        font-weight: 600;
+        font-size: 1rem;
+        background: linear-gradient(145deg, rgba(77, 208, 225, 0.20), rgba(129, 140, 248, 0.12));
+        border: 1px solid rgba(77, 208, 225, 0.25);
+        color: #e3f0f5;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-family: inherit;
+        letter-spacing: 0.01em;
+    }
+    .btn-submit:hover {
+        background: linear-gradient(145deg, rgba(77, 208, 225, 0.30), rgba(129, 140, 248, 0.18));
+        border-color: #4dd0e1;
+        box-shadow: 0 0 40px rgba(77, 208, 225, 0.04);
+        transform: translateY(-2px);
+    }
+    .btn-submit i {
+        margin-right: 0.6rem;
+    }
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* ===== LINKS ===== */
+    .login-links {
+        text-align: center;
+        margin-top: 1.6rem;
+        color: #8bb4c2;
+        font-size: 0.95rem;
+    }
+    .login-links a {
+        color: #6fc8db;
+        font-weight: 500;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: 0.2s;
+    }
+    .login-links a:hover {
+        border-bottom-color: #6fc8db;
+    }
+    .login-links .forgot-link {
+        display: inline-block;
+        margin-bottom: 0.8rem;
+    }
+
+    /* ===== FLASH MESSAGES ===== */
+    .flash-messages {
+        margin-bottom: 1.2rem;
+    }
+    .flash-messages .alert {
+        padding: 0.8rem 1.2rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        background: rgba(239, 83, 80, 0.08);
+        border: 1px solid rgba(239, 83, 80, 0.15);
+        color: #f0b3b3;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .flash-messages .alert-success {
+        background: rgba(77, 208, 225, 0.08);
+        border-color: rgba(77, 208, 225, 0.15);
+        color: #b0e5ed;
+    }
+    .flash-messages .alert .close-btn {
+        background: none;
+        border: none;
+        color: #5f828e;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0 0.2rem;
+    }
+    .flash-messages .alert .close-btn:hover {
+        color: #b0ccd6;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+        .login-card {
+            padding: 2rem 1.5rem;
+            border-radius: 32px;
+        }
+        .login-header h2 {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+
+<div class="login-wrapper">
+    <!-- Floating Particles -->
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+
+    <div class="login-card">
+        <!-- HEADER -->
+        <div class="login-header">
+            <h2>Welcome Back</h2>
+            <p>Sign in to your Tragene Journal</p>
+        </div>
+
+        <!-- FLASH MESSAGES -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- LOGIN FORM -->
+        <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+            {{ form.hidden_tag() if form else '' }}
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-group-custom">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="email" name="email" placeholder="you@example.com" 
+                           value="{{ request.form.email or '' }}" required autocomplete="email" autofocus>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-group-custom">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" 
+                           placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" class="toggle-password" onclick="togglePassword()" 
+                            aria-label="Toggle password visibility">
+                        <i class="fas fa-eye" id="passwordIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="remember-check">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">Remember me</label>
+            </div>
+
+            <button type="submit" class="btn-submit" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </form>
+
+        <!-- LINKS -->
+        <div class="login-links">
+            <a href="#" class="forgot-link">Forgot Password?</a>
+            <div>
+                Don't have an account? <a href="{{ url_for('auth.register') }}">Create one here</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== TOGGLE PASSWORD VISIBILITY =====
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const icon = document.getElementById('passwordIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        passwordInput.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+// ===== FORM VALIDATION =====
+document.querySelector('form').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('loginBtn');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    
+    let isValid = true;
+    
+    if (!email.value.trim()) {
+        e.preventDefault();
+        alert('Please enter your email address.');
+        email.focus();
+        isValid = false;
+    }
+    
+    if (!password.value.trim()) {
+        e.preventDefault();
+        alert('Please enter your password.');
+        password.focus();
+        isValid = false;
+    }
+    
+    if (isValid) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+    }
+    
+    return isValid;
+});
+
+// ===== AUTO-CLOSE FLASH MESSAGES =====
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.flash-messages .alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            alert.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Refund Policy - TRAGENE Journal{% endblock %}
+
+{% block meta_description %}Read our Refund Policy to understand the terms and conditions for subscription refunds at TRAGENE Journal.{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+    <div class="glass-card p-6 md:p-10">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">Refund Policy</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">Last Updated: {{ now.strftime('%B %d, %Y') if now else 'January 1, 2025' }}</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+
+        <!-- Introduction -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-6 rounded-lg mb-8">
+            <p class="text-gray-700 dark:text-gray-300 text-lg">
+                Thank you for choosing <strong class="text-blue-600 dark:text-blue-400">TRAGENE Journal</strong> ("Company", "we", "our", or "us").
+            </p>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">
+                This Refund Policy explains the circumstances under which refunds may or may not be granted for purchases made through 
+                the TRAGENE Journal website, dashboard, applications, and related services (collectively, the "Service").
+            </p>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">
+                By purchasing any subscription or paid feature, you acknowledge that you have read, understood, and agreed to this Refund Policy.
+            </p>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 mb-10">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Table of Contents</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                <a href="#section-1" class="text-blue-600 dark:text-blue-400 hover:underline">1. General Policy</a>
+                <a href="#section-2" class="text-blue-600 dark:text-blue-400 hover:underline">2. Subscription Plans</a>
+                <a href="#section-3" class="text-blue-600 dark:text-blue-400 hover:underline">3. No Automatic Renewal</a>
+                <a href="#section-4" class="text-blue-600 dark:text-blue-400 hover:underline">4. Cancellation Policy</a>
+                <a href="#section-5" class="text-blue-600 dark:text-blue-400 hover:underline">5. Switching Plans</a>
+                <a href="#section-6" class="text-blue-600 dark:text-blue-400 hover:underline">6. When Refunds Are Not Available</a>
+                <a href="#section-7" class="text-blue-600 dark:text-blue-400 hover:underline">7. Refund Eligibility</a>
+                <a href="#section-8" class="text-blue-600 dark:text-blue-400 hover:underline">8. Technical Issue Investigation</a>
+                <a href="#section-9" class="text-blue-600 dark:text-blue-400 hover:underline">9. Duplicate Payments</a>
+                <a href="#section-10" class="text-blue-600 dark:text-blue-400 hover:underline">10. Fraud Prevention</a>
+                <a href="#section-11" class="text-blue-600 dark:text-blue-400 hover:underline">11. Payment Provider Processing</a>
+                <a href="#section-12" class="text-blue-600 dark:text-blue-400 hover:underline">12. Taxes and Fees</a>
+                <a href="#section-13" class="text-blue-600 dark:text-blue-400 hover:underline">13. Modifications to This Policy</a>
+                <a href="#section-14" class="text-blue-600 dark:text-blue-400 hover:underline">14. Contact Us</a>
+                <a href="#section-15" class="text-blue-600 dark:text-blue-400 hover:underline">15. Acceptance of This Policy</a>
+            </div>
+        </div>
+
+        <!-- Section 1 -->
+        <div id="section-1" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">1.</span> General Policy
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">TRAGENE Journal offers digital subscription-based software services.</p>
+            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mt-3 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">Due to the nature of digital products and the immediate availability of premium features after purchase, <strong>all purchases are generally final and non-refundable</strong> unless otherwise stated in this Refund Policy.</p>
+            </div>
+        </div>
+
+        <!-- Section 2 -->
+        <div id="section-2" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">2.</span> Subscription Plans
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">We offer subscription plans that may include:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Monthly Plans</li>
+                <li>Yearly Plans</li>
+                <li>Promotional Plans</li>
+                <li>Future Subscription Plans introduced by TRAGENE Journal</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Subscription prices, features, and availability are displayed on the official pricing pages, homepage, and user dashboard.</p>
+        </div>
+
+        <!-- Section 3 -->
+        <div id="section-3" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">3.</span> No Automatic Renewal
+            </h2>
+            <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">TRAGENE Journal <strong>does not automatically renew subscriptions</strong>.</p>
+                <p class="text-gray-700 dark:text-gray-300 mt-2">When your subscription expires:</p>
+                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 ml-4 mt-1">
+                    <li>Your payment method will <strong>not</strong> be charged automatically.</li>
+                    <li>Your subscription will expire at the end of its billing period.</li>
+                    <li>If you wish to continue using premium features, you must manually purchase a new subscription.</li>
+                </ul>
+                <p class="text-gray-700 dark:text-gray-300 mt-2">Because there is no automatic renewal, refunds are not provided for unintended renewals.</p>
+            </div>
+        </div>
+
+        <!-- Section 4 -->
+        <div id="section-4" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">4.</span> Cancellation Policy
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Once a subscription has been successfully purchased and activated:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>It cannot be cancelled before its expiration date.</li>
+                <li>Access to premium features will remain available until the subscription period ends.</li>
+                <li>Stopping use of the Service does not cancel the subscription or create eligibility for a refund.</li>
+            </ul>
+        </div>
+
+        <!-- Section 5 -->
+        <div id="section-5" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">5.</span> Switching Subscription Plans
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Users may choose to purchase a different subscription plan at any time.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Purchasing a different plan:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Does not automatically cancel an existing subscription.</li>
+                <li>Does not create eligibility for a refund on any previous purchase.</li>
+                <li>Does not entitle the user to partial refunds or unused subscription credits unless expressly approved by TRAGENE Journal.</li>
+            </ul>
+        </div>
+
+        <!-- Section 6 -->
+        <div id="section-6" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">6.</span> When Refunds Are Not Available
+            </h2>
+            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">Refunds will generally <strong>not</strong> be provided for reasons including, but not limited to:</p>
+            </div>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-3 columns-2">
+                <li>Change of mind</li>
+                <li>Accidental purchase</li>
+                <li>Failure to use the Service</li>
+                <li>Lack of understanding of platform features</li>
+                <li>Dissatisfaction with personal trading performance</li>
+                <li>Trading losses</li>
+                <li>User configuration issues</li>
+                <li>Incompatible devices not listed as supported</li>
+                <li>Failure to read product descriptions</li>
+                <li>Subscription expiration</li>
+                <li>Failure to cancel before expiration (where applicable)</li>
+                <li>User preference changes</li>
+                <li>Internet connectivity issues on the user's side</li>
+                <li>Broker-related issues</li>
+                <li>Third-party trading platform issues</li>
+                <li>Third-party AI service interruptions beyond our reasonable control</li>
+            </ul>
+        </div>
+
+        <!-- Section 7 -->
+        <div id="section-7" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">7.</span> Refund Eligibility
+            </h2>
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 rounded">
+                <p class="text-gray-700 dark:text-gray-300">A refund <strong>may</strong> be considered only if TRAGENE Journal determines that the Service could not be provided due to a verified issue directly caused by our systems.</p>
+            </div>
+            <p class="text-gray-700 dark:text-gray-300 mt-3">Examples may include:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Prolonged server outage preventing normal use of the Service</li>
+                <li>Verified payment processing errors resulting in duplicate charges</li>
+                <li>Technical issues caused solely by our platform that permanently prevent access to purchased features</li>
+                <li>Billing errors made by TRAGENE Journal</li>
+                <li>Other exceptional circumstances determined solely by TRAGENE Journal</li>
+            </ul>
+            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mt-3 rounded">
+                <p class="text-gray-700 dark:text-gray-300 text-sm font-semibold">Each request is individually reviewed.</p>
+                <p class="text-gray-700 dark:text-gray-300 text-sm">Submitting a refund request does <strong>not</strong> guarantee approval.</p>
+            </div>
+        </div>
+
+        <!-- Section 8 -->
+        <div id="section-8" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">8.</span> Technical Issue Investigation
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Before approving any refund request, we may investigate the reported issue.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">This investigation may include reviewing:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2 columns-2">
+                <li>Server logs</li>
+                <li>Authentication records</li>
+                <li>Payment records</li>
+                <li>Error reports</li>
+                <li>System activity</li>
+                <li>Subscription status</li>
+                <li>User account activity</li>
+                <li>Technical diagnostics</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">You may be asked to provide additional information to assist in the investigation.</p>
+        </div>
+
+        <!-- Section 9 -->
+        <div id="section-9" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">9.</span> Duplicate Payments
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">If you are charged more than once for the same subscription due to a verified billing or payment processing error, we may, after verification:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Refund the duplicate payment, or</li>
+                <li>Credit the duplicate amount toward a future subscription, at our discretion.</li>
+            </ul>
+        </div>
+
+        <!-- Section 10 -->
+        <div id="section-10" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">10.</span> Fraud Prevention
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">To protect our users and the integrity of the Service, refund requests may be declined if we reasonably believe that:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>False information has been provided</li>
+                <li>Payment fraud has occurred</li>
+                <li>Unauthorized activity has taken place</li>
+                <li>The Service has been intentionally misused</li>
+                <li>Refund requests are abusive or repetitive</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2 font-semibold">We reserve the right to suspend or terminate accounts involved in fraudulent refund activity.</p>
+        </div>
+
+        <!-- Section 11 -->
+        <div id="section-11" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">11.</span> Payment Provider Processing
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Approved refunds, when applicable, will generally be processed through the original payment method used for the purchase.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Actual processing times may vary depending on the payment provider, banking institution, or payment network.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">TRAGENE Journal is not responsible for delays caused by third-party payment providers after a refund has been initiated.</p>
+        </div>
+
+        <!-- Section 12 -->
+        <div id="section-12" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">12.</span> Taxes and Fees
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">Any taxes, duties, or applicable governmental charges associated with your purchase may be handled according to applicable laws and payment provider policies.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Where permitted by law, certain taxes or transaction fees may not be refundable.</p>
+        </div>
+
+        <!-- Section 13 -->
+        <div id="section-13" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">13.</span> Modifications to This Policy
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">TRAGENE Journal reserves the right to modify or update this Refund Policy at any time.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">Any updates will become effective upon publication on the official website unless otherwise stated.</p>
+        </div>
+
+        <!-- Section 14 -->
+        <div id="section-14" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">14.</span> Contact Us
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">If you believe you are eligible for a refund under this Refund Policy, please contact us through the official support channels listed on our website.</p>
+            <p class="text-gray-700 dark:text-gray-300 mt-2">When submitting a request, please include:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>Your registered email address</li>
+                <li>Transaction ID (if available)</li>
+                <li>Date of purchase</li>
+                <li>Description of the issue</li>
+                <li>Screenshots or supporting information, if applicable</li>
+            </ul>
+            <p class="text-gray-700 dark:text-gray-300 mt-2 text-sm italic">Providing complete information helps us review your request more efficiently.</p>
+        </div>
+
+        <!-- Section 15 -->
+        <div id="section-15" class="mb-8 scroll-mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-3">
+                <span class="text-blue-600 dark:text-blue-400">15.</span> Acceptance of This Policy
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">By purchasing any subscription, paid feature, or digital service offered by TRAGENE Journal, you acknowledge that:</p>
+            <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-4 mt-2">
+                <li>You have read and understood this Refund Policy.</li>
+                <li>You understand that subscriptions are generally non-refundable.</li>
+                <li>You understand that subscriptions are not automatically renewed.</li>
+                <li>You understand that you must manually purchase a new subscription after expiration if you wish to continue using premium features.</li>
+                <li>You understand that refunds are only considered in limited circumstances involving verified issues caused directly by TRAGENE Journal.</li>
+            </ul>
+            <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 mt-3 rounded">
+                <p class="text-gray-700 dark:text-gray-300 font-semibold">Your continued use of the Service constitutes acceptance of this Refund Policy.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 text-center">
+            <p class="text-gray-600 dark:text-gray-400 text-sm">
+                By purchasing any subscription or paid feature, you acknowledge that you have read, understood, and agreed to this Refund Policy.
+            </p>
+            <p class="text-gray-500 dark:text-gray-500 text-xs mt-4">
+                &copy; {{ now.year if now else '2025' }} TRAGENE Journal. All rights reserved.
+            </p>
+            <div class="flex justify-center gap-4 mt-4">
+                <a href="{{ url_for('home') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Home</a>
+                <a href="{{ url_for('terms') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Terms &amp; Conditions</a>
+                <a href="{{ url_for('privacy') }}" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">Privacy Policy</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

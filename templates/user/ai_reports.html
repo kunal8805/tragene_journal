@@ -1,0 +1,673 @@
+{% extends "base_user.html" %}
+{% block title %}AI Reports - Tragene Journal{% endblock %}
+{% block page_title %}🤖 TRAGENE AI Reports{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    .ai-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* ── Token Bar ── */
+    .token-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .token-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .token-icon {
+        font-size: 1.5rem;
+    }
+    
+    .token-text h6 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .token-text span {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .token-progress {
+        width: 180px;
+        height: 8px;
+        background: var(--bg-body);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .token-progress-fill {
+        height: 100%;
+        border-radius: 8px;
+        transition: width 0.5s ease;
+    }
+    
+    .token-amount {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
+
+    /* ── Banned Alert ── */
+    .banned-alert {
+        background: rgba(255,82,82,0.1);
+        border: 1px solid rgba(255,82,82,0.3);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #ff5252;
+        font-weight: 600;
+    }
+
+    /* ── Generate Card ── */
+    .generate-card {
+        background: linear-gradient(135deg, var(--bg-card) 0%, rgba(79,142,247,0.05) 100%);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .generate-card::before {
+        content: '';
+        position: absolute;
+        top: -50px; right: -50px;
+        width: 150px; height: 150px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(79,142,247,0.08) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .generate-card h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 4px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .generate-card p {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .generate-stats {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .gen-stat {
+        background: var(--bg-body);
+        border-radius: 10px;
+        padding: 10px 14px;
+        text-align: center;
+    }
+    
+    .gen-stat .gs-val {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+    
+    .gen-stat .gs-lbl {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .btn-generate {
+        padding: 12px 28px;
+        background: linear-gradient(135deg, var(--accent) 0%, #6db3f2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Space Grotesk', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .btn-generate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(79,142,247,0.35);
+    }
+    
+    .btn-generate:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .btn-generate.locked {
+        background: var(--border-color);
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    /* ── Estimate Modal ── */
+    .modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .estimate-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.85rem;
+    }
+    
+    .estimate-row:last-child {
+        border-bottom: none;
+    }
+
+    /* ── Reports List ── */
+    .report-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .report-card:hover {
+        border-color: rgba(79,142,247,0.3);
+        transform: translateX(4px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .report-card .rc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .report-card .rc-date {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+    }
+    
+    .report-card .rc-score {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .rc-score.high { background: rgba(0,230,118,0.12); color: #00e676; }
+    .rc-score.mid { background: rgba(255,179,0,0.12); color: #ffb300; }
+    .rc-score.low { background: rgba(255,82,82,0.12); color: #ff5252; }
+    
+    .report-card .rc-summary {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 8px;
+        line-height: 1.5;
+    }
+    
+    .report-card .rc-meta {
+        display: flex;
+        gap: 14px;
+        margin-top: 10px;
+        font-size: 0.68rem;
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Expand Report ── */
+    .report-expand {
+        display: none;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .report-expand.show {
+        display: block;
+    }
+    
+    .re-section {
+        margin-bottom: 12px;
+    }
+    
+    .re-section .re-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .re-label.strength { color: #00e676; }
+    .re-label.warning { color: #ffb300; }
+    .re-label.action { color: var(--accent); }
+    
+    .re-section .re-text {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 14px;
+        opacity: 0.3;
+    }
+    
+    .empty-state h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    /* ── Upgrade Banner ── */
+    .upgrade-banner {
+        background: linear-gradient(135deg, rgba(255,179,0,0.08) 0%, rgba(255,143,0,0.04) 100%);
+        border: 1px solid rgba(255,179,0,0.2);
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .upgrade-banner span {
+        font-size: 0.8rem;
+        color: #ffb300;
+        font-weight: 600;
+    }
+    
+    .btn-upgrade-sm {
+        padding: 8px 18px;
+        background: #ffb300;
+        color: #000;
+        border: none;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    
+    .btn-upgrade-sm:hover {
+        color: #000;
+        opacity: 0.9;
+    }
+
+    /* ── Toast ── */
+    .toast-mini {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        padding: 10px 24px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+        animation: toastUp 0.4s ease, toastDown 0.4s ease 2s forwards;
+    }
+    
+    @keyframes toastUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    @keyframes toastDown { from { transform: translateX(-50%) translateY(0); opacity: 1; } to { transform: translateX(-50%) translateY(20px); opacity: 0; } }
+
+    @media (max-width: 576px) {
+        .token-bar { flex-direction: column; align-items: flex-start; }
+        .generate-stats { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="ai-container">
+    
+    <!-- ── Banned Alert ── -->
+    {% if is_banned %}
+    <div class="banned-alert">
+        <i class="bi bi-slash-circle" style="font-size:1.3rem;"></i>
+        <span>Your AI access has been restricted. Please contact support.</span>
+    </div>
+    {% endif %}
+    
+    <!-- ── Token Bar ── -->
+    <div class="token-bar">
+        <div class="token-info">
+            <div class="token-icon">🪙</div>
+            <div class="token-text">
+                <h6>AI Tokens</h6>
+                <span>Resets monthly</span>
+            </div>
+        </div>
+        <div class="token-progress">
+            {% set pct = (tokens_used / token_limit * 100) if token_limit > 0 else 0 %}
+            <div class="token-progress-fill" style="width:{{ pct }}%; background:{{ '#00e676' if pct < 50 else '#ffb300' if pct < 80 else '#ff5252' }};"></div>
+        </div>
+        <div class="token-amount" style="color:{{ '#00e676' if tokens_remaining > token_limit * 0.3 else '#ffb300' if tokens_remaining > 0 else '#ff5252' }};">
+            {{ '{:,}'.format(tokens_remaining) }} / {{ '{:,}'.format(token_limit) }}
+        </div>
+    </div>
+    
+    <!-- ── Free Plan Limit ── -->
+    {% if current_user.subscription_tier == 'free' and weekly_limit %}
+    <div class="upgrade-banner">
+        <span><i class="bi bi-info-circle"></i> Free Plan: {{ weekly_queries }}/{{ weekly_limit }} reports used this week</span>
+        <a href="{{ url_for('user.subscription') }}" class="btn-upgrade-sm">Upgrade for Unlimited</a>
+    </div>
+    {% endif %}
+    
+    <!-- ── Generate Report Card ── -->
+    {% if not is_banned %}
+    <div class="generate-card">
+        <h5>📊 Generate New Analysis</h5>
+        <p>Analyze all your trades since the last report. TRAGENE AI will review your performance and give actionable insights.</p>
+        
+        <div class="generate-stats">
+            <div class="gen-stat">
+                <div class="gs-val" id="unanalyzedCount">{{ unanalyzed_count }}</div>
+                <div class="gs-lbl">Unanalyzed Trades</div>
+            </div>
+            <div class="gen-stat">
+                <div class="gs-val" id="estTokens">-</div>
+                <div class="gs-lbl">Est. Tokens</div>
+            </div>
+            <div class="gen-stat">
+                <div class="gs-val" id="estCost">-</div>
+                <div class="gs-lbl">Est. Cost</div>
+            </div>
+        </div>
+        
+        <button class="btn-generate" id="generateBtn" onclick="generateReport()" {% if unanalyzed_count == 0 %}disabled{% endif %}>
+            <i class="bi bi-magic"></i> 
+            {% if unanalyzed_count == 0 %}
+                No New Trades to Analyze
+            {% else %}
+                Generate Report
+            {% endif %}
+        </button>
+    </div>
+    {% endif %}
+    
+    <!-- ── Reports List ── -->
+    <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.9rem;margin-bottom:14px;color:var(--text-primary);">
+        📜 Previous Reports
+    </h6>
+    
+    <div id="reportsList">
+        {% if reports %}
+            {% for report in reports %}
+            <div class="report-card" id="report-{{ report.id }}">
+                <div class="rc-header" onclick="toggleReport({{ report.id }})">
+                    <div>
+                        <div class="rc-date">{{ report.report_date.strftime('%d %B %Y') }}</div>
+                        <div class="rc-meta">
+                            <span>📊 {{ report.trades_analyzed }} trades</span>
+                            <span>🪙 {{ report.total_tokens }} tokens</span>
+                            <span>💰 ${{ '%.4f'|format(report.api_cost) }}</span>
+                        </div>
+                    </div>
+                    <span class="rc-score {% if report.performance_score >= 7 %}high{% elif report.performance_score >= 4 %}mid{% else %}low{% endif %}">
+                        Score: {{ report.performance_score }}/10
+                    </span>
+                </div>
+                
+                <div class="rc-summary" onclick="toggleReport({{ report.id }})">
+                    {{ report.user_summary[:200] }}{% if report.user_summary and report.user_summary|length > 200 %}...{% endif %}
+                </div>
+                
+                <div class="report-expand" id="expand-{{ report.id }}">
+                    {% if report.strengths %}
+                    <div class="re-section">
+                        <div class="re-label strength">✅ Strengths</div>
+                        <div class="re-text">{{ report.strengths }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if report.warnings %}
+                    <div class="re-section">
+                        <div class="re-label warning">⚠️ Warnings</div>
+                        <div class="re-text">{{ report.warnings }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if report.action_items %}
+                    <div class="re-section">
+                        <div class="re-label action">🎯 Action Items</div>
+                        <div class="re-text">{{ report.action_items }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🤖</div>
+                <h5>No Reports Yet</h5>
+                <p>Generate your first AI analysis report to see insights about your trading.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+</div>
+
+<!-- ── Estimate Modal ── -->
+<div class="modal fade" id="estimateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.95rem;">
+                    <i class="bi bi-calculator" style="color:var(--accent);"></i> Analysis Estimate
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="estimateBody">
+                <div class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--border-color);">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:8px;">Cancel</button>
+                <button type="button" class="btn btn-sm text-white" style="background:var(--accent);border-radius:8px;" id="confirmGenerate" onclick="confirmGenerate()">
+                    <i class="bi bi-check-lg"></i> Confirm & Generate
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let estimateModal;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        estimateModal = new bootstrap.Modal(document.getElementById('estimateModal'));
+    });
+    
+    function generateReport() {
+        const btn = document.getElementById('generateBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Estimating...';
+        
+        // First, get estimate
+        fetch('/ai/generate-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-magic"></i> Generate Report';
+            
+            if (data.estimating) {
+                // Show estimate modal
+                showEstimateModal(data);
+            } else if (data.success) {
+                // Report generated directly
+                showToast('✅ Report generated!', '#00e676');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showToast('❌ ' + data.message, '#ff5252');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-magic"></i> Generate Report';
+            showToast('❌ Error. Please try again.', '#ff5252');
+        });
+    }
+    
+    function showEstimateModal(data) {
+        const body = document.getElementById('estimateBody');
+        body.innerHTML = `
+            <div class="estimate-row">
+                <span>Unanalyzed Trades</span>
+                <strong>${data.unanalyzed_trades}</strong>
+            </div>
+            <div class="estimate-row">
+                <span>Estimated Tokens</span>
+                <strong style="font-family:'JetBrains Mono',monospace;">${data.estimated_tokens.toLocaleString()}</strong>
+            </div>
+            <div class="estimate-row">
+                <span>Your Remaining Tokens</span>
+                <strong style="font-family:'JetBrains Mono',monospace;color:#00e676;">${data.remaining_tokens.toLocaleString()}</strong>
+            </div>
+        
+            <div class="estimate-row">
+                <span>After Analysis</span>
+                <strong style="font-family:'JetBrains Mono',monospace;color:${(data.remaining_tokens - data.estimated_tokens) > 0 ? '#00e676' : '#ff5252'};">
+                    ${(data.remaining_tokens - data.estimated_tokens).toLocaleString()} tokens remaining
+                </strong>
+            </div>
+        `;
+        
+        document.getElementById('confirmGenerate').onclick = confirmGenerate;
+        estimateModal.show();
+    }
+    
+    function confirmGenerate() {
+        estimateModal.hide();
+        
+        const btn = document.getElementById('generateBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Generating...';
+        
+        fetch('/ai/generate-report?confirm=true', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Report generated! Score: ' + data.report.score + '/10', '#00e676');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('❌ ' + data.message, '#ff5252');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-magic"></i> Generate Report';
+            }
+        })
+        .catch(err => {
+            showToast('❌ Error generating report.', '#ff5252');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-magic"></i> Generate Report';
+        });
+    }
+    
+    function toggleReport(reportId) {
+        const expand = document.getElementById('expand-' + reportId);
+        expand.classList.toggle('show');
+    }
+    
+    function showToast(message, color) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-mini';
+        toast.style.cssText = `
+            background: var(--bg-card);
+            border: 1px solid ${color};
+            color: ${color};
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+    }
+</script>
+{% endblock %}
