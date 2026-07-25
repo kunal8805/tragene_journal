@@ -1,0 +1,438 @@
+{% extends "base_admin.html" %}
+{% block title %}Payment Analytics - Admin{% endblock %}
+{% block page_title %}Payment Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card-pay {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 20px;
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-card-pay:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: var(--accent);
+    }
+    .stat-card-pay .pay-icon {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem; margin-bottom: 10px;
+    }
+    .stat-card-pay .pay-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.6rem; font-weight: 700;
+        color: var(--text-primary); line-height: 1;
+    }
+    .stat-card-pay .pay-label {
+        font-size: 0.68rem; text-transform: uppercase;
+        letter-spacing: 0.06em; color: var(--text-muted); font-weight: 700;
+    }
+    .stat-card-pay .pay-sub {
+        font-size: 0.66rem; color: var(--text-muted); margin-top: 2px;
+    }
+
+    .filter-bar-pay {
+        display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+        padding: 12px 16px; background: var(--bg-card);
+        border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 16px;
+    }
+    .search-input-pay {
+        flex: 1; min-width: 200px; padding: 8px 14px;
+        background: var(--bg-input); border: 1px solid var(--border-color);
+        border-radius: 10px; color: var(--text-primary); font-size: 0.82rem;
+        font-family: 'Inter', sans-serif; outline: none;
+    }
+    .search-input-pay:focus { border-color: var(--accent); }
+    .search-input-pay::placeholder { color: var(--text-muted); }
+    .filter-select-pay {
+        padding: 8px 12px; background: var(--bg-input);
+        border: 1px solid var(--border-color); border-radius: 10px;
+        color: var(--text-primary); font-size: 0.8rem; cursor: pointer;
+        outline: none; min-width: 120px;
+    }
+    .filter-select-pay:focus { border-color: var(--accent); }
+    .filter-select-pay option { background: var(--bg-card); color: var(--text-primary); }
+    .btn-pay-action {
+        padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border-color);
+        font-weight: 600; font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+        white-space: nowrap; background: var(--bg-input); color: var(--text-secondary);
+    }
+    .btn-pay-action:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-pay-action.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-pay-action.primary:hover { opacity: 0.9; }
+
+    .chart-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px;
+        height: 100%;
+    }
+    .chart-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 0.85rem;
+        color: var(--text-primary); margin-bottom: 14px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .chart-title i { color: var(--accent); }
+
+    .table-pay { color: var(--text-primary) !important; margin-bottom: 0; }
+    .table-pay thead th {
+        background: var(--sidebar-hover); color: var(--text-muted) !important;
+        font-weight: 700; font-size: 0.65rem; text-transform: uppercase;
+        letter-spacing: 0.06em; border-color: var(--border-color) !important;
+        padding: 10px 10px; white-space: nowrap;
+    }
+    .table-pay tbody td {
+        border-color: var(--border-color) !important; font-size: 0.78rem;
+        vertical-align: middle; padding: 10px 10px; color: var(--text-primary);
+    }
+    .table-pay tbody tr { transition: background 0.15s; }
+    .table-pay tbody tr:hover { background: var(--sidebar-hover); }
+
+    .badge-tier {
+        padding: 4px 10px; border-radius: 12px;
+        font-size: 0.63rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .badge-tier.free { background: rgba(148,163,184,0.15); color: #94a3b8; border: 1px solid rgba(148,163,184,0.3); }
+    .badge-tier.basic { background: rgba(79,142,247,0.15); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.3); }
+    .badge-tier.pro { background: rgba(38,166,154,0.15); color: #26a69a; border: 1px solid rgba(38,166,154,0.3); }
+    .badge-tier.elite { background: rgba(139,92,246,0.15); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.3); }
+    .badge-tier.enterprise { background: rgba(255,179,0,0.15); color: #ffb300; border: 1px solid rgba(255,179,0,0.3); }
+
+    .badge-status-pay {
+        padding: 3px 10px; border-radius: 10px;
+        font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.5px; white-space: nowrap;
+    }
+    .badge-status-pay.success { background: rgba(0,200,83,0.12); color: #00c853; }
+    .badge-status-pay.pending { background: rgba(255,179,0,0.12); color: #ffb300; }
+    .badge-status-pay.failed { background: rgba(255,82,82,0.12); color: #ff5252; }
+    .badge-status-pay.cancelled { background: rgba(148,163,184,0.12); color: #94a3b8; }
+
+    .progress-mini {
+        height: 6px; border-radius: 3px;
+        background: var(--border-color); overflow: hidden; margin-top: 4px;
+    }
+    .progress-fill {
+        height: 100%; border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+
+    .pagination-bar-pay {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 14px; border-top: 1px solid var(--border-color);
+        flex-wrap: wrap; gap: 8px;
+    }
+    .page-btn-pay {
+        padding: 4px 10px; border-radius: 8px;
+        border: 1px solid var(--border-color); background: var(--bg-input);
+        color: var(--text-primary); cursor: pointer; font-size: 0.74rem;
+        font-weight: 600; transition: all 0.15s;
+    }
+    .page-btn-pay:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .page-btn-pay:disabled { opacity: 0.35; cursor: not-allowed; }
+    .page-btn-pay.active-page { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .page-info-pay { font-size: 0.74rem; color: var(--text-muted); }
+
+    /* Revenue Cards Row */
+    .revenue-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px 16px;
+        text-align: center;
+    }
+    .revenue-card .rev-label {
+        font-size: 0.68rem; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700;
+    }
+    .revenue-card .rev-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem; font-weight: 700; color: var(--text-primary);
+    }
+
+    @media (max-width: 768px) {
+        .filter-bar-pay { flex-direction: column; }
+        .search-input-pay, .filter-select-pay { width: 100%; }
+        .pay-value { font-size: 1.3rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card-pay">
+            <div class="pay-icon" style="background:rgba(0,200,83,0.12);color:#00c853;"><i class="bi bi-cash-stack"></i></div>
+            <div class="pay-label">Total Revenue</div>
+            <div class="pay-value">₹{{ '%.0f'|format(total_revenue) }}</div>
+            <div class="pay-sub">{{ total_payments }} payments</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card-pay">
+            <div class="pay-icon" style="background:rgba(0,200,83,0.12);color:#00c853;"><i class="bi bi-check-circle"></i></div>
+            <div class="pay-label">Successful</div>
+            <div class="pay-value" style="color:#00c853;">{{ successful }}</div>
+            <div class="pay-sub">{{ success_rate }}% rate</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card-pay">
+            <div class="pay-icon" style="background:rgba(255,179,0,0.12);color:#ffb300;"><i class="bi bi-clock"></i></div>
+            <div class="pay-label">Pending</div>
+            <div class="pay-value" style="color:#ffb300;">{{ pending }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card-pay">
+            <div class="pay-icon" style="background:rgba(255,82,82,0.12);color:#ff5252;"><i class="bi bi-x-circle"></i></div>
+            <div class="pay-label">Failed</div>
+            <div class="pay-value" style="color:#ff5252;">{{ failed }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card-pay">
+            <div class="pay-icon" style="background:rgba(79,142,247,0.12);color:#4f8ef7;"><i class="bi bi-people"></i></div>
+            <div class="pay-label">Buyers</div>
+            <div class="pay-value">{{ unique_buyers }}</div>
+            <div class="pay-sub">{{ repeat_buyers }} repeat</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card-pay">
+            <div class="pay-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6;"><i class="bi bi-basket"></i></div>
+            <div class="pay-label">Avg Order</div>
+            <div class="pay-value" style="font-size:1.3rem;">₹{{ '%.0f'|format(avg_order) }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="revenue-card">
+            <div class="rev-label">Today's Revenue</div>
+            <div class="rev-value" style="color:#00c853;">₹{{ '%.0f'|format(revenue_trend[-1].revenue if revenue_trend else 0) }}</div>
+            <div class="pay-sub">{{ revenue_trend[-1].orders if revenue_trend else 0 }} orders today</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="revenue-card">
+            <div class="rev-label">This Month</div>
+            <div class="rev-value" style="color:#4f8ef7;">₹{{ '%.0f'|format(monthly_revenue[-1].revenue if monthly_revenue else 0) }}</div>
+            <div class="pay-sub">{{ monthly_revenue[-1].month if monthly_revenue else 'N/A' }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="revenue-card">
+            <div class="rev-label">Success Rate</div>
+            <div class="rev-value" style="color:{{ '#00c853' if success_rate >= 80 else '#ffb300' if success_rate >= 50 else '#ff5252' }};">{{ success_rate }}%</div>
+            <div class="pay-sub">{{ successful }}/{{ total_payments }} payments</div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Spenders & Plan Breakdown -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <div class="chart-title"><i class="bi bi-trophy"></i> Top Spenders</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-pay mb-0">
+                    <thead>
+                        <tr><th>#</th><th>User</th><th>Orders</th><th>Total Spent</th><th>Last Purchase</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for spender in top_spenders %}
+                        <tr>
+                            <td><strong>{{ loop.index }}</strong></td>
+                            <td>
+                                <strong>{{ spender.username }}</strong>
+                                <div style="font-size:0.65rem;color:var(--text-muted);">{{ spender.email }}</div>
+                            </td>
+                            <td>{{ spender.orders }}</td>
+                            <td style="color:#00c853;font-weight:700;">₹{{ '%.0f'|format(spender.total_spent / 100) }}</td>
+                            <td style="font-size:0.72rem;color:var(--text-muted);">{{ spender.last_purchase.strftime('%d %b %Y') if spender.last_purchase else 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-3">No data yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <div class="chart-title"><i class="bi bi-bar-chart"></i> Plan Performance</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-pay mb-0">
+                    <thead>
+                        <tr><th>Plan</th><th>Sales</th><th>Revenue</th><th>Share</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in plan_breakdown %}
+                        <tr>
+                            <td><span class="badge-tier {{ plan.plan_tier }}">{{ plan.plan_tier.upper() }}</span></td>
+                            <td>{{ plan.sales }}</td>
+                            <td style="color:#00c853;font-weight:700;">₹{{ '%.0f'|format(plan.revenue / 100) }}</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div class="progress-mini" style="flex:1;">
+                                        <div class="progress-fill" style="width:{{ (plan.sales / successful * 100) if successful > 0 else 0 }}%;background:var(--accent);"></div>
+                                    </div>
+                                    <small style="color:var(--text-muted);white-space:nowrap;">{{ '%.1f'|format(plan.sales / successful * 100) if successful > 0 else 0 }}%</small>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">No data yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Log -->
+<div class="chart-container">
+    <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <span><i class="bi bi-list-ul"></i> Transaction Log</span>
+        <div style="display:flex;gap:8px;">
+            <button class="btn-pay-action primary" onclick="loadTransactions()">🔄 Refresh</button>
+            <button class="btn-pay-action" onclick="exportCSV()">📥 Export CSV</button>
+        </div>
+    </div>
+    
+    <div class="filter-bar-pay">
+        <input type="text" class="search-input-pay" id="txSearch" placeholder="🔍 Search by name, email, order ID...">
+        <select class="filter-select-pay" id="txStatus">
+            <option value="all">All Status</option>
+            <option value="SUCCESS">Success</option>
+            <option value="PENDING">Pending</option>
+            <option value="FAILED">Failed</option>
+            <option value="CANCELLED">Cancelled</option>
+        </select>
+        <select class="filter-select-pay" id="txPlan">
+            <option value="all">All Plans</option>
+            <option value="pro">Pro</option>
+            <option value="elite">Elite</option>
+            <option value="basic">Basic</option>
+            <option value="enterprise">Enterprise</option>
+        </select>
+        <button class="btn-pay-action primary" onclick="loadTransactions()">🔍 Search</button>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-sm table-pay mb-0">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>User</th>
+                    <th>Plan</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="txTableBody">
+                <tr><td colspan="6" class="text-center py-4 text-muted">Loading transactions...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="pagination-bar-pay">
+        <span class="page-info-pay" id="txInfo">0 results</span>
+        <div class="d-flex align-items-center gap-1" id="txPagination"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let txPage = 1;
+    
+    function loadTransactions() {
+        var search = document.getElementById('txSearch').value;
+        var status = document.getElementById('txStatus').value;
+        var plan = document.getElementById('txPlan').value;
+        
+        document.getElementById('txTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Loading...</td></tr>';
+        
+        fetch('/admin/api/payment-transactions?search=' + encodeURIComponent(search) + '&status=' + status + '&plan=' + plan + '&page=' + txPage + '&per_page=25')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var tbody = document.getElementById('txTableBody');
+                if (data.transactions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No transactions found</td></tr>';
+                } else {
+                    var html = '';
+                    for (var i = 0; i < data.transactions.length; i++) {
+                        var tx = data.transactions[i];
+                        html += '<tr>' +
+                            '<td style="font-size:0.7rem;font-family:\'JetBrains Mono\',monospace;">' + tx.order_id + '</td>' +
+                            '<td><strong>' + tx.username + '</strong><div style="font-size:0.65rem;color:var(--text-muted);">' + tx.email + '</div></td>' +
+                            '<td><span class="badge-tier ' + tx.plan.toLowerCase() + '">' + tx.plan + ' · ' + tx.plan_type + '</span></td>' +
+                            '<td style="font-weight:700;">' + tx.currency + ' ' + tx.amount.toFixed(2) + '</td>' +
+                            '<td><span class="badge-status-pay ' + tx.status.toLowerCase() + '">' + tx.status + '</span></td>' +
+                            '<td style="font-size:0.72rem;color:var(--text-muted);">' + tx.date + '</td>' +
+                        '</tr>';
+                    }
+                    tbody.innerHTML = html;
+                }
+                
+                document.getElementById('txInfo').textContent = data.total + ' results';
+                
+                var pag = document.getElementById('txPagination');
+                var pHtml = '<button class="page-btn-pay" onclick="goToTxPage(' + (data.page - 1) + ')" ' + (data.page === 1 ? 'disabled' : '') + '>‹</button>';
+                for (var i = 1; i <= data.total_pages; i++) {
+                    if (i === 1 || i === data.total_pages || (i >= data.page - 2 && i <= data.page + 2)) {
+                        pHtml += '<button class="page-btn-pay ' + (i === data.page ? 'active-page' : '') + '" onclick="goToTxPage(' + i + ')">' + i + '</button>';
+                    } else if (i === data.page - 3 || i === data.page + 3) {
+                        pHtml += '<span style="color:var(--text-muted);">...</span>';
+                    }
+                }
+                pHtml += '<button class="page-btn-pay" onclick="goToTxPage(' + (data.page + 1) + ')" ' + (data.page === data.total_pages ? 'disabled' : '') + '>›</button>';
+                pHtml += '<span class="page-info-pay ms-2">Page ' + data.page + ' of ' + data.total_pages + '</span>';
+                pag.innerHTML = pHtml;
+            });
+    }
+    
+    function goToTxPage(p) {
+        txPage = p;
+        loadTransactions();
+    }
+    
+    function exportCSV() {
+        var search = document.getElementById('txSearch').value;
+        var status = document.getElementById('txStatus').value;
+        var plan = document.getElementById('txPlan').value;
+        window.location.href = '/admin/api/payment-transactions?search=' + encodeURIComponent(search) + '&status=' + status + '&plan=' + plan + '&export=csv';
+    }
+    
+    // Debounced search
+    var searchTimeout;
+    document.getElementById('txSearch').addEventListener('keyup', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() { txPage = 1; loadTransactions(); }, 400);
+    });
+    document.getElementById('txStatus').addEventListener('change', function() { txPage = 1; loadTransactions(); });
+    document.getElementById('txPlan').addEventListener('change', function() { txPage = 1; loadTransactions(); });
+    
+    document.addEventListener('DOMContentLoaded', function() { loadTransactions(); });
+</script>
+{% endblock %}

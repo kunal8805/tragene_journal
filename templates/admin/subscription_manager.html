@@ -1,0 +1,467 @@
+{% extends "base_admin.html" %}
+{% block title %}Subscription Manager - Admin{% endblock %}
+{% block page_title %}Subscription Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    .plan-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        height: 100%;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .plan-card:hover { border-color: var(--accent); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+    .plan-card.featured { border-color: rgba(38,166,154,0.4); background: linear-gradient(135deg, rgba(38,166,154,0.05), var(--bg-card)); }
+    .plan-card.inactive { opacity: 0.5; }
+    
+    .plan-header {
+        display: flex; justify-content: space-between; align-items: start;
+        margin-bottom: 12px;
+    }
+    .plan-tier-badge {
+        padding: 4px 12px; border-radius: 20px;
+        font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .plan-tier-badge.pro { background: rgba(38,166,154,0.15); color: #26a69a; }
+    .plan-tier-badge.elite { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    .plan-tier-badge.basic { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+    .plan-tier-badge.enterprise { background: rgba(255,179,0,0.15); color: #ffb300; }
+    .plan-tier-badge.free { background: rgba(148,163,184,0.15); color: #94a3b8; }
+    
+    .plan-type-badge {
+        padding: 2px 8px; border-radius: 8px;
+        font-size: 0.6rem; font-weight: 600;
+        background: rgba(255,255,255,0.06); color: var(--text-muted);
+    }
+    .plan-price {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 2rem; font-weight: 700; color: var(--text-primary);
+    }
+    .plan-price .currency { font-size: 1rem; color: var(--text-muted); }
+    .plan-price .period { font-size: 0.8rem; color: var(--text-muted); font-weight: 400; }
+    .plan-total {
+        font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;
+    }
+    .plan-discount {
+        display: inline-block; padding: 2px 8px; border-radius: 6px;
+        background: rgba(0,200,83,0.12); color: #00c853;
+        font-size: 0.62rem; font-weight: 700;
+    }
+    
+    .feature-list {
+        list-style: none; padding: 0; margin: 12px 0;
+    }
+    .feature-list li {
+        padding: 4px 0; font-size: 0.75rem; color: var(--text-secondary);
+        display: flex; align-items: center; gap: 6px;
+    }
+    .feature-list li i { color: #00c853; font-size: 0.7rem; }
+    
+    .plan-actions {
+        display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap;
+    }
+    .btn-plan-action {
+        padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color);
+        background: var(--bg-input); color: var(--text-secondary);
+        font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-plan-action:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-plan-action.edit:hover { border-color: #4f8ef7; color: #4f8ef7; }
+    .btn-plan-action.delete:hover { border-color: #ff5252; color: #ff5252; background: rgba(255,82,82,0.1); }
+    .btn-plan-action.toggle:hover { border-color: #ffb300; color: #ffb300; }
+    
+    .featured-star {
+        position: absolute; top: 12px; right: 12px;
+        color: #ffb300; font-size: 1rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.7); z-index: 1050;
+        align-items: center; justify-content: center; padding: 20px;
+        backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 18px; width: 100%; max-width: 600px;
+        max-height: 85vh; overflow-y: auto;
+    }
+    .modal-header {
+        padding: 16px 20px; border-bottom: 1px solid var(--border-color);
+        display: flex; justify-content: space-between; align-items: center;
+        position: sticky; top: 0; background: var(--bg-card); z-index: 1;
+    }
+    .modal-header h5 { margin: 0; font-weight: 700; font-size: 0.9rem; }
+    .modal-close {
+        background: none; border: none; color: var(--text-muted);
+        font-size: 1.3rem; cursor: pointer;
+    }
+    .modal-body { padding: 20px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+        display: block; font-size: 0.72rem; font-weight: 700;
+        color: var(--text-muted); text-transform: uppercase;
+        letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 9px 12px;
+        background: var(--bg-input); border: 1px solid var(--border-color);
+        border-radius: 8px; color: var(--text-primary); font-size: 0.82rem;
+        font-family: 'Inter', sans-serif;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        border-color: var(--accent); outline: none;
+    }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+    .btn-save {
+        width: 100%; padding: 10px; border-radius: 10px;
+        background: var(--accent); color: #fff; border: none;
+        font-weight: 700; font-size: 0.85rem; cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-save:hover { opacity: 0.9; }
+    
+    .feature-input-row {
+        display: flex; gap: 6px; margin-bottom: 6px;
+    }
+    .feature-input-row input { flex: 1; }
+    .btn-add-feature {
+        padding: 8px 12px; border-radius: 8px;
+        background: rgba(0,200,83,0.1); color: #00c853;
+        border: 1px solid rgba(0,200,83,0.2); cursor: pointer;
+        font-size: 0.75rem; font-weight: 600;
+    }
+    .btn-remove-feature {
+        padding: 8px; border-radius: 8px;
+        background: none; border: 1px solid rgba(255,82,82,0.2);
+        color: #ff5252; cursor: pointer; font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Top Bar -->
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+    <div style="display:flex;gap:10px;">
+        <button class="btn-pay-action primary" onclick="openPlanModal()">➕ Add New Plan</button>
+        <button class="btn-pay-action" onclick="seedDefaults()" id="btnSeed">🔄 Seed Defaults</button>
+    </div>
+    <div style="display:flex;gap:12px;font-size:0.78rem;color:var(--text-muted);">
+        <span><strong style="color:var(--text-primary);">{{ total_plans }}</strong> Active Plans</span>
+        <span><strong style="color:var(--text-primary);">{{ active_subs }}</strong> Active Subs</span>
+        <span><strong style="color:var(--text-primary);">{{ total_users }}</strong> Users</span>
+    </div>
+</div>
+
+<!-- Plans Grid -->
+<div class="row g-3" id="plansGrid">
+    {% for plan in plans %}
+    <div class="col-md-6 col-lg-4" id="plan-{{ plan.id }}">
+        <div class="plan-card {{ 'featured' if plan.is_featured else '' }} {{ 'inactive' if not plan.is_active else '' }}">
+            {% if plan.is_featured %}<span class="featured-star">⭐</span>{% endif %}
+            <div class="plan-header">
+                <div>
+                    <span class="plan-tier-badge {{ plan.plan_tier }}">{{ plan.plan_tier.upper() }}</span>
+                    <span class="plan-type-badge ms-1">{{ plan.plan_type|title }}</span>
+                </div>
+                {% if plan.discount_percent > 0 %}
+                <span class="plan-discount">{{ plan.discount_percent|int }}% OFF</span>
+                {% endif %}
+            </div>
+            <div class="plan-name" style="font-weight:600;font-size:0.9rem;color:var(--text-primary);margin-bottom:4px;">
+                {{ plan.plan_name or (plan.plan_tier|title + ' ' + plan.plan_type|title) }}
+            </div>
+            <div class="plan-price">
+                <span class="currency">{{ '₹' if plan.currency == 'INR' else '$' }}</span>{{ '%.0f'|format(plan.price) }}
+                <span class="period">/{{ plan.plan_type }}</span>
+            </div>
+            <div class="plan-total">
+                Total: {{ '₹' if plan.currency == 'INR' else '$' }}{{ '%.2f'|format(plan.total_price) }} (incl. {{ plan.gateway_fee_percent }}% fee)
+            </div>
+            {% set features = plan.get_features() %}
+            {% if features %}
+            <ul class="feature-list">
+                {% for feature in features[:6] %}
+                <li><i class="bi bi-check-circle-fill"></i> {{ feature }}</li>
+                {% endfor %}
+                {% if features|length > 6 %}
+                <li style="color:var(--text-muted);font-size:0.7rem;">+{{ features|length - 6 }} more</li>
+                {% endif %}
+            </ul>
+            {% endif %}
+            <div class="plan-actions">
+                <button class="btn-plan-action edit" onclick="openPlanModal({{ plan.id }})">✏️ Edit</button>
+                <button class="btn-plan-action toggle" onclick="togglePlan({{ plan.id }})">{{ '🔴 Deactivate' if plan.is_active else '🟢 Activate' }}</button>
+                <button class="btn-plan-action delete" onclick="deletePlan({{ plan.id }})">🗑️ Delete</button>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5 text-muted">
+        <div style="font-size:3rem;opacity:0.3;">📭</div>
+        <h6>No plans configured</h6>
+        <p>Click "Add New Plan" or "Seed Defaults" to get started.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Plan Edit Modal -->
+<div class="modal-overlay" id="planModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 id="modalTitle">➕ Add New Plan</h5>
+            <button class="modal-close" onclick="closePlanModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="planId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Plan Tier</label>
+                    <select id="planTier">
+                        <option value="free">Free</option>
+                        <option value="basic">Basic</option>
+                        <option value="pro" selected>Pro</option>
+                        <option value="elite">Elite</option>
+                        <option value="enterprise">Enterprise</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Plan Type</label>
+                    <select id="planType">
+                        <option value="monthly" selected>Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="half_yearly">6 Months</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="lifetime">Lifetime</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Plan Name (optional)</label>
+                <input type="text" id="planName" placeholder="e.g., Pro Monthly Special">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Currency</label>
+                    <select id="planCurrency">
+                        <option value="INR" selected>INR (₹)</option>
+                        <option value="USD">USD ($)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Base Price</label>
+                    <input type="number" id="planPrice" placeholder="399" step="0.01" min="0" onchange="updatePreview()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Gateway Fee %</label>
+                    <input type="number" id="gatewayFee" value="2.0" step="0.1" min="0" max="10" onchange="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Discount %</label>
+                    <input type="number" id="discountPercent" value="0" step="1" min="0" max="99" onchange="updatePreview()">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Total Price (auto-calculated)</label>
+                <input type="text" id="totalPricePreview" readonly style="font-weight:700;color:#00c853;font-size:1rem;">
+            </div>
+            <div class="form-group">
+                <label>Sort Order</label>
+                <input type="number" id="sortOrder" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="isActive" checked> Active
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                    <input type="checkbox" id="isFeatured"> Featured (⭐)
+                </label>
+            </div>
+            <div class="form-group">
+                <label>Features (one per line)</label>
+                <div id="featuresContainer">
+                    <div class="feature-input-row">
+                        <input type="text" class="feature-input" placeholder="Feature description...">
+                        <button class="btn-remove-feature" onclick="removeFeature(this)">✕</button>
+                    </div>
+                </div>
+                <button class="btn-add-feature" onclick="addFeature()" style="margin-top:6px;">+ Add Feature</button>
+            </div>
+            <div class="form-group">
+                <label>Description (optional)</label>
+                <textarea id="planDescription" rows="2" placeholder="Short description..."></textarea>
+            </div>
+            <button class="btn-save" onclick="savePlan()">💾 Save Plan</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openPlanModal(planId) {
+        document.getElementById('planModal').classList.add('show');
+        document.getElementById('planId').value = '';
+        document.getElementById('modalTitle').textContent = '➕ Add New Plan';
+        
+        // Reset form
+        document.getElementById('planTier').value = 'pro';
+        document.getElementById('planType').value = 'monthly';
+        document.getElementById('planName').value = '';
+        document.getElementById('planCurrency').value = 'INR';
+        document.getElementById('planPrice').value = '';
+        document.getElementById('gatewayFee').value = '2.0';
+        document.getElementById('discountPercent').value = '0';
+        document.getElementById('sortOrder').value = '0';
+        document.getElementById('isActive').checked = true;
+        document.getElementById('isFeatured').checked = false;
+        document.getElementById('planDescription').value = '';
+        document.getElementById('featuresContainer').innerHTML = '<div class="feature-input-row"><input type="text" class="feature-input" placeholder="Feature description..."><button class="btn-remove-feature" onclick="removeFeature(this)">✕</button></div>';
+        updatePreview();
+        
+        if (planId) {
+            document.getElementById('modalTitle').textContent = '✏️ Edit Plan';
+            fetch('/admin/api/plans').then(r => r.json()).then(data => {
+                var plan = data.plans.find(p => p.id === planId);
+                if (plan) {
+                    document.getElementById('planId').value = plan.id;
+                    document.getElementById('planTier').value = plan.plan_tier;
+                    document.getElementById('planType').value = plan.plan_type;
+                    document.getElementById('planName').value = plan.plan_name || '';
+                    document.getElementById('planCurrency').value = plan.currency;
+                    document.getElementById('planPrice').value = plan.price;
+                    document.getElementById('gatewayFee').value = plan.gateway_fee_percent;
+                    document.getElementById('discountPercent').value = plan.discount_percent;
+                    document.getElementById('sortOrder').value = plan.sort_order;
+                    document.getElementById('isActive').checked = plan.is_active;
+                    document.getElementById('isFeatured').checked = plan.is_featured;
+                    document.getElementById('planDescription').value = plan.description || '';
+                    
+                    var featContainer = document.getElementById('featuresContainer');
+                    featContainer.innerHTML = '';
+                    if (plan.features && plan.features.length > 0) {
+                        plan.features.forEach(function(f) {
+                            featContainer.innerHTML += '<div class="feature-input-row"><input type="text" class="feature-input" value="' + f.replace(/"/g, '&quot;') + '"><button class="btn-remove-feature" onclick="removeFeature(this)">✕</button></div>';
+                        });
+                    } else {
+                        featContainer.innerHTML = '<div class="feature-input-row"><input type="text" class="feature-input" placeholder="Feature description..."><button class="btn-remove-feature" onclick="removeFeature(this)">✕</button></div>';
+                    }
+                    updatePreview();
+                }
+            });
+        }
+    }
+    
+    function closePlanModal() {
+        document.getElementById('planModal').classList.remove('show');
+    }
+    
+    function updatePreview() {
+        var price = parseFloat(document.getElementById('planPrice').value) || 0;
+        var fee = parseFloat(document.getElementById('gatewayFee').value) || 0;
+        var discount = parseFloat(document.getElementById('discountPercent').value) || 0;
+        var discounted = price * (1 - discount / 100);
+        var total = discounted + (discounted * fee / 100);
+        document.getElementById('totalPricePreview').value = '₹' + total.toFixed(2);
+    }
+    
+    function addFeature() {
+        var container = document.getElementById('featuresContainer');
+        container.innerHTML += '<div class="feature-input-row"><input type="text" class="feature-input" placeholder="Feature description..."><button class="btn-remove-feature" onclick="removeFeature(this)">✕</button></div>';
+    }
+    
+    function removeFeature(btn) {
+        var rows = document.querySelectorAll('.feature-input-row');
+        if (rows.length > 1) {
+            btn.parentElement.remove();
+        }
+    }
+    
+    function savePlan() {
+        var features = [];
+        document.querySelectorAll('.feature-input').forEach(function(input) {
+            var val = input.value.trim();
+            if (val) features.push(val);
+        });
+        
+        var data = {
+            id: document.getElementById('planId').value || null,
+            plan_tier: document.getElementById('planTier').value,
+            plan_type: document.getElementById('planType').value,
+            plan_name: document.getElementById('planName').value,
+            currency: document.getElementById('planCurrency').value,
+            price: parseFloat(document.getElementById('planPrice').value) || 0,
+            gateway_fee_percent: parseFloat(document.getElementById('gatewayFee').value) || 2.0,
+            is_active: document.getElementById('isActive').checked,
+            is_featured: document.getElementById('isFeatured').checked,
+            discount_percent: parseFloat(document.getElementById('discountPercent').value) || 0,
+            description: document.getElementById('planDescription').value,
+            features: features,
+            sort_order: parseInt(document.getElementById('sortOrder').value) || 0
+        };
+        
+        fetch('/admin/api/plans/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                alert(d.message);
+                closePlanModal();
+                location.reload();
+            } else {
+                alert(d.message || 'Error saving plan.');
+            }
+        });
+    }
+    
+    function togglePlan(id) {
+        fetch('/admin/api/plans/' + id + '/toggle', { method: 'POST' })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) location.reload();
+            });
+    }
+    
+    function deletePlan(id) {
+        if (!confirm('Delete this plan permanently?')) return;
+        fetch('/admin/api/plans/' + id + '/delete', { method: 'POST' })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) location.reload();
+            });
+    }
+    
+    function seedDefaults() {
+        if (!confirm('Seed default plans? This only works if no plans exist.')) return;
+        var btn = document.getElementById('btnSeed');
+        btn.disabled = true; btn.textContent = 'Seeding...';
+        fetch('/admin/api/plans/seed-defaults', { method: 'POST' })
+            .then(r => r.json())
+            .then(d => {
+                alert(d.message);
+                location.reload();
+            });
+    }
+    
+    document.getElementById('planModal').addEventListener('click', function(e) {
+        if (e.target === this) closePlanModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePlanModal();
+    });
+</script>
+{% endblock %}

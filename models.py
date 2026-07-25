@@ -878,3 +878,40 @@ class MediaLibrary(db.Model):
     size_bytes = db.Column(db.Integer, nullable=True)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
     uploaded_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+
+
+class PlanPrice(db.Model):
+    """Admin-managed plan pricing"""
+    id = db.Column(db.Integer, primary_key=True)
+    plan_tier = db.Column(db.String(20), nullable=False)
+    plan_type = db.Column(db.String(20), nullable=False)
+    plan_name = db.Column(db.String(100), nullable=True)
+    currency = db.Column(db.String(10), default='INR')
+    price = db.Column(db.Float, nullable=False, default=0)
+    gateway_fee_percent = db.Column(db.Float, default=2.0)
+    total_price = db.Column(db.Float, nullable=False, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    is_featured = db.Column(db.Boolean, default=False)
+    discount_percent = db.Column(db.Float, default=0)
+    description = db.Column(db.Text, nullable=True)
+    features_json = db.Column(db.Text, nullable=True)
+    sort_order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    def get_features(self):
+        try:
+            return json.loads(self.features_json) if self.features_json else []
+        except:
+            return []
+    
+    def set_features(self, features_list):
+        self.features_json = json.dumps(features_list)
+    
+    def calculate_total(self):
+        discounted = round(self.price * (1 - self.discount_percent / 100), 2)
+        fee = round(discounted * self.gateway_fee_percent / 100, 2)
+        self.total_price = round(discounted + fee, 2)
+        return self.total_price

@@ -879,3 +879,356 @@ def seo_settings():
         return redirect(url_for('admin.seo_settings'))
         
     return render_template('admin/blog/seo_settings.html', settings=settings)
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 💰 PAYMENT ANALYTICS
+# ═══════════════════════════════════════════════════════════
+
+@admin_bp.route('/payment-analytics')
+@login_required
+@admin_required
+def payment_analytics():
+    """Complete payment analytics dashboard"""
+    from models import Payment, Subscription
+    
+    # Revenue stats
+    total_revenue = db.session.query(func.sum(Payment.total_amount)).filter(
+        Payment.status == 'SUCCESS'
+    ).scalar() or 0
+    total_revenue = round(total_revenue / 100, 2)  # Convert paise to rupees
+    
+    successful = Payment.query.filter_by(status='SUCCESS').count()
+    pending = Payment.query.filter_by(status='PENDING').count()
+    failed = Payment.query.filter_by(status='FAILED').count()
+    cancelled = Payment.query.filter_by(status='CANCELLED').count()
+    total_payments = successful + pending + failed + cancelled
+    
+    # Unique buyers
+    unique_buyers = db.session.query(func.count(func.distinct(Payment.user_id))).filter(
+        Payment.status == 'SUCCESS'
+    ).scalar() or 0
+    
+    # Repeat buyers (more than 1 successful payment)
+    repeat_buyers_query = db.session.query(
+        Payment.user_id, func.count(Payment.id).label('count')
+    ).filter(Payment.status == 'SUCCESS').group_by(Payment.user_id).having(func.count(Payment.id) > 1).all()
+    repeat_buyers = len(repeat_buyers_query)
+    
+    # Avg order value
+    avg_order = round(total_revenue / successful, 2) if successful > 0 else 0
+    
+    # Success rate
+    success_rate = round((successful / total_payments) * 100, 1) if total_payments > 0 else 0
+    
+    # Revenue trend (last 30 days)
+    revenue_trend = []
+    for i in range(30):
+        d = date.today() - timedelta(days=29 - i)
+        day_total = db.session.query(func.sum(Payment.total_amount)).filter(
+            Payment.status == 'SUCCESS',
+            func.date(Payment.payment_completed_at) == d
+        ).scalar() or 0
+        day_count = Payment.query.filter(
+            Payment.status == 'SUCCESS',
+            func.date(Payment.payment_completed_at) == d
+        ).count()
+        revenue_trend.append({
+            'date': d.strftime('%d %b'),
+            'revenue': round(day_total / 100, 2),
+            'orders': day_count
+        })
+    
+    # Monthly revenue
+    monthly_revenue = []
+    for i in range(12):
+        month_start = date.today().replace(day=1) - timedelta(days=30 * i)
+        month_start = month_start.replace(day=1)
+        if i == 0:
+            month_end = date.today()
+        else:
+            if month_start.month == 12:
+                month_end = month_start.replace(year=month_start.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                month_end = month_start.replace(month=month_start.month + 1, day=1) - timedelta(days=1)
+        
+        month_total = db.session.query(func.sum(Payment.total_amount)).filter(
+            Payment.status == 'SUCCESS',
+            func.date(Payment.payment_completed_at) >= month_start,
+            func.date(Payment.payment_completed_at) <= month_end
+        ).scalar() or 0
+        
+        monthly_revenue.append({
+            'month': month_start.strftime('%b %Y'),
+            'revenue': round(month_total / 100, 2)
+        })
+    monthly_revenue.reverse()
+    
+    # Top spenders
+    top_spenders = db.session.query(
+        User.username, User.email,
+        func.count(Payment.id).label('orders'),
+        func.sum(Payment.total_amount).label('total_spent'),
+        func.max(Payment.payment_completed_at).label('last_purchase')
+    ).join(Payment, User.id == Payment.user_id)\
+        .filter(Payment.status == 'SUCCESS')\
+        .group_by(User.id)\
+        .order_by(func.sum(Payment.total_amount).desc()).limit(10).all()
+    
+    # Plan breakdown
+    plan_breakdown = db.session.query(
+        Payment.plan_tier,
+        func.count(Payment.id).label('sales'),
+        func.sum(Payment.total_amount).label('revenue')
+    ).filter(Payment.status == 'SUCCESS')\
+        .group_by(Payment.plan_tier).all()
+    
+    # Payment status distribution
+    status_distribution = {
+        'successful': successful,
+        'pending': pending,
+        'failed': failed,
+        'cancelled': cancelled
+    }
+    
+    return render_template('admin/payment_analytics.html',
+        total_revenue=total_revenue,
+        successful=successful,
+        pending=pending,
+        failed=failed,
+        cancelled=cancelled,
+        total_payments=total_payments,
+        unique_buyers=unique_buyers,
+        repeat_buyers=repeat_buyers,
+        avg_order=avg_order,
+        success_rate=success_rate,
+        revenue_trend=revenue_trend,
+        monthly_revenue=monthly_revenue,
+        top_spenders=top_spenders,
+        plan_breakdown=plan_breakdown,
+        status_distribution=status_distribution
+    )
+
+
+@admin_bp.route('/api/payment-transactions')
+@login_required
+@admin_required
+def api_payment_transactions():
+    """API endpoint for transaction log with search and filters"""
+    search = request.args.get('search', '').strip()
+    status = request.args.get('status', 'all')
+    plan = request.args.get('plan', 'all')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 25, type=int)
+    
+    query = Payment.query
+    
+    if status != 'all':
+        query = query.filter_by(status=status.upper())
+    
+    if plan != 'all':
+        query = query.filter_by(plan_tier=plan)
+    
+    if search:
+        query = query.join(User, Payment.user_id == User.id).filter(
+            db.or_(
+                User.username.ilike(f'%{search}%'),
+                User.email.ilike(f'%{search}%'),
+                Payment.cashfree_order_id.ilike(f'%{search}%')
+            )
+        )
+    
+    total = query.count()
+    payments = query.order_by(Payment.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    
+    transactions = []
+    for p in payments:
+        user = User.query.get(p.user_id)
+        transactions.append({
+            'order_id': p.cashfree_order_id,
+            'username': user.username if user else 'Unknown',
+            'email': user.email if user else '',
+            'plan': p.plan_tier.upper() if p.plan_tier else 'N/A',
+            'plan_type': p.plan_type or 'monthly',
+            'amount': round(p.total_amount / 100, 2) if p.total_amount else 0,
+            'currency': p.currency or 'INR',
+            'status': p.status,
+            'date': p.created_at.strftime('%d %b %Y, %H:%M') if p.created_at else 'N/A',
+            'completed': p.payment_completed_at.strftime('%d %b %Y, %H:%M') if p.payment_completed_at else 'N/A',
+            'payment_id': p.cashfree_payment_id or 'N/A'
+        })
+    
+    return jsonify({
+        'transactions': transactions,
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'total_pages': max(1, (total + per_page - 1) // per_page)
+    })
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 💰 SUBSCRIPTION MANAGER
+# ═══════════════════════════════════════════════════════════
+
+@admin_bp.route('/subscription-manager')
+@login_required
+@admin_required
+def subscription_manager():
+    """Manage plan pricing and subscriptions"""
+    from models import PlanPrice
+    
+    plans = PlanPrice.query.order_by(PlanPrice.sort_order, PlanPrice.plan_tier, PlanPrice.plan_type).all()
+    
+    # Stats
+    total_plans = PlanPrice.query.filter_by(is_active=True).count()
+    active_subs = Subscription.query.filter_by(is_active=True).count()
+    total_users = User.query.count()
+    
+    return render_template('admin/subscription_manager.html',
+        plans=plans,
+        total_plans=total_plans,
+        active_subs=active_subs,
+        total_users=total_users
+    )
+
+
+@admin_bp.route('/api/plans')
+@login_required
+@admin_required
+def api_get_plans():
+    """Get all plans as JSON"""
+    plans = PlanPrice.query.order_by(PlanPrice.sort_order).all()
+    return jsonify({
+        'plans': [{
+            'id': p.id,
+            'plan_tier': p.plan_tier,
+            'plan_type': p.plan_type,
+            'plan_name': p.plan_name or f"{p.plan_tier.title()} {p.plan_type.title()}",
+            'currency': p.currency,
+            'price': p.price,
+            'gateway_fee_percent': p.gateway_fee_percent,
+            'total_price': p.total_price,
+            'is_active': p.is_active,
+            'is_featured': p.is_featured,
+            'discount_percent': p.discount_percent,
+            'description': p.description or '',
+            'features': p.get_features(),
+            'sort_order': p.sort_order
+        } for p in plans]
+    })
+
+
+@admin_bp.route('/api/plans/save', methods=['POST'])
+@login_required
+@admin_required
+def api_save_plan():
+    """Create or update a plan"""
+    data = request.get_json()
+    plan_id = data.get('id')
+    
+    if plan_id:
+        plan = PlanPrice.query.get(plan_id)
+        if not plan:
+            return jsonify({'success': False, 'message': 'Plan not found'})
+    else:
+        plan = PlanPrice()
+        db.session.add(plan)
+    
+    plan.plan_tier = data.get('plan_tier', 'pro')
+    plan.plan_type = data.get('plan_type', 'monthly')
+    plan.plan_name = data.get('plan_name', '')
+    plan.currency = data.get('currency', 'INR')
+    plan.price = float(data.get('price', 0))
+    plan.gateway_fee_percent = float(data.get('gateway_fee_percent', 2.0))
+    plan.is_active = data.get('is_active', True)
+    plan.is_featured = data.get('is_featured', False)
+    plan.discount_percent = float(data.get('discount_percent', 0))
+    plan.description = data.get('description', '')
+    plan.set_features(data.get('features', []))
+    plan.sort_order = int(data.get('sort_order', 0))
+    plan.updated_by_id = current_user.id
+    plan.calculate_total()
+    
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': f'Plan "{plan.plan_name or plan.plan_tier}" saved!',
+        'plan': {
+            'id': plan.id,
+            'plan_tier': plan.plan_tier,
+            'plan_type': plan.plan_type,
+            'plan_name': plan.plan_name,
+            'price': plan.price,
+            'total_price': plan.total_price,
+            'is_active': plan.is_active
+        }
+    })
+
+
+@admin_bp.route('/api/plans/<int:plan_id>/toggle', methods=['POST'])
+@login_required
+@admin_required
+def api_toggle_plan(plan_id):
+    """Toggle plan active/inactive"""
+    plan = PlanPrice.query.get_or_404(plan_id)
+    plan.is_active = not plan.is_active
+    plan.updated_by_id = current_user.id
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'message': f'Plan {"activated" if plan.is_active else "deactivated"}!',
+        'is_active': plan.is_active
+    })
+
+
+@admin_bp.route('/api/plans/<int:plan_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def api_delete_plan(plan_id):
+    """Delete a plan"""
+    plan = PlanPrice.query.get_or_404(plan_id)
+    name = plan.plan_name or plan.plan_tier
+    db.session.delete(plan)
+    db.session.commit()
+    return jsonify({'success': True, 'message': f'Plan "{name}" deleted!'})
+
+
+@admin_bp.route('/api/plans/seed-defaults', methods=['POST'])
+@login_required
+@admin_required
+def api_seed_default_plans():
+    """Seed default plans if none exist"""
+    existing = PlanPrice.query.count()
+    if existing > 0:
+        return jsonify({'success': False, 'message': 'Plans already exist. Clear them first.'})
+    
+    defaults = [
+        {'plan_tier': 'pro', 'plan_type': 'monthly', 'plan_name': 'Pro Monthly', 'currency': 'INR', 'price': 399, 'gateway_fee_percent': 2.0, 'sort_order': 1, 'is_featured': True, 'features': ['Unlimited Manual Journal', 'Unlimited CSV Import', 'MT4/MT5 Auto Sync', '10 Trading Accounts', '50,000 AI Tokens/month', 'AI Analysis & Reports', 'Ad Free Experience', 'Export PDF/CSV Reports']},
+        {'plan_tier': 'pro', 'plan_type': 'yearly', 'plan_name': 'Pro Yearly', 'currency': 'INR', 'price': 3999, 'gateway_fee_percent': 2.0, 'sort_order': 2, 'discount_percent': 16, 'features': ['Everything in Pro Monthly', 'Save 16% vs Monthly', 'Priority Support']},
+        {'plan_tier': 'elite', 'plan_type': 'monthly', 'plan_name': 'Elite Monthly', 'currency': 'INR', 'price': 799, 'gateway_fee_percent': 2.0, 'sort_order': 3, 'is_featured': True, 'features': ['Everything in Pro', 'Unlimited Accounts', '150,000 AI Tokens/month', 'Personalized AI Coach', 'Trading Goals & Planner', 'Strategy Builder', 'Ad Free Experience']},
+        {'plan_tier': 'elite', 'plan_type': 'yearly', 'plan_name': 'Elite Yearly', 'currency': 'INR', 'price': 7999, 'gateway_fee_percent': 2.0, 'sort_order': 4, 'discount_percent': 16, 'features': ['Everything in Elite Monthly', 'Save 16% vs Monthly', 'VIP Priority Support']},
+        {'plan_tier': 'elite', 'plan_type': 'quarterly', 'plan_name': 'Elite Quarterly', 'currency': 'INR', 'price': 2199, 'gateway_fee_percent': 2.0, 'sort_order': 5, 'features': ['Everything in Elite', '3 Months Access', 'Save vs Monthly']},
+    ]
+    
+    for d in defaults:
+        plan = PlanPrice(
+            plan_tier=d['plan_tier'],
+            plan_type=d['plan_type'],
+            plan_name=d['plan_name'],
+            currency=d['currency'],
+            price=d['price'],
+            gateway_fee_percent=d.get('gateway_fee_percent', 2.0),
+            sort_order=d.get('sort_order', 0),
+            is_featured=d.get('is_featured', False),
+            discount_percent=d.get('discount_percent', 0),
+        )
+        plan.set_features(d.get('features', []))
+        plan.calculate_total()
+        db.session.add(plan)
+    
+    db.session.commit()
+    return jsonify({'success': True, 'message': f'{len(defaults)} default plans created!'})
