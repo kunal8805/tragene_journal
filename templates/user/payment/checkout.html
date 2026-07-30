@@ -58,6 +58,19 @@
         padding: 28px;
     }
 
+    /* ── Savings Badge ── */
+    .savings-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #00e676, #00c853);
+        color: #000;
+        font-weight: 700;
+        font-size: 0.7rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-left: 8px;
+        letter-spacing: 0.5px;
+    }
+
     /* ── Order Summary ── */
     .summary-section {
         margin-bottom: 24px;
@@ -363,24 +376,34 @@
 
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-star"></i> Plan</span>
-                    <span class="value">{{ plan_name }} — {{ plan_label }}</span>
+                    <span class="value">
+                        {{ plan_name }} — {{ plan_label }}
+                        {% if plan_type == 'yearly' %}
+                            <span class="savings-badge">🎁 2 MONTHS FREE</span>
+                        {% endif %}
+                    </span>
                 </div>
 
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-cash"></i> Base Price</span>
-                    <span class="value">{{ symbol }}{{ '%.2f'|format(base_price) }}</span>
+                    <span class="value">₹{{ '%.2f'|format(base_price) }}</span>
                 </div>
 
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-credit-card"></i> Gateway Fee (2%)</span>
-                    <span class="value" style="color:var(--text-muted);">{{ symbol }}{{ '%.2f'|format(gateway_fee) }}</span>
+                    <span class="value" style="color:var(--text-muted);">₹{{ '%.2f'|format(gateway_fee) }}</span>
                 </div>
 
                 <div class="summary-row total">
                     <span class="label">💳 Total Amount</span>
-                    <span class="value">{{ symbol }}{{ '%.2f'|format(total_price) }}</span>
+                    <span class="value">₹{{ '%.2f'|format(total_price) }}</span>
                 </div>
 
+                {% if plan_type == 'yearly' %}
+                <div class="gateway-fee-note" style="color:#00e676;">
+                    🎉 You save ~17% with yearly billing — pay for 10 months, get 12!
+                </div>
+                {% endif %}
                 <div class="gateway-fee-note">
                     * 2% gateway processing fee included. This is charged by the payment provider.
                 </div>
@@ -425,17 +448,9 @@
                 <div id="termsError" class="checkbox-error">Please agree to the Terms & Conditions.</div>
 
                 <div class="checkbox-item">
-                    <input type="checkbox" id="agreeSubscription" onchange="validateCheckboxes()">
-                    <label for="agreeSubscription">
-                        I understand this is a <strong>{{ plan_label }}</strong> subscription. It will auto-renew until cancelled. I can cancel anytime from Settings.
-                    </label>
-                </div>
-                <div id="subscriptionError" class="checkbox-error">Please confirm you understand this is a subscription.</div>
-
-                <div class="checkbox-item">
                     <input type="checkbox" id="agreePayment" onchange="validateCheckboxes()">
                     <label for="agreePayment">
-                        I confirm that I am authorized to make this payment and the amount of <strong>{{ symbol }}{{ '%.2f'|format(total_price) }}</strong> is correct.
+                        I confirm that I am authorized to make this payment and the amount of <strong>₹{{ '%.2f'|format(total_price) }}</strong> is correct.
                     </label>
                 </div>
                 <div id="paymentError" class="checkbox-error">Please confirm the payment amount.</div>
@@ -443,14 +458,14 @@
 
             <!-- Pay Button -->
             <button class="btn-pay {{ plan_tier }}" id="payButton" onclick="startPayment()" disabled>
-                <i class="bi bi-lock-fill"></i> Pay {{ symbol }}{{ '%.2f'|format(total_price) }} with {{ gateway_name }}
+                <i class="bi bi-lock-fill"></i> Pay ₹{{ '%.2f'|format(total_price) }} with Cashfree
             </button>
 
             <!-- Security Info -->
             <div class="security-row">
                 <span><i class="bi bi-shield-check"></i> PCI Compliant</span>
                 <span><i class="bi bi-lock"></i> 256-bit SSL</span>
-                <span><i class="bi bi-cashfree"></i> Powered by {{ gateway_name }}</span>
+                <span>Powered by Cashfree</span>
             </div>
 
         </div>
@@ -472,35 +487,31 @@
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 
 <script>
-    // Track if payment window was opened
     let paymentWindowOpened = false;
     let currentOrderId = null;
 
     function validateCheckboxes() {
         const terms = document.getElementById('agreeTerms').checked;
-        const subscription = document.getElementById('agreeSubscription').checked;
         const payment = document.getElementById('agreePayment').checked;
 
         document.getElementById('termsError').classList.toggle('show', !terms);
-        document.getElementById('subscriptionError').classList.toggle('show', !subscription);
         document.getElementById('paymentError').classList.toggle('show', !payment);
 
-        document.getElementById('payButton').disabled = !(terms && subscription && payment);
+        document.getElementById('payButton').disabled = !(terms && payment);
     }
 
     function resetPayButton() {
         const btn = document.getElementById('payButton');
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-lock-fill"></i> Pay {{ symbol }}{{ "%.2f"|format(total_price) }} with {{ gateway_name }}';
+        btn.innerHTML = '<i class="bi bi-lock-fill"></i> Pay ₹{{ "%.2f"|format(total_price) }} with Cashfree';
         validateCheckboxes();
     }
 
     function startPayment() {
         const terms = document.getElementById('agreeTerms').checked;
-        const subscription = document.getElementById('agreeSubscription').checked;
         const payment = document.getElementById('agreePayment').checked;
 
-        if (!terms || !subscription || !payment) {
+        if (!terms || !payment) {
             validateCheckboxes();
             return;
         }
@@ -523,29 +534,22 @@
         .then(data => {
             document.getElementById('spinnerOverlay').classList.remove('show');
 
-            if (data.success && data.gateway === 'cashfree' && data.payment_session_id) {
-                // Store order ID for later use
+            if (data.success && data.payment_session_id) {
                 currentOrderId = data.order_id;
                 
-                // Detect if we're in sandbox or production
                 const isSandbox = window.location.hostname === 'localhost' || 
-                                 window.location.hostname === '127.0.0.1' ||
-                                 '{{ config.ENV }}' === 'development';
+                                 window.location.hostname === '127.0.0.1';
                 
-                // Initialize Cashfree
                 const cashfree = Cashfree({ 
                     mode: isSandbox ? "sandbox" : "production"
                 });
                 
-                // Open Cashfree checkout with proper callbacks
                 let checkoutOptions = {
                     paymentSessionId: data.payment_session_id,
                     redirectTarget: "_self",
                 };
                 
-                // Add callbacks if supported by Cashfree SDK version
                 if (typeof cashfree.on === 'function') {
-                    // New SDK version with event listeners
                     cashfree.on('paymentSuccess', function(paymentData) {
                         console.log('Payment Success:', paymentData);
                         window.location.href = `/payment/success?order_id=${currentOrderId}`;
@@ -565,38 +569,21 @@
                 paymentWindowOpened = true;
                 cashfree.checkout(checkoutOptions);
                 
-                // Fallback: If page doesn't redirect within 5 minutes, reset button
-                // This handles cases where user closes Cashfree window without any callback
                 setTimeout(function() {
                     if (paymentWindowOpened) {
-                        console.log('Payment window timeout - user may have abandoned');
-                        // Don't auto-redirect, just re-enable the button
                         paymentWindowOpened = false;
                         resetPayButton();
                         
-                        // Show a subtle warning
                         const warningMsg = document.createElement('div');
                         warningMsg.className = 'alert alert-warning mt-3';
                         warningMsg.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Payment window was closed. If payment was completed, check your email for confirmation. Otherwise, try again.';
                         document.querySelector('.checkout-body').appendChild(warningMsg);
                         
-                        // Remove warning after 10 seconds
                         setTimeout(() => warningMsg.remove(), 10000);
                     }
-                }, 300000); // 5 minutes
-                
-            } else if (data.success && data.gateway === 'stripe' && data.url) {
-                // Stripe Checkout - redirect to Stripe's hosted page
-                currentOrderId = data.order_id;
-                window.location.href = data.url;
-                
-                // Fallback for Stripe too
-                setTimeout(function() {
-                    resetPayButton();
                 }, 300000);
                 
             } else {
-                // Show error
                 alert('Failed to create payment: ' + (data.message || 'Unknown error'));
                 resetPayButton();
             }
@@ -609,11 +596,8 @@
         });
     }
 
-    // Handle page visibility changes (user comes back after abandoning payment)
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible' && paymentWindowOpened) {
-            // User came back to this tab but didn't complete payment
-            // Check if payment was completed in another tab
             if (currentOrderId) {
                 fetch(`/payment/check-status/${currentOrderId}`)
                     .then(res => res.json())
@@ -624,16 +608,12 @@
                             paymentWindowOpened = false;
                             resetPayButton();
                         }
-                        // If still PENDING, do nothing - user may still complete payment
                     })
-                    .catch(() => {
-                        // Ignore errors - user can manually retry
-                    });
+                    .catch(() => {});
             }
         }
     });
     
-    // Prevent accidental double-clicks
     let paymentInProgress = false;
     const originalStartPayment = startPayment;
     startPayment = function() {
@@ -643,7 +623,6 @@
         }
         paymentInProgress = true;
         originalStartPayment();
-        // Reset after 10 seconds
         setTimeout(() => { paymentInProgress = false; }, 10000);
     };
 </script>

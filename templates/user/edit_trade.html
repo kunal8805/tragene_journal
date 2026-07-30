@@ -3,78 +3,387 @@
 {% block page_title %}Edit Trade #{{ trade.id }}{% endblock %}
 {% block content %}
 
+<style>
+    .market-selector {
+        display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .market-btn {
+        flex: 1; min-width: 90px; padding: 12px 10px; border-radius: 12px;
+        border: 2px solid var(--border-color); background: var(--bg-card);
+        color: var(--text-secondary); cursor: pointer; text-align: center;
+        transition: all 0.25s; font-weight: 600; font-size: 0.8rem;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .market-btn:hover { border-color: var(--accent); background: rgba(38,166,154,0.05); }
+    .market-btn.active { border-color: var(--accent); background: rgba(38,166,154,0.1); color: var(--accent); box-shadow: 0 0 20px rgba(38,166,154,0.15); }
+    .market-btn .market-icon { font-size: 1.3rem; display: block; margin-bottom: 3px; }
+    
+    .section-divider { border-color: var(--border-color); margin: 18px 0; opacity: 0.5; }
+    
+    .form-floating-custom { position: relative; margin-bottom: 12px; }
+    .form-floating-custom .floating-label {
+        position: absolute; top: -9px; left: 12px; background: var(--bg-card);
+        padding: 0 6px; font-size: 0.62rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); z-index: 1;
+    }
+    .form-floating-custom input, .form-floating-custom select, .form-floating-custom textarea {
+        width: 100%; padding: 11px 14px; background: var(--bg-card); border: 1px solid var(--border-color);
+        color: var(--text-primary); border-radius: 10px; font-size: 0.82rem; font-family: 'Inter', sans-serif;
+    }
+    .form-floating-custom input:focus, .form-floating-custom select:focus, .form-floating-custom textarea:focus {
+        border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(38,166,154,0.1);
+    }
+    
+    .market-form-section { display: none; }
+    .market-form-section.active { display: block; }
+    
+    .trade-type-toggle {
+        display: flex; border-radius: 8px; overflow: hidden; border: 2px solid var(--border-color);
+    }
+    .trade-type-toggle .btn {
+        flex: 1; border: none; border-radius: 0; padding: 10px;
+        font-weight: 700; font-size: 0.82rem; transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .trade-type-toggle .btn.buy-active { background: rgba(0,200,83,0.2); color: #00c853; }
+    .trade-type-toggle .btn.sell-active { background: rgba(255,82,82,0.2); color: #ff5252; }
+    .trade-type-toggle .btn:not(.buy-active):not(.sell-active) { background: var(--bg-card); color: var(--text-muted); }
+</style>
+
 <div class="mb-3">
     <a href="{{ url_for('user.trade_detail', trade_id=trade.id) }}" class="text-decoration-none" style="color: var(--text-secondary);">
-        <i class="bi bi-arrow-left"></i> Back
+        <i class="bi bi-arrow-left"></i> Back to Trade
     </a>
 </div>
 
-<div class="card p-4">
+<div class="card p-3 p-md-4">
     <form method="POST">
+        
+        <!-- Market Selector -->
+        {% set current_market = trade.market or detect_market(trade.symbol) %}
+        <div class="market-selector">
+            <button type="button" class="market-btn {{ 'active' if current_market == 'forex' }}" onclick="switchMarket('forex')" id="marketBtnForex">
+                <span class="market-icon">💱</span> Forex
+            </button>
+            <button type="button" class="market-btn {{ 'active' if current_market == 'crypto' }}" onclick="switchMarket('crypto')" id="marketBtnCrypto">
+                <span class="market-icon">₿</span> Crypto
+            </button>
+            <button type="button" class="market-btn {{ 'active' if current_market == 'indian_stock' }}" onclick="switchMarket('indian_stock')" id="marketBtnIndian">
+                <span class="market-icon">📈</span> Indian Stocks
+            </button>
+        </div>
+        <input type="hidden" name="market" id="marketInput" value="{{ current_market }}">
+        
+        <!-- Core Fields -->
         <div class="row g-3">
             <div class="col-md-4">
-                <label class="form-label small fw-bold">Symbol</label>
-                <input type="text" name="symbol" class="form-control" value="{{ trade.symbol }}" required>
+                <div class="form-floating-custom">
+                    <span class="floating-label">Symbol *</span>
+                    <input type="text" name="symbol" value="{{ trade.symbol }}" required>
+                </div>
             </div>
             <div class="col-md-4">
-                <label class="form-label small fw-bold">Type</label>
-                <select name="trade_type" class="form-select">
-                    <option value="buy" {% if trade.trade_type == 'buy' %}selected{% endif %}>BUY</option>
-                    <option value="sell" {% if trade.trade_type == 'sell' %}selected{% endif %}>SELL</option>
-                </select>
+                <label class="form-label small fw-bold" style="font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px;">Type *</label>
+                <div class="trade-type-toggle">
+                    <button type="button" class="btn {{ 'buy-active' if trade.trade_type == 'buy' }}" id="btnBuy" onclick="setTradeType('buy')">
+                        <i class="bi bi-arrow-up-circle-fill"></i> BUY
+                    </button>
+                    <button type="button" class="btn {{ 'sell-active' if trade.trade_type == 'sell' }}" id="btnSell" onclick="setTradeType('sell')">
+                        <i class="bi bi-arrow-down-circle-fill"></i> SELL
+                    </button>
+                </div>
+                <input type="hidden" name="trade_type" id="tradeTypeInput" value="{{ trade.trade_type }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label small fw-bold">Lot Size</label>
-                <input type="number" name="lot_size" class="form-control" value="{{ trade.lot_size }}" step="0.01">
+                <div class="form-floating-custom">
+                    <span class="floating-label" id="quantityLabel">{{ 'Quantity (Shares)' if current_market == 'indian_stock' else 'Coins' if current_market == 'crypto' else 'Lot Size' }}</span>
+                    <input type="number" name="quantity" value="{{ trade.quantity }}" step="0.01" min="0.01">
+                </div>
             </div>
             <div class="col-md-4">
-                <label class="form-label small fw-bold">Entry Price</label>
-                <input type="number" name="entry_price" class="form-control" value="{{ trade.entry_price }}" step="0.00001" required>
+                <div class="form-floating-custom">
+                    <span class="floating-label">Entry Price *</span>
+                    <input type="number" name="entry_price" value="{{ trade.entry_price }}" step="0.00001" required>
+                </div>
             </div>
             <div class="col-md-4">
-                <label class="form-label small fw-bold">Exit Price</label>
-                <input type="number" name="exit_price" class="form-control" value="{{ trade.exit_price if trade.exit_price else '' }}" step="0.00001">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Exit Price</span>
+                    <input type="number" name="exit_price" value="{{ trade.exit_price if trade.exit_price else '' }}" step="0.00001">
+                </div>
             </div>
             <div class="col-md-4">
-                <label class="form-label small fw-bold">Stop Loss</label>
-                <input type="number" name="stop_loss" class="form-control" value="{{ trade.stop_loss if trade.stop_loss else '' }}" step="0.00001">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Stop Loss</span>
+                    <input type="number" name="stop_loss" value="{{ trade.stop_loss if trade.stop_loss else '' }}" step="0.00001">
+                </div>
             </div>
             <div class="col-md-4">
-                <label class="form-label small fw-bold">Take Profit</label>
-                <input type="number" name="take_profit" class="form-control" value="{{ trade.take_profit if trade.take_profit else '' }}" step="0.00001">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Take Profit</span>
+                    <input type="number" name="take_profit" value="{{ trade.take_profit if trade.take_profit else '' }}" step="0.00001">
+                </div>
             </div>
             <div class="col-md-4">
-                <label class="form-label small fw-bold">Entry Date</label>
-                <input type="datetime-local" name="entry_date" class="form-control" value="{{ trade.entry_date.strftime('%Y-%m-%dT%H:%M') }}">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-bold">Exit Date</label>
-                <input type="datetime-local" name="exit_date" class="form-control" value="{{ trade.exit_date.strftime('%Y-%m-%dT%H:%M') if trade.exit_date else '' }}">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-bold">Session</label>
-                <select name="session" class="form-select">
-                    <option value="">Select</option>
-                    <option value="asian" {% if trade.session == 'asian' %}selected{% endif %}>Asian</option>
-                    <option value="london" {% if trade.session == 'london' %}selected{% endif %}>London</option>
-                    <option value="newyork" {% if trade.session == 'newyork' %}selected{% endif %}>New York</option>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label small fw-bold">Tags</label>
-                <input type="text" name="tags" class="form-control" value="{{ trade.tags if trade.tags else '' }}">
-            </div>
-            <div class="col-12">
-                <label class="form-label small fw-bold">Notes</label>
-                <textarea name="notes" class="form-control" rows="3">{{ trade.notes if trade.notes else '' }}</textarea>
+                <div class="form-floating-custom">
+                    <span class="floating-label">Setup Type</span>
+                    <select name="setup_type">
+                        <option value="">Select</option>
+                        <option value="breakout" {{ 'selected' if trade.setup_type == 'breakout' }}>Breakout</option>
+                        <option value="trend" {{ 'selected' if trade.setup_type == 'trend' }}>Trend Follow</option>
+                        <option value="scalping" {{ 'selected' if trade.setup_type == 'scalping' }}>Scalping</option>
+                        <option value="reversal" {{ 'selected' if trade.setup_type == 'reversal' }}>Reversal</option>
+                        <option value="news" {{ 'selected' if trade.setup_type == 'news' }}>News Trade</option>
+                        <option value="support_resistance" {{ 'selected' if trade.setup_type == 'support_resistance' }}>S/R Flip</option>
+                    </select>
+                </div>
             </div>
         </div>
+        
+        <hr class="section-divider">
+        
+        <!-- Forex Fields -->
+        <div id="forexFields" class="market-form-section {{ 'active' if current_market == 'forex' }}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Session</span>
+                        <select name="session">
+                            <option value="">Auto Detect</option>
+                            <option value="asian" {{ 'selected' if trade.session == 'asian' }}>🌅 Asian</option>
+                            <option value="london" {{ 'selected' if trade.session == 'london' }}>🏙 London</option>
+                            <option value="newyork" {{ 'selected' if trade.session == 'newyork' }}>🌃 New York</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Leverage</span>
+                        <select name="leverage">
+                            <option value="">Select</option>
+                            <option value="50" {{ 'selected' if trade.leverage == 50 }}>1:50</option>
+                            <option value="100" {{ 'selected' if trade.leverage == 100 }}>1:100</option>
+                            <option value="200" {{ 'selected' if trade.leverage == 200 }}>1:200</option>
+                            <option value="500" {{ 'selected' if trade.leverage == 500 }}>1:500</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Crypto Fields -->
+        <div id="cryptoFields" class="market-form-section {{ 'active' if current_market == 'crypto' }}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Exchange</span>
+                        <select name="exchange">
+                            <option value="">Select</option>
+                            <option value="binance" {{ 'selected' if trade.exchange == 'binance' }}>Binance</option>
+                            <option value="coinbase" {{ 'selected' if trade.exchange == 'coinbase' }}>Coinbase</option>
+                            <option value="bybit" {{ 'selected' if trade.exchange == 'bybit' }}>Bybit</option>
+                            <option value="kucoin" {{ 'selected' if trade.exchange == 'kucoin' }}>KuCoin</option>
+                            <option value="okx" {{ 'selected' if trade.exchange == 'okx' }}>OKX</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Segment</span>
+                        <select name="crypto_segment">
+                            <option value="spot" {{ 'selected' if trade.crypto_segment == 'spot' }}>Spot</option>
+                            <option value="futures" {{ 'selected' if trade.crypto_segment == 'futures' }}>Futures</option>
+                            <option value="perpetual" {{ 'selected' if trade.crypto_segment == 'perpetual' }}>Perpetual</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Leverage</span>
+                        <select name="leverage">
+                            <option value="1" {{ 'selected' if trade.leverage == 1 }}>1x</option>
+                            <option value="5" {{ 'selected' if trade.leverage == 5 }}>5x</option>
+                            <option value="10" {{ 'selected' if trade.leverage == 10 }}>10x</option>
+                            <option value="20" {{ 'selected' if trade.leverage == 20 }}>20x</option>
+                            <option value="50" {{ 'selected' if trade.leverage == 50 }}>50x</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Indian Fields -->
+        <div id="indianFields" class="market-form-section {{ 'active' if current_market == 'indian_stock' }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Exchange</span>
+                        <select name="exchange" id="indianExchange" onchange="toggleIndianSegment()">
+                            <option value="NSE" {{ 'selected' if trade.exchange == 'NSE' }}>NSE</option>
+                            <option value="BSE" {{ 'selected' if trade.exchange == 'BSE' }}>BSE</option>
+                            <option value="MCX" {{ 'selected' if trade.exchange == 'MCX' }}>MCX</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Segment</span>
+                        <select name="segment" id="indianSegment" onchange="toggleIndianSegment()">
+                            <option value="equity" {{ 'selected' if trade.segment == 'equity' }}>Equity</option>
+                            <option value="intraday" {{ 'selected' if trade.segment == 'intraday' }}>Intraday</option>
+                            <option value="futures" {{ 'selected' if trade.segment == 'futures' }}>Futures</option>
+                            <option value="options" {{ 'selected' if trade.segment == 'options' }}>Options</option>
+                            <option value="commodity" {{ 'selected' if trade.segment == 'commodity' }}>Commodity</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Instrument</span>
+                        <select name="instrument">
+                            <option value="stock" {{ 'selected' if trade.instrument == 'stock' }}>Stock</option>
+                            <option value="index" {{ 'selected' if trade.instrument == 'index' }}>Index</option>
+                            <option value="etf" {{ 'selected' if trade.instrument == 'etf' }}>ETF</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Broker</span>
+                        <select name="broker">
+                            <option value="">Select</option>
+                            <option value="zerodha" {{ 'selected' if trade.broker == 'zerodha' }}>Zerodha</option>
+                            <option value="upstox" {{ 'selected' if trade.broker == 'upstox' }}>Upstox</option>
+                            <option value="angelone" {{ 'selected' if trade.broker == 'angelone' }}>Angel One</option>
+                            <option value="groww" {{ 'selected' if trade.broker == 'groww' }}>Groww</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- F&O Fields -->
+            <div class="row g-3 mt-2" id="indianFnoFields" style="display:{{ 'flex' if trade.segment in ['futures', 'options'] else 'none' }};">
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Expiry Date</span>
+                        <input type="date" name="expiry_date" value="{{ trade.expiry_date.strftime('%Y-%m-%d') if trade.expiry_date else '' }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Strike Price</span>
+                        <input type="number" name="strike_price" value="{{ trade.strike_price if trade.strike_price else '' }}" step="0.05">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Option Type</span>
+                        <select name="option_type">
+                            <option value="">N/A</option>
+                            <option value="CE" {{ 'selected' if trade.option_type == 'CE' }}>CE (Call)</option>
+                            <option value="PE" {{ 'selected' if trade.option_type == 'PE' }}>PE (Put)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Margin Used (₹)</span>
+                        <input type="number" name="margin_used" value="{{ trade.margin_used if trade.margin_used else '' }}" step="0.01">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charges -->
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Brokerage (₹)</span>
+                        <input type="number" name="brokerage" value="{{ trade.brokerage or 0 }}" step="0.01">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Taxes/STT (₹)</span>
+                        <input type="number" name="taxes" value="{{ trade.taxes or 0 }}" step="0.01">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Other Charges (₹)</span>
+                        <input type="number" name="other_charges" value="{{ trade.other_charges or 0 }}" step="0.01">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <hr class="section-divider">
+        
+        <!-- Common Fields -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Entry Date</span>
+                    <input type="datetime-local" name="entry_date" value="{{ trade.entry_date.strftime('%Y-%m-%dT%H:%M') }}">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Exit Date</span>
+                    <input type="datetime-local" name="exit_date" value="{{ trade.exit_date.strftime('%Y-%m-%dT%H:%M') if trade.exit_date else '' }}">
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Tags</span>
+                    <input type="text" name="tags" value="{{ trade.tags if trade.tags else '' }}">
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Notes</span>
+                    <textarea name="notes" rows="3">{{ trade.notes if trade.notes else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+        
         <div class="d-flex gap-2 mt-4">
-            <button type="submit" class="btn text-white" style="background: var(--accent); border-radius: 8px; border: none;">
+            <button type="submit" class="btn text-white" style="background: var(--accent); border-radius: 10px; border: none; padding: 12px 28px; font-weight: 700; font-family: 'Space Grotesk', sans-serif;">
                 <i class="bi bi-check-lg"></i> Save Changes
             </button>
-            <a href="{{ url_for('user.trade_detail', trade_id=trade.id) }}" class="btn btn-outline-secondary" style="border-radius: 8px;">Cancel</a>
+            <a href="{{ url_for('user.trade_detail', trade_id=trade.id) }}" class="btn btn-outline-secondary" style="border-radius: 10px; padding: 12px 28px;">Cancel</a>
         </div>
     </form>
 </div>
+
+<script>
+    let currentMarket = '{{ current_market }}';
+    
+    function switchMarket(market) {
+        currentMarket = market;
+        document.getElementById('marketInput').value = market;
+        
+        document.querySelectorAll('.market-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('marketBtn' + (market === 'forex' ? 'Forex' : market === 'crypto' ? 'Crypto' : 'Indian')).classList.add('active');
+        
+        document.getElementById('forexFields').classList.toggle('active', market === 'forex');
+        document.getElementById('cryptoFields').classList.toggle('active', market === 'crypto');
+        document.getElementById('indianFields').classList.toggle('active', market === 'indian_stock');
+        
+        document.getElementById('quantityLabel').textContent = 
+            market === 'indian_stock' ? 'Quantity (Shares)' : 
+            market === 'crypto' ? 'Quantity (Coins)' : 'Lot Size';
+    }
+    
+    function toggleIndianSegment() {
+        const segment = document.getElementById('indianSegment').value;
+        document.getElementById('indianFnoFields').style.display = 
+            (segment === 'futures' || segment === 'options') ? 'flex' : 'none';
+    }
+    
+    function setTradeType(type) {
+        document.getElementById('tradeTypeInput').value = type;
+        document.getElementById('btnBuy').className = 'btn ' + (type === 'buy' ? 'buy-active' : '');
+        document.getElementById('btnSell').className = 'btn ' + (type === 'sell' ? 'sell-active' : '');
+    }
+</script>
 {% endblock %}

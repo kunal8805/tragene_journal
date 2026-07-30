@@ -4,113 +4,80 @@
 {% block content %}
 
 <style>
+    .market-selector {
+        display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .market-btn {
+        flex: 1; min-width: 100px; padding: 14px 12px; border-radius: 14px;
+        border: 2px solid var(--border-color); background: var(--bg-card);
+        color: var(--text-secondary); cursor: pointer; text-align: center;
+        transition: all 0.25s; font-weight: 600; font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .market-btn:hover { border-color: var(--accent); background: rgba(38,166,154,0.05); }
+    .market-btn.active { border-color: var(--accent); background: rgba(38,166,154,0.1); color: var(--accent); box-shadow: 0 0 20px rgba(38,166,154,0.15); }
+    .market-btn .market-icon { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+    
     .symbol-chip {
-        display: inline-block;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 1px solid var(--border-color);
-        background: var(--bg-card);
-        color: var(--text-secondary);
-        margin: 3px;
+        display: inline-block; padding: 6px 14px; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        border: 1px solid var(--border-color); background: var(--bg-card);
+        color: var(--text-secondary); margin: 3px;
     }
-    .symbol-chip:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-        background: rgba(79,142,247,0.1);
-    }
-    .symbol-chip.selected {
-        background: var(--accent);
-        color: #fff;
-        border-color: var(--accent);
-    }
-    .symbol-chip.gold { border-left: 3px solid #ffb300; }
+    .symbol-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(38,166,154,0.1); }
+    .symbol-chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
     .symbol-chip.forex { border-left: 3px solid #4f8ef7; }
     .symbol-chip.crypto { border-left: 3px solid #ff6b6b; }
-    .symbol-chip.index { border-left: 3px solid #7c4dff; }
-    .symbol-chip.oil { border-left: 3px solid #00bcd4; }
+    .symbol-chip.indian { border-left: 3px solid #ffb300; }
     
     .category-label {
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--text-muted);
-        margin-bottom: 8px;
-        font-weight: 700;
+        font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;
+        color: var(--text-muted); margin-bottom: 6px; font-weight: 700;
     }
     
     .trade-type-toggle {
-        display: flex;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
+        display: flex; border-radius: 10px; overflow: hidden; border: 2px solid var(--border-color);
     }
     .trade-type-toggle .btn {
-        flex: 1;
-        border: none;
-        border-radius: 0;
-        padding: 10px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.2s;
+        flex: 1; border: none; border-radius: 0; padding: 10px;
+        font-weight: 700; font-size: 0.85rem; transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
     }
-    .trade-type-toggle .btn.buy-active {
-        background: rgba(0,200,83,0.2);
-        color: #00c853;
-    }
-    .trade-type-toggle .btn.sell-active {
-        background: rgba(255,82,82,0.2);
-        color: #ff5252;
-    }
-    .trade-type-toggle .btn:not(.buy-active):not(.sell-active) {
-        background: var(--bg-card);
-        color: var(--text-muted);
-    }
+    .trade-type-toggle .btn.buy-active { background: rgba(0,200,83,0.2); color: #00c853; }
+    .trade-type-toggle .btn.sell-active { background: rgba(255,82,82,0.2); color: #ff5252; }
+    .trade-type-toggle .btn:not(.buy-active):not(.sell-active) { background: var(--bg-card); color: var(--text-muted); }
     
-    .section-divider {
-        border-color: var(--border-color);
-        margin: 20px 0;
-        opacity: 0.5;
-    }
+    .section-divider { border-color: var(--border-color); margin: 18px 0; opacity: 0.5; }
     
-    .form-floating-custom {
-        position: relative;
-    }
+    .form-floating-custom { position: relative; margin-bottom: 12px; }
     .form-floating-custom .floating-label {
-        position: absolute;
-        top: -10px;
-        left: 12px;
-        background: var(--bg-card);
-        padding: 0 6px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--accent);
-        z-index: 1;
+        position: absolute; top: -9px; left: 12px; background: var(--bg-card);
+        padding: 0 6px; font-size: 0.65rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); z-index: 1;
     }
+    .form-floating-custom input, .form-floating-custom select, .form-floating-custom textarea {
+        width: 100%; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border-color);
+        color: var(--text-primary); border-radius: 10px; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+    }
+    .form-floating-custom input:focus, .form-floating-custom select:focus, .form-floating-custom textarea:focus {
+        border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(38,166,154,0.1);
+    }
+    .form-floating-custom textarea { resize: vertical; min-height: 70px; }
     
     .pnl-preview {
-        text-align: center;
-        padding: 12px;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 1.1rem;
+        text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 1rem;
+        font-family: 'Space Grotesk', sans-serif;
     }
-    .pnl-preview.profit {
-        background: rgba(0,200,83,0.1);
-        color: #00c853;
-    }
-    .pnl-preview.loss {
-        background: rgba(255,82,82,0.1);
-        color: #ff5252;
-    }
-    .pnl-preview.neutral {
-        background: var(--bg-body);
-        color: var(--text-muted);
+    .pnl-preview.profit { background: rgba(0,200,83,0.1); color: #00c853; }
+    .pnl-preview.loss { background: rgba(255,82,82,0.1); color: #ff5252; }
+    .pnl-preview.neutral { background: var(--bg-body); color: var(--text-muted); }
+    
+    .market-form-section { display: none; }
+    .market-form-section.active { display: block; }
+    
+    @media (max-width: 576px) {
+        .market-btn { padding: 10px 8px; font-size: 0.75rem; }
+        .market-btn .market-icon { font-size: 1.2rem; }
     }
 </style>
 
@@ -120,41 +87,78 @@
     </a>
 </div>
 
-<div class="card p-4">
+<div class="card p-3 p-md-4">
     <form method="POST" id="tradeForm">
         
-        <!-- Symbol Quick Select -->
-        <div class="mb-4">
-            <div class="category-label"><i class="bi bi-star-fill" style="color: #ffb300; font-size: 0.6rem;"></i> Quick Select Pair</div>
-            <div id="symbolChips">
-                <span class="symbol-chip gold" onclick="selectSymbol('XAUUSD')" data-symbol="XAUUSD">🥇 XAUUSD</span>
-                <span class="symbol-chip forex" onclick="selectSymbol('EURUSD')" data-symbol="EURUSD">💱 EURUSD</span>
-                <span class="symbol-chip forex" onclick="selectSymbol('GBPUSD')" data-symbol="GBPUSD">💱 GBPUSD</span>
-                <span class="symbol-chip forex" onclick="selectSymbol('USDJPY')" data-symbol="USDJPY">💱 USDJPY</span>
-                <span class="symbol-chip forex" onclick="selectSymbol('GBPJPY')" data-symbol="GBPJPY">💱 GBPJPY</span>
-                <span class="symbol-chip crypto" onclick="selectSymbol('BTCUSD')" data-symbol="BTCUSD">₿ BTCUSD</span>
-                <span class="symbol-chip crypto" onclick="selectSymbol('ETHUSD')" data-symbol="ETHUSD">Ξ ETHUSD</span>
-                <span class="symbol-chip index" onclick="selectSymbol('NAS100')" data-symbol="NAS100">📊 NAS100</span>
-                <span class="symbol-chip index" onclick="selectSymbol('US30')" data-symbol="US30">📊 US30</span>
-                <span class="symbol-chip oil" onclick="selectSymbol('USOIL')" data-symbol="USOIL">🛢 USOIL</span>
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- MARKET SELECTOR -->
+        <!-- ═══════════════════════════════════════════ -->
+        <div class="market-selector">
+            <button type="button" class="market-btn active" onclick="switchMarket('forex')" id="marketBtnForex">
+                <span class="market-icon">💱</span> Forex
+            </button>
+            <button type="button" class="market-btn" onclick="switchMarket('crypto')" id="marketBtnCrypto">
+                <span class="market-icon">₿</span> Crypto
+            </button>
+            <button type="button" class="market-btn" onclick="switchMarket('indian_stock')" id="marketBtnIndian">
+                <span class="market-icon">📈</span> Indian Stocks
+            </button>
+        </div>
+        <input type="hidden" name="market" id="marketInput" value="forex">
+        
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- QUICK SELECT SYMBOLS (changes per market) -->
+        <!-- ═══════════════════════════════════════════ -->
+        <div class="mb-3">
+            <div class="category-label" id="quickSelectLabel">💱 Quick Select Forex Pair</div>
+            <div id="symbolChipsForex" class="market-form-section active">
+                <span class="symbol-chip forex" onclick="selectSymbol('EURUSD')">EURUSD</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('GBPUSD')">GBPUSD</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('USDJPY')">USDJPY</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('XAUUSD')">🥇 XAUUSD</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('GBPJPY')">GBPJPY</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('AUDUSD')">AUDUSD</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('US30')">📊 US30</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('NAS100')">📊 NAS100</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('USOIL')">🛢 USOIL</span>
+                <span class="symbol-chip forex" onclick="selectSymbol('XAGUSD')">XAGUSD</span>
+            </div>
+            <div id="symbolChipsCrypto" class="market-form-section">
+                <span class="symbol-chip crypto" onclick="selectSymbol('BTCUSD')">₿ BTCUSD</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('ETHUSD')">Ξ ETHUSD</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('SOLUSD')">SOLUSD</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('XRPUSD')">XRPUSD</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('ADAUSD')">ADAUSD</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('DOGEUSD')">🐕 DOGEUSD</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('MATICUSD')">MATICUSD</span>
+                <span class="symbol-chip crypto" onclick="selectSymbol('DOTUSD')">DOTUSD</span>
+            </div>
+            <div id="symbolChipsIndian" class="market-form-section">
+                <span class="symbol-chip indian" onclick="selectSymbol('NIFTY')">📊 NIFTY 50</span>
+                <span class="symbol-chip indian" onclick="selectSymbol('BANKNIFTY')">🏦 BANKNIFTY</span>
+                <span class="symbol-chip indian" onclick="selectSymbol('RELIANCE.NS')">RELIANCE</span>
+                <span class="symbol-chip indian" onclick="selectSymbol('TCS.NS')">TCS</span>
+                <span class="symbol-chip indian" onclick="selectSymbol('INFY.NS')">INFOSYS</span>
+                <span class="symbol-chip indian" onclick="selectSymbol('HDFCBANK.NS')">HDFC BANK</span>
+                <span class="symbol-chip indian" onclick="selectSymbol('ICICIBANK.NS')">ICICI BANK</span>
+                <span class="symbol-chip indian" onclick="selectSymbol('TATAMOTORS.NS')">TATA MOTORS</span>
             </div>
         </div>
-
+        
         <hr class="section-divider">
-
-        <!-- Main Inputs -->
+        
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- CORE FIELDS (All Markets) -->
+        <!-- ═══════════════════════════════════════════ -->
         <div class="row g-3">
-            <!-- Symbol Input -->
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-floating-custom">
                     <span class="floating-label">Symbol *</span>
-                    <input type="text" name="symbol" id="symbolInput" class="form-control" placeholder="EURUSD, XAUUSD..." required style="padding-top: 14px;">
+                    <input type="text" name="symbol" id="symbolInput" placeholder="Enter symbol..." required>
                 </div>
             </div>
-
-            <!-- Trade Type Toggle -->
-            <div class="col-md-4">
-                <label class="form-label small fw-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Type *</label>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Type *</label>
                 <div class="trade-type-toggle">
                     <button type="button" class="btn buy-active" id="btnBuy" onclick="setTradeType('buy')">
                         <i class="bi bi-arrow-up-circle-fill"></i> BUY
@@ -165,113 +169,289 @@
                 </div>
                 <input type="hidden" name="trade_type" id="tradeTypeInput" value="buy">
             </div>
-
-            <!-- Lot Size -->
-            <div class="col-md-4">
-                <div class="form-floating-custom">
-                    <span class="floating-label">Lot Size</span>
-                    <input type="number" name="lot_size" class="form-control" value="1.0" step="0.01" min="0.01" style="padding-top: 14px;">
-                </div>
-            </div>
-
-            <!-- Entry Price -->
             <div class="col-md-4">
                 <div class="form-floating-custom">
                     <span class="floating-label">Entry Price *</span>
-                    <input type="number" name="entry_price" id="entryPrice" class="form-control" step="0.00001" required style="padding-top: 14px;" oninput="previewPnL()">
+                    <input type="number" name="entry_price" id="entryPrice" step="0.00001" required oninput="previewPnL()">
                 </div>
             </div>
-
-            <!-- Exit Price -->
             <div class="col-md-4">
                 <div class="form-floating-custom">
                     <span class="floating-label">Exit Price</span>
-                    <input type="number" name="exit_price" id="exitPrice" class="form-control" step="0.00001" style="padding-top: 14px;" oninput="previewPnL()">
+                    <input type="number" name="exit_price" id="exitPrice" step="0.00001" oninput="previewPnL()">
                 </div>
             </div>
-
-            <!-- Stop Loss -->
+            <div class="col-md-4">
+                <div class="form-floating-custom">
+                    <span class="floating-label" id="quantityLabel">Lot Size</span>
+                    <input type="number" name="quantity" id="quantity" value="1.0" step="0.01" min="0.01" oninput="previewPnL()">
+                </div>
+            </div>
             <div class="col-md-4">
                 <div class="form-floating-custom">
                     <span class="floating-label">Stop Loss</span>
-                    <input type="number" name="stop_loss" class="form-control" step="0.00001" style="padding-top: 14px;">
+                    <input type="number" name="stop_loss" step="0.00001">
                 </div>
             </div>
-
-            <!-- Take Profit -->
             <div class="col-md-4">
                 <div class="form-floating-custom">
                     <span class="floating-label">Take Profit</span>
-                    <input type="number" name="take_profit" class="form-control" step="0.00001" style="padding-top: 14px;">
+                    <input type="number" name="take_profit" step="0.00001">
                 </div>
             </div>
-
-            <!-- Entry Date -->
             <div class="col-md-4">
-                <div class="form-floating-custom">
-                    <span class="floating-label">Entry Date *</span>
-                    <input type="datetime-local" name="entry_date" class="form-control" required style="padding-top: 14px;">
-                </div>
-            </div>
-
-            <!-- Exit Date -->
-            <div class="col-md-4">
-                <div class="form-floating-custom">
-                    <span class="floating-label">Exit Date</span>
-                    <input type="datetime-local" name="exit_date" class="form-control" style="padding-top: 14px;">
-                </div>
-            </div>
-
-            <!-- Session -->
-            <div class="col-md-4">
-                <div class="form-floating-custom">
-                    <span class="floating-label">Session</span>
-                    <select name="session" class="form-select" style="padding-top: 14px;">
-                        <option value="">Auto Detect</option>
-                        <option value="asian">🌅 Asian</option>
-                        <option value="london">🏙 London</option>
-                        <option value="newyork">🌃 New York</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- P&L Preview -->
-            <div class="col-md-4">
-                <label class="form-label small fw-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">P&L Preview</label>
                 <div class="pnl-preview neutral" id="pnlPreview">—</div>
             </div>
-
-            <!-- Tags -->
-            <div class="col-md-8">
-                <div class="form-floating-custom">
-                    <span class="floating-label">Tags</span>
-                    <input type="text" name="tags" class="form-control" placeholder="scalping, news, trend" style="padding-top: 14px;">
+        </div>
+        
+        <hr class="section-divider">
+        
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- FOREX SPECIFIC FIELDS -->
+        <!-- ═══════════════════════════════════════════ -->
+        <div id="forexFields" class="market-form-section active">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Session</span>
+                        <select name="session">
+                            <option value="">Auto Detect</option>
+                            <option value="asian">🌅 Asian</option>
+                            <option value="london">🏙 London</option>
+                            <option value="newyork">🌃 New York</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="mt-2">
-                    <span class="symbol-chip" onclick="addTag('scalping')" style="font-size: 0.7rem; padding: 4px 10px;">scalping</span>
-                    <span class="symbol-chip" onclick="addTag('daytrade')" style="font-size: 0.7rem; padding: 4px 10px;">daytrade</span>
-                    <span class="symbol-chip" onclick="addTag('swing')" style="font-size: 0.7rem; padding: 4px 10px;">swing</span>
-                    <span class="symbol-chip" onclick="addTag('news')" style="font-size: 0.7rem; padding: 4px 10px;">news</span>
-                    <span class="symbol-chip" onclick="addTag('breakout')" style="font-size: 0.7rem; padding: 4px 10px;">breakout</span>
-                    <span class="symbol-chip" onclick="addTag('trend')" style="font-size: 0.7rem; padding: 4px 10px;">trend</span>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Leverage</span>
+                        <select name="leverage">
+                            <option value="">Select</option>
+                            <option value="50">1:50</option>
+                            <option value="100" selected>1:100</option>
+                            <option value="200">1:200</option>
+                            <option value="500">1:500</option>
+                            <option value="1000">1:1000</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Notes -->
-            <div class="col-12">
-                <div class="form-floating-custom">
-                    <span class="floating-label">Notes</span>
-                    <textarea name="notes" class="form-control" rows="3" placeholder="Why did you take this trade? What was your setup?" style="padding-top: 14px;"></textarea>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Setup Type</span>
+                        <select name="setup_type">
+                            <option value="">Select</option>
+                            <option value="breakout">Breakout</option>
+                            <option value="trend">Trend Follow</option>
+                            <option value="scalping">Scalping</option>
+                            <option value="reversal">Reversal</option>
+                            <option value="news">News Trade</option>
+                            <option value="support_resistance">S/R Flip</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
-
+        
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- CRYPTO SPECIFIC FIELDS -->
+        <!-- ═══════════════════════════════════════════ -->
+        <div id="cryptoFields" class="market-form-section">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Exchange</span>
+                        <select name="exchange">
+                            <option value="">Select</option>
+                            <option value="binance">Binance</option>
+                            <option value="coinbase">Coinbase</option>
+                            <option value="bybit">Bybit</option>
+                            <option value="kucoin">KuCoin</option>
+                            <option value="okx">OKX</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Segment</span>
+                        <select name="crypto_segment">
+                            <option value="spot">Spot</option>
+                            <option value="futures">Futures</option>
+                            <option value="perpetual">Perpetual</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Leverage</span>
+                        <select name="leverage">
+                            <option value="1">1x (Spot)</option>
+                            <option value="5">5x</option>
+                            <option value="10">10x</option>
+                            <option value="20">20x</option>
+                            <option value="50">50x</option>
+                            <option value="100">100x</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- INDIAN STOCK SPECIFIC FIELDS -->
+        <!-- ═══════════════════════════════════════════ -->
+        <div id="indianFields" class="market-form-section">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Exchange</span>
+                        <select name="exchange" onchange="toggleIndianSegment()" id="indianExchange">
+                            <option value="NSE">NSE</option>
+                            <option value="BSE">BSE</option>
+                            <option value="MCX">MCX</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Segment</span>
+                        <select name="segment" id="indianSegment" onchange="toggleIndianSegment()">
+                            <option value="equity">Equity (Delivery)</option>
+                            <option value="intraday">Intraday</option>
+                            <option value="futures">Futures</option>
+                            <option value="options">Options</option>
+                            <option value="commodity">Commodity</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Instrument</span>
+                        <select name="instrument">
+                            <option value="stock">Stock</option>
+                            <option value="index">Index</option>
+                            <option value="etf">ETF</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Broker</span>
+                        <select name="broker">
+                            <option value="">Select</option>
+                            <option value="zerodha">Zerodha</option>
+                            <option value="upstox">Upstox</option>
+                            <option value="angelone">Angel One</option>
+                            <option value="icicidirect">ICICI Direct</option>
+                            <option value="hdfcsec">HDFC Securities</option>
+                            <option value="groww">Groww</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- F&O Fields (hidden by default) -->
+            <div class="row g-3 mt-2" id="indianFnoFields" style="display:none;">
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Expiry Date</span>
+                        <input type="date" name="expiry_date">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Strike Price</span>
+                        <input type="number" name="strike_price" step="0.05">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Option Type</span>
+                        <select name="option_type">
+                            <option value="">N/A</option>
+                            <option value="CE">CE (Call)</option>
+                            <option value="PE">PE (Put)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Margin Used (₹)</span>
+                        <input type="number" name="margin_used" step="0.01">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charges Fields -->
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Brokerage (₹)</span>
+                        <input type="number" name="brokerage" value="0" step="0.01">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Taxes/STT (₹)</span>
+                        <input type="number" name="taxes" value="0" step="0.01">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating-custom">
+                        <span class="floating-label">Other Charges (₹)</span>
+                        <input type="number" name="other_charges" value="0" step="0.01">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <hr class="section-divider">
+        
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- COMMON FIELDS -->
+        <!-- ═══════════════════════════════════════════ -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Entry Date *</span>
+                    <input type="datetime-local" name="entry_date" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Exit Date</span>
+                    <input type="datetime-local" name="exit_date">
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Tags</span>
+                    <input type="text" name="tags" placeholder="scalping, news, trend">
+                </div>
+                <div class="mt-2">
+                    <span class="symbol-chip" onclick="addTag('scalping')" style="font-size:0.65rem;padding:4px 8px;">scalping</span>
+                    <span class="symbol-chip" onclick="addTag('daytrade')" style="font-size:0.65rem;padding:4px 8px;">daytrade</span>
+                    <span class="symbol-chip" onclick="addTag('swing')" style="font-size:0.65rem;padding:4px 8px;">swing</span>
+                    <span class="symbol-chip" onclick="addTag('news')" style="font-size:0.65rem;padding:4px 8px;">news</span>
+                    <span class="symbol-chip" onclick="addTag('breakout')" style="font-size:0.65rem;padding:4px 8px;">breakout</span>
+                    <span class="symbol-chip" onclick="addTag('trend')" style="font-size:0.65rem;padding:4px 8px;">trend</span>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-floating-custom">
+                    <span class="floating-label">Notes</span>
+                    <textarea name="notes" rows="3" placeholder="Why did you take this trade? What was your setup?"></textarea>
+                </div>
+            </div>
+        </div>
+        
         <!-- Submit -->
         <div class="d-flex gap-2 mt-4">
-            <button type="submit" class="btn text-white" style="background: var(--accent); border-radius: 8px; border: none; padding: 10px 24px; font-weight: 600;">
+            <button type="submit" class="btn text-white" style="background: var(--accent); border-radius: 10px; border: none; padding: 12px 28px; font-weight: 700; font-family: 'Space Grotesk', sans-serif;">
                 <i class="bi bi-check-lg"></i> Save Trade
             </button>
-            <a href="{{ url_for('user.import_trades') }}" class="btn btn-outline-secondary" style="border-radius: 8px; padding: 10px 24px;">Cancel</a>
+            <a href="{{ url_for('user.import_trades') }}" class="btn btn-outline-secondary" style="border-radius: 10px; padding: 12px 28px;">Cancel</a>
         </div>
     </form>
 </div>
@@ -279,85 +459,103 @@
 <script>
     // Set default entry date
     document.querySelector('input[name="entry_date"]').value = new Date().toISOString().slice(0, 16);
-
-    // Symbol quick select
-    function selectSymbol(sym) {
-        document.getElementById('symbolInput').value = sym;
-        document.querySelectorAll('#symbolChips .symbol-chip').forEach(c => c.classList.remove('selected'));
-        document.querySelector(`[data-symbol="${sym}"]`).classList.add('selected');
-    }
-
-    // Trade type toggle
-    function setTradeType(type) {
-        document.getElementById('tradeTypeInput').value = type;
-        document.getElementById('btnBuy').classList.toggle('buy-active', type === 'buy');
-        document.getElementById('btnSell').classList.toggle('sell-active', type === 'sell');
-        document.getElementById('btnBuy').classList.toggle('buy-active', type === 'buy');
-        document.getElementById('btnSell').classList.remove('buy-active');
-        document.getElementById('btnBuy').classList.remove('sell-active');
+    
+    let currentMarket = 'forex';
+    
+    function switchMarket(market) {
+        currentMarket = market;
+        document.getElementById('marketInput').value = market;
+        
+        // Update market buttons
+        document.querySelectorAll('.market-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('marketBtn' + (market === 'forex' ? 'Forex' : market === 'crypto' ? 'Crypto' : 'Indian')).classList.add('active');
+        
+        // Show/hide quick select chips
+        document.querySelectorAll('.market-form-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('symbolChips' + (market === 'forex' ? 'Forex' : market === 'crypto' ? 'Crypto' : 'Indian')).classList.add('active');
+        document.getElementById('quickSelectLabel').textContent = 
+            market === 'forex' ? '💱 Quick Select Forex Pair' : 
+            market === 'crypto' ? '₿ Quick Select Crypto' : 
+            '📈 Quick Select Indian Stock';
+        
+        // Show/hide market-specific fields
+        document.getElementById('forexFields').classList.toggle('active', market === 'forex');
+        document.getElementById('cryptoFields').classList.toggle('active', market === 'crypto');
+        document.getElementById('indianFields').classList.toggle('active', market === 'indian_stock');
+        
+        // Update quantity label
+        document.getElementById('quantityLabel').textContent = 
+            market === 'indian_stock' ? 'Quantity (Shares)' : 
+            market === 'crypto' ? 'Quantity (Coins)' : 'Lot Size';
+        
+        // Reset symbol
+        document.getElementById('symbolInput').value = '';
         previewPnL();
     }
-
-    // Tag quick add
+    
+    function toggleIndianSegment() {
+        const segment = document.getElementById('indianSegment').value;
+        const fnoFields = document.getElementById('indianFnoFields');
+        fnoFields.style.display = (segment === 'futures' || segment === 'options') ? 'flex' : 'none';
+    }
+    
+    function selectSymbol(sym) {
+        document.getElementById('symbolInput').value = sym;
+        document.querySelectorAll('.symbol-chip').forEach(c => c.classList.remove('selected'));
+        event.target.classList.add('selected');
+    }
+    
+    function setTradeType(type) {
+        document.getElementById('tradeTypeInput').value = type;
+        document.getElementById('btnBuy').className = 'btn ' + (type === 'buy' ? 'buy-active' : '');
+        document.getElementById('btnSell').className = 'btn ' + (type === 'sell' ? 'sell-active' : '');
+        previewPnL();
+    }
+    
     function addTag(tag) {
         const input = document.querySelector('input[name="tags"]');
         const current = input.value.split(',').map(t => t.trim()).filter(t => t);
-        if (!current.includes(tag)) {
-            current.push(tag);
-            input.value = current.join(', ');
-        }
+        if (!current.includes(tag)) { current.push(tag); input.value = current.join(', '); }
     }
-
-    // P&L Preview
+    
     function previewPnL() {
         const entry = parseFloat(document.getElementById('entryPrice').value);
         const exit = parseFloat(document.getElementById('exitPrice').value);
         const type = document.getElementById('tradeTypeInput').value;
-        const lotSize = parseFloat(document.querySelector('input[name="lot_size"]').value) || 1.0;
+        const qty = parseFloat(document.getElementById('quantity').value) || 1.0;
         const symbol = document.getElementById('symbolInput').value.toUpperCase();
         const preview = document.getElementById('pnlPreview');
+        const currency = currentMarket === 'indian_stock' ? '₹' : '$';
         
         if (!entry || !exit) {
-            preview.textContent = '—';
+            preview.innerHTML = '—';
             preview.className = 'pnl-preview neutral';
             return;
         }
-
-        let pipMultiplier = 10000;
-        let valuePerPip = 10;
         
-        if (symbol.includes('XAU') || symbol.includes('GOLD')) { pipMultiplier = 100; valuePerPip = 10; }
+        let pipMultiplier = 10000, valuePerPip = 10;
+        if (currentMarket === 'indian_stock' || currentMarket === 'crypto') { pipMultiplier = 1; valuePerPip = 1; }
+        else if (symbol.includes('XAU') || symbol.includes('GOLD')) { pipMultiplier = 100; valuePerPip = 10; }
         else if (symbol.includes('JPY')) { pipMultiplier = 100; valuePerPip = 10; }
         else if (['US30','NAS100','NAS','SPX','DJI','DAX'].some(x => symbol.includes(x))) { pipMultiplier = 1; valuePerPip = 10; }
-        else if (['BTC','ETH','XRP','SOL'].some(x => symbol.includes(x))) { pipMultiplier = 1; valuePerPip = 1; }
-
-        let pips;
-        if (type === 'buy') {
-            pips = (exit - entry) * pipMultiplier;
-        } else {
-            pips = (entry - exit) * pipMultiplier;
-        }
         
-        const pnl = (pips * lotSize * valuePerPip).toFixed(2);
+        let pips = type === 'buy' ? (exit - entry) * pipMultiplier : (entry - exit) * pipMultiplier;
+        const pnl = (pips * qty * valuePerPip).toFixed(2);
         
         if (pnl > 0) {
-            preview.innerHTML = `<i class="bi bi-arrow-up-circle-fill"></i> +$${pnl}`;
+            preview.innerHTML = `<i class="bi bi-arrow-up-circle-fill"></i> +${currency}${pnl}`;
             preview.className = 'pnl-preview profit';
         } else if (pnl < 0) {
-            preview.innerHTML = `<i class="bi bi-arrow-down-circle-fill"></i> -$${Math.abs(pnl)}`;
+            preview.innerHTML = `<i class="bi bi-arrow-down-circle-fill"></i> -${currency}${Math.abs(pnl)}`;
             preview.className = 'pnl-preview loss';
         } else {
-            preview.textContent = '$0.00';
+            preview.innerHTML = `${currency}0.00`;
             preview.className = 'pnl-preview neutral';
         }
     }
-
-    // Highlight selected symbol on input change
+    
     document.getElementById('symbolInput').addEventListener('input', function() {
-        const val = this.value.toUpperCase();
-        document.querySelectorAll('#symbolChips .symbol-chip').forEach(c => c.classList.remove('selected'));
-        const match = document.querySelector(`[data-symbol="${val}"]`);
-        if (match) match.classList.add('selected');
+        document.querySelectorAll('.symbol-chip').forEach(c => c.classList.remove('selected'));
     });
 </script>
 {% endblock %}

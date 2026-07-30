@@ -1,0 +1,93 @@
+{% extends "base_admin.html" %}
+{% block title %}Manage Moderators - Tragene Journal{% endblock %}
+{% block page_title %}👥 Manage Moderators{% endblock %}
+
+{% block content %}
+<style>
+    .mod-card {
+        background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 14px; padding: 18px 20px; margin-bottom: 10px;
+        display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .mod-card:hover { border-color: rgba(38,166,154,0.2); }
+    .mod-avatar {
+        width: 44px; height: 44px; border-radius: 12px;
+        background: rgba(38,166,154,0.1); display: flex;
+        align-items: center; justify-content: center;
+        font-size: 1.2rem; flex-shrink: 0;
+    }
+    .mod-info { flex: 1; min-width: 150px; }
+    .mod-name { font-weight: 700; font-size: 0.85rem; color: #e0f0ed; font-family: 'Space Grotesk', sans-serif; }
+    .mod-email { font-size: 0.7rem; color: #64748b; font-family: 'JetBrains Mono', monospace; }
+    .mod-meta { font-size: 0.65rem; color: #64748b; margin-top: 2px; }
+    .badge-status {
+        padding: 4px 12px; border-radius: 20px; font-size: 0.62rem;
+        font-weight: 700; font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-status.active { background: rgba(0,230,118,0.1); color: #00e676; }
+    .badge-status.banned { background: rgba(255,82,82,0.1); color: #ff5252; }
+    .btn-sm-mod {
+        padding: 5px 12px; border-radius: 6px; font-size: 0.65rem;
+        font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03); color: #94a3b8; text-decoration: none;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .btn-sm-mod:hover { background: rgba(38,166,154,0.1); border-color: var(--accent); color: var(--accent); }
+    .btn-sm-mod.danger:hover { background: rgba(255,82,82,0.1); border-color: #ff5252; color: #ff5252; }
+    .btn-add {
+        background: var(--accent); color: #000; border: none; padding: 10px 20px;
+        border-radius: 10px; font-weight: 700; font-size: 0.8rem; text-decoration: none;
+        font-family: 'Space Grotesk', sans-serif; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .perm-count {
+        display: inline-block; background: rgba(139,92,246,0.1); color: #8b5cf6;
+        padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; font-weight: 700;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <a href="{{ url_for('moderator.activity_log') }}" class="btn-sm-mod" style="margin-right:8px;">📊 Activity Log</a>
+    </div>
+    <a href="{{ url_for('moderator.add_moderator') }}" class="btn-add"><i class="bi bi-plus-circle"></i> Add Moderator</a>
+</div>
+
+{% if moderators %}
+    {% for mod in moderators %}
+    <div class="mod-card">
+        <div class="mod-avatar">🛡</div>
+        <div class="mod-info">
+            <div class="mod-name">{{ mod.full_name }}</div>
+            <div class="mod-email">{{ mod.email }}</div>
+            <div class="mod-meta">
+                Created: {{ mod.created_at.strftime('%d %b %Y') }} · 
+                Last Login: {{ mod.last_login_at.strftime('%d %b %Y, %H:%M') if mod.last_login_at else 'Never' }} ·
+                Permissions: <span class="perm-count">{{ mod.permissions|selectattr('is_granted')|list|length }}</span>
+            </div>
+        </div>
+        <span class="badge-status {{ 'banned' if mod.is_banned else 'active' }}">
+            {{ 'BANNED' if mod.is_banned else 'ACTIVE' }}
+        </span>
+        <div style="display:flex;gap:6px;">
+            <a href="{{ url_for('moderator.edit_moderator', moderator_id=mod.id) }}" class="btn-sm-mod">✏️ Edit</a>
+            <form method="POST" action="{{ url_for('moderator.toggle_moderator', moderator_id=mod.id) }}" style="display:inline;">
+                <input type="hidden" name="reason" value="{{ 'Unbanned' if mod.is_banned else 'Banned by admin' }}">
+                <button type="submit" class="btn-sm-mod {{ '' if mod.is_banned else 'danger' }}">
+                    {{ '✅ Unban' if mod.is_banned else '🚫 Ban' }}
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('moderator.delete_moderator', moderator_id=mod.id) }}" style="display:inline;" onsubmit="return confirm('Delete this moderator permanently?');">
+                <button type="submit" class="btn-sm-mod danger">🗑</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div style="text-align:center;padding:50px;color:#64748b;">
+        <div style="font-size:3rem;opacity:0.2;margin-bottom:12px;">🛡</div>
+        <h5 style="color:#e0f0ed;">No Moderators Yet</h5>
+        <p style="font-size:0.8rem;">Add moderators to help manage the platform.</p>
+        <a href="{{ url_for('moderator.add_moderator') }}" class="btn-add">Add First Moderator</a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base_user.html" %}
+{% block title %}Sync Logs - Tragene Journal{% endblock %}
+{% block page_title %}📋 Sync Logs: {{ connection.label or connection.platform.upper() }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .log-container { max-width: 700px; margin: 0 auto; }
+    
+    .log-card {
+        background: rgba(15,23,42,0.5); border: 1px solid rgba(38,166,154,0.12);
+        border-radius: 14px; padding: 16px 18px; margin-bottom: 10px;
+        backdrop-filter: blur(10px);
+    }
+    .log-card .log-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 6px;
+    }
+    .log-card .log-status {
+        padding: 3px 10px; border-radius: 12px; font-size: 0.62rem;
+        font-weight: 700; font-family: 'JetBrains Mono', monospace;
+    }
+    .log-status.success { background: rgba(0,230,118,0.1); color: #00e676; }
+    .log-status.error { background: rgba(255,82,82,0.1); color: #ff5252; }
+    
+    .log-card .log-date {
+        font-size: 0.68rem; color: #64748b; font-family: 'JetBrains Mono', monospace;
+    }
+    .log-card .log-detail {
+        font-size: 0.75rem; color: #94a3b8; line-height: 1.5;
+    }
+    .log-card .log-error {
+        background: rgba(255,82,82,0.05); border: 1px solid rgba(255,82,82,0.1);
+        border-radius: 8px; padding: 10px; font-size: 0.7rem; color: #ff5252;
+        margin-top: 8px; font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .empty-state { text-align: center; padding: 50px 20px; }
+    .empty-state .icon { font-size: 3rem; opacity: 0.2; margin-bottom: 16px; }
+    
+    .stats-row {
+        display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .stat-mini {
+        flex: 1; min-width: 100px; background: rgba(15,23,42,0.5);
+        border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;
+        padding: 12px; text-align: center;
+    }
+    .stat-mini .sm-value {
+        font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem;
+        font-weight: 700; color: #e0f0ed;
+    }
+    .stat-mini .sm-label {
+        font-size: 0.58rem; color: #64748b; text-transform: uppercase;
+        letter-spacing: 0.5px; margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="log-container">
+    
+    <div class="mb-3">
+        <a href="{{ url_for('user.sync_center') }}" class="text-decoration-none" style="color:#64748b;font-size:0.78rem;">
+            <i class="bi bi-arrow-left"></i> Back to Sync Center
+        </a>
+    </div>
+    
+    <!-- Connection Info -->
+    <div class="log-card">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span style="font-size:1.5rem;">{% if connection.market == 'crypto' %}₿{% elif connection.market == 'forex' %}💱{% else %}📈{% endif %}</span>
+            <div>
+                <strong style="color:#e0f0ed;font-family:'Space Grotesk',sans-serif;">{{ connection.label or connection.platform.upper() }}</strong>
+                <div style="font-size:0.68rem;color:#64748b;">{{ connection.platform.upper() }} · {{ connection.market.title() }}</div>
+            </div>
+            <span style="margin-left:auto;padding:4px 10px;border-radius:12px;font-size:0.62rem;font-weight:700;font-family:'JetBrains Mono',monospace;background:rgba(0,230,118,0.1);color:#00e676;" id="connStatus">
+                {{ connection.sync_status.upper() if connection.is_active else 'PAUSED' }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-mini">
+            <div class="sm-value">{{ connection.sync_count or 0 }}</div>
+            <div class="sm-label">Total Syncs</div>
+        </div>
+        <div class="stat-mini">
+            <div class="sm-value">{{ connection.total_trades_fetched or 0 }}</div>
+            <div class="sm-label">Trades Fetched</div>
+        </div>
+        <div class="stat-mini">
+            <div class="sm-value">
+                {% if connection.last_synced_at %}
+                    {{ connection.last_synced_at.strftime('%d %b %H:%M') }}
+                {% else %}—{% endif %}
+            </div>
+            <div class="sm-label">Last Synced</div>
+        </div>
+    </div>
+    
+    <!-- Error State -->
+    {% if connection.last_error %}
+    <div class="log-card" style="border-color:rgba(255,82,82,0.2);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="font-size:1rem;">⚠️</span>
+            <strong style="color:#ff5252;font-size:0.78rem;">Last Error</strong>
+            <span style="font-size:0.62rem;color:#64748b;margin-left:auto;">
+                {{ connection.last_error_at.strftime('%d %b %Y, %H:%M') if connection.last_error_at else '' }}
+            </span>
+        </div>
+        <div class="log-error">{{ connection.last_error }}</div>
+    </div>
+    {% endif %}
+    
+    <!-- Sync Actions -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <form method="POST" action="{{ url_for('user.sync_fetch_now', connection_id=connection.id) }}" style="display:inline;">
+            <button type="submit" style="padding:10px 20px;background:var(--accent);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.78rem;cursor:pointer;font-family:'Space Grotesk',sans-serif;">
+                🔄 Sync Now
+            </button>
+        </form>
+        <form method="POST" action="{{ url_for('user.sync_toggle', connection_id=connection.id) }}" style="display:inline;">
+            <button type="submit" style="padding:10px 20px;background:transparent;border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:10px;font-weight:600;font-size:0.78rem;cursor:pointer;">
+                {{ '▶ Resume' if not connection.is_active else '⏸ Pause' }}
+            </button>
+        </form>
+    </div>
+    
+    <!-- Connection Details -->
+    <div class="log-card">
+        <h6 style="font-size:0.7rem;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Connection Details</h6>
+        <div style="font-size:0.72rem;color:#94a3b8;line-height:1.8;">
+            <div><strong style="color:#e0f0ed;">Market:</strong> {{ connection.market.title() }}</div>
+            <div><strong style="color:#e0f0ed;">Platform:</strong> {{ connection.platform.upper() }}</div>
+            <div><strong style="color:#e0f0ed;">Method:</strong> {{ connection.method.upper() }}</div>
+            {% if connection.server_name %}
+            <div><strong style="color:#e0f0ed;">Server:</strong> {{ connection.server_name }}</div>
+            {% endif %}
+            {% if connection.mt_account_number %}
+            <div><strong style="color:#e0f0ed;">Account:</strong> {{ connection.mt_account_number }}</div>
+            {% endif %}
+            <div><strong style="color:#e0f0ed;">Created:</strong> {{ connection.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+            <div><strong style="color:#e0f0ed;">Status:</strong> 
+                {% if connection.admin_stopped %}
+                <span style="color:#ff5252;">Stopped by admin</span>
+                {% if connection.stop_reason %}<br><small style="color:#64748b;">Reason: {{ connection.stop_reason }}</small>{% endif %}
+                {% else %}
+                {{ connection.sync_status.title() }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete -->
+    <form method="POST" action="{{ url_for('user.sync_delete', connection_id=connection.id) }}" onsubmit="return confirm('Delete this connection? Trades already imported will remain.');">
+        <button type="submit" style="width:100%;padding:10px;background:transparent;border:1px solid rgba(255,82,82,0.2);color:#ff5252;border-radius:10px;font-weight:600;font-size:0.78rem;cursor:pointer;margin-top:8px;">
+            🗑 Delete This Connection
+        </button>
+    </form>
+    
+</div>
+
+{% endblock %}

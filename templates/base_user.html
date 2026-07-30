@@ -213,6 +213,8 @@
             border: 1px solid var(--border-color); margin-bottom: 18px;
             display: flex; align-items: center; gap: 10px;
             box-shadow: var(--shadow-sm); backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 100;
         }
         .top-bar h5 {
             margin: 0; font-weight: 600; color: var(--text-primary);
@@ -277,6 +279,10 @@
         }
 
         /* Account Switcher */
+        .account-switcher {
+            position: relative;
+            z-index: 2000;
+        }
         .account-switcher .btn {
             background: var(--bg-input); border: 1px solid var(--accent); color: var(--accent);
             border-radius: 16px; padding: 5px 10px; font-size: 0.7rem; font-weight: 600;
@@ -287,6 +293,8 @@
         .account-switcher .dropdown-menu {
             background: var(--bg-card); border: 1px solid var(--border-color);
             box-shadow: var(--shadow-lg); min-width: 260px; max-height: 400px; overflow-y: auto;
+            z-index: 3000;
+            position: absolute;
         }
         .account-item {
             display: flex; align-items: center; justify-content: space-between;
@@ -311,12 +319,19 @@
         .theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--sidebar-hover); transform: rotate(25deg); }
 
         /* User Dropdown */
+        .user-dropdown {
+            position: relative;
+            z-index: 2000;
+        }
         .user-dropdown .btn {
             background: var(--bg-input); border: 1px solid var(--border-color);
             color: var(--text-primary); border-radius: 16px; padding: 5px 10px;
             font-size: 0.7rem; flex-shrink: 0;
         }
         .user-dropdown .btn:hover { border-color: var(--accent); }
+        .user-dropdown .dropdown-menu {
+            z-index: 3000;
+        }
         .dropdown-menu { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); }
         .dropdown-item { color: var(--text-primary); font-size: 0.82rem; padding: 8px 14px; }
         .dropdown-item:hover { background: var(--sidebar-hover); color: var(--accent); }
@@ -326,6 +341,8 @@
             background: var(--bg-card); border: 1px solid var(--border-color);
             border-radius: var(--radius); box-shadow: var(--shadow-sm);
             transition: all var(--transition);
+            position: relative;
+            z-index: 1;
         }
         .card:hover { border-color: rgba(38,166,154,0.2); box-shadow: var(--shadow); }
 
@@ -533,22 +550,23 @@
         <span class="brand-text">Tragene<span>Journal</span></span>
     </div>
     <nav>
-        <a href="{{ url_for('user.dashboard') }}" class="nav-link {% if request.endpoint == 'user.dashboard' %}active{% endif %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <a href="{{ url_for('user.journal') }}" class="nav-link {% if request.endpoint == 'user.journal' %}active{% endif %}"><i class="bi bi-journal-text"></i> Trade Journal</a>
-        <a href="{{ url_for('user.analytics') }}" class="nav-link {% if request.endpoint == 'user.analytics' %}active{% endif %}"><i class="bi bi-graph-up"></i> Analytics</a>
-        <a href="{{ url_for('tools.risk_analytics') }}" class="nav-link {% if request.endpoint == 'tools.risk_analytics' %}active{% endif %}"><i class="bi bi-shield-check"></i> Risk Management</a>
-        <a href="{{ url_for('user.calendar') }}" class="nav-link {% if request.endpoint == 'user.calendar' %}active{% endif %}"><i class="bi bi-calendar3"></i> Calendar</a>
-        <a href="{{ url_for('ai.ai_reports') }}" class="nav-link {% if 'ai.' in request.endpoint %}active{% endif %}"><i class="bi bi-robot"></i> AI Reports</a>
-        <a href="{% if current_user.can_access_coach() %}{{ url_for('ai.coach_page') }}{% else %}#{% endif %}" class="nav-link {% if request.endpoint == 'ai.coach_page' %}active{% endif %}" {% if not current_user.can_access_coach() %}onclick="showUpgradeAlert('AI Coach')"{% endif %}><i class="bi bi-brain"></i> AI Coach{% if not current_user.can_access_coach() %}<span class="elite-badge-sidebar">ELITE</span>{% endif %}</a>
-        <a href="{% if current_user.can_access_goals() %}{{ url_for('ai.goals_page') }}{% else %}#{% endif %}" class="nav-link {% if request.endpoint == 'ai.goals_page' %}active{% endif %}" {% if not current_user.can_access_goals() %}onclick="showUpgradeAlert('Goals & Planner')"{% endif %}><i class="bi bi-bullseye"></i> Goals & Planner{% if not current_user.can_access_goals() %}<span class="elite-badge-sidebar">ELITE</span>{% endif %}</a>
-        <a href="{{ url_for('user.insights') }}" class="nav-link {% if request.endpoint == 'user.insights' %}active{% endif %}"><i class="bi bi-lightbulb"></i> Insights</a>
-        <a href="{{ url_for('user.diary') }}" class="nav-link {% if request.endpoint == 'user.diary' %}active{% endif %}"><i class="bi bi-book"></i> Trading Diary</a>
-        <a href="{{ url_for('tools.index') }}" class="nav-link {% if 'tools' in request.endpoint %}active{% endif %}"><i class="bi bi-tools"></i> Tools</a>
-        <a href="{{ url_for('user.payment_history') }}" class="nav-link {% if request.endpoint == 'user.payment_history' %}active{% endif %}"><i class="bi bi-receipt"></i> Payment History</a>
-        <a href="{{ url_for('user.support') }}" class="nav-link {% if request.endpoint == 'user.support' %}active{% endif %}"><i class="bi bi-headset"></i> Help & Support</a>
-        <a href="{{ url_for('user.settings') }}" class="nav-link {% if request.endpoint == 'user.settings' %}active{% endif %}"><i class="bi bi-gear"></i> Settings</a>
-        <a href="{{ url_for('user.subscription') }}" class="nav-link {% if request.endpoint == 'user.subscription' %}active{% endif %}"><i class="bi bi-credit-card"></i> Subscription</a>
-    </nav>
+    <a href="{{ url_for('user.dashboard') }}" class="nav-link {% if request.endpoint == 'user.dashboard' %}active{% endif %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="{{ url_for('user.journal') }}" class="nav-link {% if request.endpoint == 'user.journal' %}active{% endif %}"><i class="bi bi-journal-text"></i> Trade Journal</a>
+    <a href="{{ url_for('user.sync_center') }}" class="nav-link {% if request.endpoint and 'sync' in request.endpoint %}active{% endif %}"><i class="bi bi-arrow-repeat"></i> Sync Center</a>
+    <a href="{{ url_for('user.analytics') }}" class="nav-link {% if request.endpoint == 'user.analytics' %}active{% endif %}"><i class="bi bi-graph-up"></i> Analytics</a>
+    <a href="{{ url_for('tools.risk_analytics') }}" class="nav-link {% if request.endpoint == 'tools.risk_analytics' %}active{% endif %}"><i class="bi bi-shield-check"></i> Risk Management</a>
+    <a href="{{ url_for('user.calendar') }}" class="nav-link {% if request.endpoint == 'user.calendar' %}active{% endif %}"><i class="bi bi-calendar3"></i> Calendar</a>
+    <a href="{{ url_for('ai.ai_reports') }}" class="nav-link {% if 'ai.' in request.endpoint %}active{% endif %}"><i class="bi bi-robot"></i> AI Reports</a>
+    <a href="{% if current_user.can_access_coach() %}{{ url_for('ai.coach_page') }}{% else %}#{% endif %}" class="nav-link {% if request.endpoint == 'ai.coach_page' %}active{% endif %}" {% if not current_user.can_access_coach() %}onclick="showUpgradeAlert('AI Coach')"{% endif %}><i class="bi bi-brain"></i> AI Coach{% if not current_user.can_access_coach() %}<span class="elite-badge-sidebar">ELITE</span>{% endif %}</a>
+    <a href="{% if current_user.can_access_goals() %}{{ url_for('ai.goals_page') }}{% else %}#{% endif %}" class="nav-link {% if request.endpoint == 'ai.goals_page' %}active{% endif %}" {% if not current_user.can_access_goals() %}onclick="showUpgradeAlert('Goals & Planner')"{% endif %}><i class="bi bi-bullseye"></i> Goals & Planner{% if not current_user.can_access_goals() %}<span class="elite-badge-sidebar">ELITE</span>{% endif %}</a>
+    <a href="{{ url_for('user.insights') }}" class="nav-link {% if request.endpoint == 'user.insights' %}active{% endif %}"><i class="bi bi-lightbulb"></i> Insights</a>
+    <a href="{{ url_for('user.diary') }}" class="nav-link {% if request.endpoint == 'user.diary' %}active{% endif %}"><i class="bi bi-book"></i> Trading Diary</a>
+    <a href="{{ url_for('tools.index') }}" class="nav-link {% if 'tools' in request.endpoint %}active{% endif %}"><i class="bi bi-tools"></i> Tools</a>
+    <a href="{{ url_for('user.payment_history') }}" class="nav-link {% if request.endpoint == 'user.payment_history' %}active{% endif %}"><i class="bi bi-receipt"></i> Payment History</a>
+    <a href="{{ url_for('user.support') }}" class="nav-link {% if request.endpoint == 'user.support' %}active{% endif %}"><i class="bi bi-headset"></i> Help & Support</a>
+    <a href="{{ url_for('user.settings') }}" class="nav-link {% if request.endpoint == 'user.settings' %}active{% endif %}"><i class="bi bi-gear"></i> Settings</a>
+    <a href="{{ url_for('user.subscription') }}" class="nav-link {% if request.endpoint == 'user.subscription' %}active{% endif %}"><i class="bi bi-credit-card"></i> Subscription</a>
+</nav>
     <div class="sidebar-footer">
         <a href="{{ url_for('auth.logout') }}" class="nav-link logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
     </div>

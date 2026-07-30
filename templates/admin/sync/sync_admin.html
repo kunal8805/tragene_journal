@@ -1,0 +1,240 @@
+{% extends "base_admin.html" %}
+{% block title %}Sync Admin - Tragene Journal{% endblock %}
+{% block page_title %}🔧 Sync Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-stats {
+        display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .admin-stat {
+        flex: 1; min-width: 110px; background: rgba(15,23,42,0.5);
+        border: 1px solid rgba(38,166,154,0.12); border-radius: 12px;
+        padding: 14px; text-align: center; backdrop-filter: blur(10px);
+    }
+    .admin-stat .as-value { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 700; }
+    .admin-stat .as-label { font-size: 0.58rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    
+    .sync-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    .sync-table th {
+        background: rgba(15,23,42,0.8); color: #64748b; font-size: 0.62rem;
+        text-transform: uppercase; letter-spacing: 0.8px; padding: 12px 10px;
+        text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .sync-table td {
+        padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);
+        color: #94a3b8; vertical-align: middle;
+    }
+    .sync-table tr:hover { background: rgba(38,166,154,0.03); }
+    
+    .badge-status {
+        padding: 3px 10px; border-radius: 12px; font-size: 0.6rem;
+        font-weight: 700; font-family: 'JetBrains Mono', monospace; white-space: nowrap;
+    }
+    .badge-status.active { background: rgba(0,230,118,0.1); color: #00e676; }
+    .badge-status.error { background: rgba(255,82,82,0.1); color: #ff5252; }
+    .badge-status.stopped { background: rgba(255,255,255,0.03); color: #64748b; }
+    .badge-status.expired { background: rgba(255,179,0,0.1); color: #ffb300; }
+    
+    .btn-admin-sm {
+        padding: 5px 12px; border-radius: 6px; font-size: 0.62rem;
+        font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03); color: #94a3b8;
+        transition: all 0.2s; font-family: 'Space Grotesk', sans-serif; white-space: nowrap;
+    }
+    .btn-admin-sm:hover { background: rgba(38,166,154,0.1); border-color: var(--accent); color: var(--accent); }
+    .btn-admin-sm.danger:hover { background: rgba(255,82,82,0.1); border-color: #ff5252; color: #ff5252; }
+    
+    .search-bar {
+        display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .search-bar input, .search-bar select {
+        padding: 8px 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08);
+        color: #e0f0ed; border-radius: 8px; font-size: 0.72rem;
+    }
+    .search-bar input { flex: 1; min-width: 200px; }
+    .search-bar input:focus, .search-bar select:focus { border-color: var(--accent); outline: none; }
+    
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+        z-index: 9999; align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;
+        max-height: 80vh; overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="admin-stats">
+    <div class="admin-stat">
+        <div class="as-value" style="color:#e0f0ed;">{{ stats.total }}</div>
+        <div class="as-label">Total Connections</div>
+    </div>
+    <div class="admin-stat">
+        <div class="as-value" style="color:#00e676;">{{ stats.active }}</div>
+        <div class="as-label">Active</div>
+    </div>
+    <div class="admin-stat">
+        <div class="as-value" style="color:#ff5252;">{{ stats.failed }}</div>
+        <div class="as-label">Failed</div>
+    </div>
+    <div class="admin-stat">
+        <div class="as-value" style="color:#64748b;">{{ stats.stopped }}</div>
+        <div class="as-label">Stopped</div>
+    </div>
+    <div class="admin-stat">
+        <div class="as-value" style="color:#ffb300;">{{ stats.stale }}</div>
+        <div class="as-label">Stale (>24h)</div>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search by user email, platform, or status..." onkeyup="filterTable()">
+    <select id="statusFilter" onchange="filterTable()">
+        <option value="all">All Status</option>
+        <option value="active">Active</option>
+        <option value="error">Error</option>
+        <option value="stopped">Stopped</option>
+        <option value="expired">Expired</option>
+    </select>
+    <select id="marketFilter" onchange="filterTable()">
+        <option value="all">All Markets</option>
+        <option value="crypto">Crypto</option>
+        <option value="forex">Forex</option>
+        <option value="indian_stock">Indian</option>
+    </select>
+</div>
+
+<!-- Table -->
+<div class="table-responsive">
+    <table class="sync-table" id="syncTable">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Plan</th>
+                <th>Market</th>
+                <th>Platform</th>
+                <th>Label</th>
+                <th>Status</th>
+                <th>Last Synced</th>
+                <th>Trades</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for conn, user in connections %}
+            <tr class="sync-row" data-status="{{ conn.sync_status }}{{ ' stopped' if conn.admin_stopped }}{{ ' paused' if not conn.is_active }}" data-market="{{ conn.market }}" data-search="{{ user.email }} {{ conn.platform }} {{ conn.label or '' }} {{ conn.sync_status }}">
+                <td>
+                    <strong style="color:#e0f0ed;">{{ user.email }}</strong>
+                    <div style="font-size:0.62rem;color:#64748b;">ID: {{ user.id }}</div>
+                </td>
+                <td><span class="badge-status" style="background:rgba(139,92,246,0.1);color:#8b5cf6;">{{ user.subscription_tier.upper() }}</span></td>
+                <td>{{ conn.market.title() }}</td>
+                <td>{{ conn.platform.upper() }}</td>
+                <td>{{ conn.label or '-' }}</td>
+                <td>
+                    {% if conn.admin_stopped %}
+                    <span class="badge-status stopped">STOPPED</span>
+                    {% elif not conn.is_active %}
+                    <span class="badge-status expired">PAUSED</span>
+                    {% else %}
+                    <span class="badge-status {{ conn.sync_status }}">{{ conn.sync_status.upper() }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;">
+                    {{ conn.last_synced_at.strftime('%d %b %H:%M') if conn.last_synced_at else 'Never' }}
+                </td>
+                <td>{{ conn.total_trades_fetched or 0 }}</td>
+                <td>
+                    <div style="display:flex;gap:4px;">
+                        {% if conn.is_active and not conn.admin_stopped %}
+                        <form method="POST" action="{{ url_for('admin.admin_stop_sync', connection_id=conn.id) }}" style="display:inline;">
+                            <input type="hidden" name="reason" value="Stopped by admin">
+                            <button type="submit" class="btn-admin-sm danger">⏹ Stop</button>
+                        </form>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('admin.admin_start_sync', connection_id=conn.id) }}" style="display:inline;">
+                            <button type="submit" class="btn-admin-sm">▶ Start</button>
+                        </form>
+                        {% endif %}
+                        <button class="btn-admin-sm" onclick="viewUserLogs({{ user.id }}, '{{ user.email }}')">📋</button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- User Logs Modal -->
+<div class="modal-overlay" id="userLogsModal">
+    <div class="modal-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h6 style="font-family:'Space Grotesk',sans-serif;color:#e0f0ed;">📋 Sync Logs: <span id="modalUserEmail"></span></h6>
+            <button onclick="closeModal()" style="background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer;">&times;</button>
+        </div>
+        <div id="modalLogContent">Loading...</div>
+    </div>
+</div>
+
+<script>
+    function filterTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+        const market = document.getElementById('marketFilter').value;
+        
+        document.querySelectorAll('.sync-row').forEach(row => {
+            const matchSearch = row.dataset.search.toLowerCase().includes(search);
+            const matchStatus = status === 'all' || row.dataset.status.includes(status);
+            const matchMarket = market === 'all' || row.dataset.market === market;
+            row.style.display = matchSearch && matchStatus && matchMarket ? '' : 'none';
+        });
+    }
+    
+    function viewUserLogs(userId, email) {
+        document.getElementById('modalUserEmail').textContent = email;
+        document.getElementById('modalLogContent').innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;">Loading...</div>';
+        document.getElementById('userLogsModal').classList.add('show');
+        
+        fetch(`/admin/sync/user/${userId}/logs`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.connections && data.connections.length > 0) {
+                    document.getElementById('modalLogContent').innerHTML = data.connections.map(c => `
+                        <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;margin-bottom:8px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong style="color:#e0f0ed;font-size:0.78rem;">${c.platform.toUpperCase()} · ${c.market}</strong>
+                                <span class="badge-status ${c.status}">${c.status.toUpperCase()}</span>
+                            </div>
+                            <div style="font-size:0.65rem;color:#64748b;margin-top:4px;">
+                                Last synced: ${c.last_synced || 'Never'} · Trades: ${c.trades_fetched}
+                            </div>
+                            ${c.error ? `<div style="font-size:0.62rem;color:#ff5252;margin-top:4px;">⚠️ ${c.error}</div>` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('modalLogContent').innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;">No connections found.</div>';
+                }
+            })
+            .catch(() => {
+                document.getElementById('modalLogContent').innerHTML = '<div style="text-align:center;padding:20px;color:#ff5252;">Failed to load.</div>';
+            });
+    }
+    
+    function closeModal() {
+        document.getElementById('userLogsModal').classList.remove('show');
+    }
+    
+    document.getElementById('userLogsModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+{% endblock %}

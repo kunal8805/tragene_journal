@@ -1,0 +1,412 @@
+{% extends "base_user.html" %}
+{% block title %}Setup Sync - Tragene Journal{% endblock %}
+{% block page_title %}🔄 Setup Sync Connection{% endblock %}
+
+{% block extra_css %}
+<style>
+    .setup-container { max-width: 650px; margin: 0 auto; }
+    
+    .market-selector {
+        display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .market-btn {
+        flex: 1; min-width: 100px; padding: 16px 12px; border-radius: 14px;
+        border: 2px solid rgba(255,255,255,0.06); background: rgba(15,23,42,0.5);
+        color: #94a3b8; cursor: pointer; text-align: center;
+        transition: all 0.25s; font-weight: 600; font-size: 0.82rem;
+        font-family: 'Space Grotesk', sans-serif; backdrop-filter: blur(10px);
+        position: relative;
+    }
+    .market-btn:hover { border-color: rgba(38,166,154,0.3); }
+    .market-btn.active { border-color: var(--accent); background: rgba(38,166,154,0.08); color: var(--accent); box-shadow: 0 0 20px rgba(38,166,154,0.1); }
+    .market-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .market-btn:disabled:hover { border-color: rgba(255,255,255,0.06); }
+    .market-btn .market-icon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+    .market-btn .market-desc { font-size: 0.6rem; color: #64748b; margin-top: 2px; }
+    .market-btn .locked-badge {
+        display: block; font-size: 0.55rem; color: #ffb300; margin-top: 3px;
+        font-weight: 700; letter-spacing: 0.5px;
+    }
+    
+    .upgrade-banner {
+        background: rgba(255,179,0,0.05); border: 1px solid rgba(255,179,0,0.15);
+        border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; flex-wrap: wrap;
+    }
+    .upgrade-banner span {
+        font-size: 0.72rem; color: #ffb300; font-weight: 600;
+    }
+    .btn-upgrade-sm {
+        padding: 7px 16px; background: #ffb300; color: #000;
+        border: none; border-radius: 8px; font-weight: 700; font-size: 0.68rem;
+        cursor: pointer; text-decoration: none; white-space: nowrap;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .btn-upgrade-sm:hover { opacity: 0.9; color: #000; }
+    
+    .setup-card {
+        background: rgba(15,23,42,0.5); border: 1px solid rgba(38,166,154,0.12);
+        border-radius: 16px; padding: 24px; backdrop-filter: blur(10px); margin-bottom: 16px;
+    }
+    .setup-card h6 {
+        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+        font-size: 0.82rem; color: #e0f0ed; margin-bottom: 16px;
+        text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    
+    .form-group { margin-bottom: 14px; position: relative; }
+    .form-group label {
+        display: block; font-size: 0.65rem; color: #64748b;
+        text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+        font-weight: 700; font-family: 'JetBrains Mono', monospace;
+    }
+    .form-group input, .form-group select {
+        width: 100%; padding: 11px 14px; background: rgba(15,23,42,0.8);
+        border: 1px solid rgba(255,255,255,0.08); color: #e0f0ed;
+        border-radius: 10px; font-size: 0.82rem; font-family: 'Inter', sans-serif;
+    }
+    .form-group input:focus, .form-group select:focus {
+        border-color: var(--accent); outline: none;
+        box-shadow: 0 0 0 3px rgba(38,166,154,0.08);
+    }
+    .form-group input::placeholder { color: #475569; }
+    .form-group select option { background: #0f172a; color: #e0f0ed; }
+    
+    .form-group .hint {
+        font-size: 0.62rem; color: #64748b; margin-top: 4px;
+    }
+    .form-group .hint.warn { color: #ffb300; }
+    .form-group .hint.success { color: #00e676; }
+    
+    /* Exchange Dropdown */
+    .exchange-dropdown {
+        position: absolute; top: 100%; left: 0; right: 0;
+        max-height: 250px; overflow-y: auto;
+        background: rgba(15,23,42,0.98); 
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px; margin-top: 4px;
+        z-index: 100; display: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .exchange-dropdown.show { display: block; }
+    .exchange-dropdown-item {
+        padding: 10px 14px; cursor: pointer; font-size: 0.75rem;
+        color: #e0f0ed; border-bottom: 1px solid rgba(255,255,255,0.03);
+        transition: all 0.15s; text-transform: capitalize;
+    }
+    .exchange-dropdown-item:hover { background: rgba(38,166,154,0.1); }
+    .exchange-dropdown-item.selected { background: rgba(38,166,154,0.15); color: var(--accent); }
+    .exchange-dropdown-empty {
+        padding: 12px; color: var(--text-muted); font-size: 0.72rem; text-align: center;
+    }
+    
+    .platform-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 8px; margin-bottom: 16px;
+    }
+    .platform-chip {
+        padding: 12px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
+        background: rgba(15,23,42,0.5); color: #94a3b8; cursor: pointer;
+        text-align: center; transition: all 0.2s; font-size: 0.72rem; font-weight: 600;
+    }
+    .platform-chip:hover { border-color: rgba(38,166,154,0.3); }
+    .platform-chip.selected { border-color: var(--accent); background: rgba(38,166,154,0.08); color: var(--accent); }
+    .platform-chip .chip-icon { font-size: 1.4rem; display: block; margin-bottom: 3px; }
+    
+    .btn-submit {
+        width: 100%; padding: 14px; background: var(--accent); color: #000;
+        border: none; border-radius: 12px; font-weight: 700; font-size: 0.85rem;
+        cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+        transition: all 0.2s;
+    }
+    .btn-submit:hover { opacity: 0.9; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .security-note {
+        background: rgba(255,179,0,0.05); border: 1px solid rgba(255,179,0,0.1);
+        border-radius: 10px; padding: 12px 14px; font-size: 0.7rem; color: #ffb300;
+        margin-top: 16px; display: flex; gap: 8px; align-items: flex-start;
+    }
+    .security-note i { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="setup-container">
+    
+    <!-- Market Selector -->
+    <div class="market-selector" id="marketSelector">
+        <button class="market-btn active" onclick="selectMarket('crypto')" id="mktCrypto">
+            <span class="market-icon">₿</span> Crypto
+            <span class="market-desc">API Key (Read-Only)</span>
+        </button>
+        <button class="market-btn" onclick="selectMarket('forex')" id="mktForex"
+            {% if user_tier == 'free' %}disabled title="Upgrade to Pro or Elite to unlock Forex/MT sync"{% endif %}>
+            <span class="market-icon">💱</span> Forex / Prop
+            <span class="market-desc">MT4/MT5 Investor Pass</span>
+            {% if user_tier == 'free' %}<span class="locked-badge">🔒 PRO / ELITE</span>{% endif %}
+        </button>
+        <button class="market-btn" onclick="selectMarket('indian_stock')" id="mktIndian">
+            <span class="market-icon">📈</span> Indian Stocks
+            <span class="market-desc">CSV Tradebook Upload</span>
+        </button>
+    </div>
+    
+    {% if user_tier == 'free' %}
+    <div class="upgrade-banner">
+        <span>🔒 <strong>Forex/MT4/MT5 sync</strong> requires Pro (₹399/mo) or Elite (₹799/mo) plan.</span>
+        <a href="{{ url_for('user.subscription') }}" class="btn-upgrade-sm">Upgrade →</a>
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('user.sync_connect') }}" id="syncForm">
+        <input type="hidden" name="market" id="marketInput" value="crypto">
+        <input type="hidden" name="platform" id="platformInput" value="">
+        <input type="hidden" name="method" id="methodInput" value="api">
+        <input type="hidden" name="custom_exchange" id="customExchangeInput" value="">
+        
+        <!-- ═══════════════════════════════════════ -->
+        <!-- CRYPTO SETUP -->
+        <!-- ═══════════════════════════════════════ -->
+        <div id="cryptoSetup" class="setup-card">
+            <h6>🔗 Select Exchange</h6>
+            
+            <div class="form-group" style="position:relative;">
+                <label>Exchange *</label>
+                <input type="text" id="exchangeSearch" placeholder="Type to search 100+ exchanges..." 
+                       oninput="filterExchangeList()" onfocus="showExchangeDropdown()" autocomplete="off"
+                       style="padding-right:35px;">
+                <i class="bi bi-search" style="position:absolute;right:12px;top:34px;color:var(--text-muted);pointer-events:none;"></i>
+                <div class="exchange-dropdown" id="exchangeDropdown"></div>
+            </div>
+            
+            <div class="form-group">
+                <label>Label (Optional)</label>
+                <input type="text" name="label" placeholder="e.g. My Binance Spot Account">
+            </div>
+            <div class="form-group">
+                <label>API Key *</label>
+                <input type="password" name="api_key" placeholder="Enter your read-only API key" id="apiKey" class="crypto-required">
+                <div class="hint">Create a <strong>read-only</strong> API key in your exchange settings. Never share your trading key.</div>
+            </div>
+            <div class="form-group">
+                <label>API Secret *</label>
+                <input type="password" name="api_secret" placeholder="Enter your API secret" class="crypto-required">
+            </div>
+            <div class="form-group" id="passphraseGroup" style="display:none;">
+                <label>Passphrase</label>
+                <input type="password" name="passphrase" placeholder="Enter passphrase (if required)">
+                <div class="hint">Required for OKX, KuCoin, Coinbase, and some other exchanges.</div>
+            </div>
+            
+            <div class="security-note">
+                <i class="bi bi-shield-check"></i>
+                <span>Crypto exchanges support <strong>true read-only API keys</strong>. Even if our server was compromised, these keys cannot execute trades or withdraw funds. This is enforced by the exchange, not by us.</span>
+            </div>
+        </div>
+        
+        <!-- ═══════════════════════════════════════ -->
+        <!-- FOREX / MT SETUP -->
+        <!-- ═══════════════════════════════════════ -->
+        <div id="forexSetup" class="setup-card" style="display:none;">
+            <h6>🔗 Select Platform</h6>
+            <div class="platform-grid" id="forexPlatforms">
+                <div class="platform-chip" onclick="selectPlatform('forex','mt5')" data-platform="mt5">
+                    <span class="chip-icon">📊</span> MetaTrader 5
+                </div>
+                <div class="platform-chip" onclick="selectPlatform('forex','mt4')" data-platform="mt4">
+                    <span class="chip-icon">📈</span> MetaTrader 4
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Label (Optional)</label>
+                <input type="text" name="label" placeholder="e.g. FTMO Challenge Account">
+            </div>
+            <div class="form-group">
+                <label>Server Name *</label>
+                <input type="text" name="server_name" placeholder="e.g. FTMO-Demo, ICMarkets-Live" class="forex-required">
+                <div class="hint">Found in your MT4/MT5 terminal under File → Login to Trade Account.</div>
+            </div>
+            <div class="form-group">
+                <label>Account Number *</label>
+                <input type="text" name="mt_account_number" placeholder="Your MT4/MT5 login ID" class="forex-required">
+            </div>
+            <div class="form-group">
+                <label>Investor Password (Read-Only) *</label>
+                <input type="password" name="investor_password" placeholder="Investor password — NOT master password" class="forex-required">
+                <div class="hint success">✅ The investor password is <strong>platform-enforced read-only</strong>. It cannot place trades.</div>
+                <div class="hint warn">⚠️ Never enter your master/trading password here.</div>
+            </div>
+            
+            <div class="security-note">
+                <i class="bi bi-shield-check"></i>
+                <span>MT4/MT5 investor passwords are <strong>cryptographically incapable of executing trades</strong>. This is the safest credential type available, enforced by the MetaTrader platform itself.</span>
+            </div>
+        </div>
+        
+        <!-- ═══════════════════════════════════════ -->
+        <!-- INDIAN STOCKS SETUP -->
+        <!-- ═══════════════════════════════════════ -->
+        <div id="indianSetup" class="setup-card" style="display:none;">
+            <h6>📋 Indian Stock Broker</h6>
+            <div class="platform-grid" id="indianPlatforms">
+                <div class="platform-chip" onclick="selectPlatform('indian_stock','zerodha')" data-platform="zerodha">
+                    <span class="chip-icon">🔶</span> Zerodha
+                </div>
+                <div class="platform-chip" onclick="selectPlatform('indian_stock','angelone')" data-platform="angelone">
+                    <span class="chip-icon">🔷</span> Angel One
+                </div>
+                <div class="platform-chip" onclick="selectPlatform('indian_stock','upstox')" data-platform="upstox">
+                    <span class="chip-icon">🟠</span> Upstox
+                </div>
+                <div class="platform-chip" onclick="selectPlatform('indian_stock','groww')" data-platform="groww">
+                    <span class="chip-icon">🟢</span> Groww
+                </div>
+                <div class="platform-chip" onclick="selectPlatform('indian_stock','dhan')" data-platform="dhan">
+                    <span class="chip-icon">🔵</span> Dhan
+                </div>
+                <div class="platform-chip" onclick="selectPlatform('indian_stock','fyers')" data-platform="fyers">
+                    <span class="chip-icon">🟣</span> Fyers
+                </div>
+                <div class="platform-chip" onclick="selectPlatform('indian_stock','icicidirect')" data-platform="icicidirect">
+                    <span class="chip-icon">🏦</span> ICICI Direct
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Label (Optional)</label>
+                <input type="text" name="label" placeholder="e.g. My Zerodha Account">
+            </div>
+            
+            <div style="background:rgba(38,166,154,0.05);border:1px solid rgba(38,166,154,0.1);border-radius:10px;padding:14px;text-align:center;margin-bottom:16px;">
+                <i class="bi bi-file-earmark-arrow-down" style="font-size:2rem;color:var(--accent);display:block;margin-bottom:8px;"></i>
+                <p style="font-size:0.8rem;color:#94a3b8;margin:0;">
+                    Indian brokers use <strong>CSV tradebook upload</strong> for safety.<br>
+                    No API credentials are stored — just download your tradebook from your broker's portal and upload it here.
+                </p>
+            </div>
+            
+            <div class="security-note">
+                <i class="bi bi-info-circle"></i>
+                <span>Indian broker API keys are trade-capable. We use <strong>CSV import only</strong> by default — zero risk to your trading account. API sync will be available as an opt-in advanced feature in a future update.</span>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn-submit" id="submitBtn" disabled>
+            <i class="bi bi-link-45deg"></i> Connect
+        </button>
+    </form>
+    
+    <div style="text-align:center;margin-top:12px;">
+        <a href="{{ url_for('user.sync_center') }}" style="color:#64748b;font-size:0.78rem;">← Back to Sync Center</a>
+    </div>
+</div>
+
+<script>
+    let currentMarket = 'crypto';
+    let currentPlatform = '';
+    
+    const ALL_EXCHANGES = [
+        'alpaca','apex','aster','backpack','bigone','binance','bingx','bit2c',
+        'bitbank','bitbns','bitfinex','bitflyer','bitget','bithumb','bitmart',
+        'bitmex','bitopro','bitrue','bitso','bitstamp','bitteam','bittrade',
+        'bitvavo','blockchaincom','blofin','btcbox','btcmarkets','btcturk',
+        'bullish','bybit','bydfi','cex','coinbase','coinbaseexchange',
+        'coinbaseinternational','coincheck','coinex','coinmate','coinone',
+        'coinsph','coinspot','cryptocom','cryptomus','deepcoin','delta',
+        'deribit','derive','digifinex','dydx','exmo','foxbit','gate','gemini',
+        'grvt','hashkey','hibachi','hitbtc','hollaex','htx','hyperliquid',
+        'independentreserve','indodax','kraken','krakenfutures','kucoin',
+        'kucoinfutures','latoken','lbank','lighter','luno','mercado','mexc',
+        'modetrade','mudrex','nado','ndax','okx','onetrading','p2b','pacifica',
+        'paradex','paymium','phemex','poloniex','tokocrypto','toobit','upbit',
+        'weex','whitebit','woo','woofipro','xt','zaif','zebpay'
+    ];
+    
+    function showExchangeDropdown() {
+        filterExchangeList();
+        document.getElementById('exchangeDropdown').classList.add('show');
+    }
+    
+    function filterExchangeList() {
+        const search = document.getElementById('exchangeSearch').value.toLowerCase();
+        const dropdown = document.getElementById('exchangeDropdown');
+        
+        const filtered = ALL_EXCHANGES.filter(ex => ex.includes(search));
+        
+        if (filtered.length === 0) {
+            dropdown.innerHTML = '<div class="exchange-dropdown-empty">No exchange found</div>';
+        } else {
+            dropdown.innerHTML = filtered.map(ex => 
+                `<div class="exchange-dropdown-item" onclick="selectExchange('${ex}')">${ex}</div>`
+            ).join('');
+        }
+    }
+    
+    function selectExchange(exchange) {
+        document.getElementById('exchangeSearch').value = exchange.charAt(0).toUpperCase() + exchange.slice(1);
+        document.getElementById('platformInput').value = exchange;
+        document.getElementById('customExchangeInput').value = exchange;
+        document.getElementById('exchangeDropdown').classList.remove('show');
+        currentPlatform = exchange;
+        
+        const passphraseGroup = document.getElementById('passphraseGroup');
+        if (passphraseGroup) {
+            passphraseGroup.style.display = ['okx','kucoin','bitget','coinbase','gemini'].includes(exchange) ? 'block' : 'none';
+        }
+        
+        updateSubmitButton();
+    }
+    
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('exchangeDropdown');
+        const search = document.getElementById('exchangeSearch');
+        if (dropdown && search && e.target !== search && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+    
+    function selectMarket(market) {
+        if (market === 'forex' && '{{ user_tier }}' === 'free') return;
+        
+        currentMarket = market;
+        currentPlatform = '';
+        document.getElementById('marketInput').value = market;
+        document.getElementById('platformInput').value = '';
+        document.getElementById('exchangeSearch').value = '';
+        
+        document.querySelectorAll('.market-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('mkt' + (market === 'forex' ? 'Forex' : market === 'crypto' ? 'Crypto' : 'Indian')).classList.add('active');
+        
+        document.getElementById('cryptoSetup').style.display = market === 'crypto' ? 'block' : 'none';
+        document.getElementById('forexSetup').style.display = market === 'forex' ? 'block' : 'none';
+        document.getElementById('indianSetup').style.display = market === 'indian_stock' ? 'block' : 'none';
+        
+        document.querySelectorAll('.crypto-required, .forex-required').forEach(el => el.required = false);
+        
+        if (market === 'crypto') document.querySelectorAll('.crypto-required').forEach(el => el.required = true);
+        if (market === 'forex') document.querySelectorAll('.forex-required').forEach(el => el.required = true);
+        
+        updateSubmitButton();
+    }
+    
+    function selectPlatform(market, platform) {
+        currentPlatform = platform;
+        document.getElementById('platformInput').value = platform;
+        document.getElementById('methodInput').value = market === 'indian_stock' ? 'csv' : 'api';
+        updateSubmitButton();
+    }
+    
+    function updateSubmitButton() {
+        const hasPlatform = currentPlatform || document.getElementById('platformInput').value;
+        document.getElementById('submitBtn').disabled = !(currentMarket && hasPlatform);
+    }
+    
+    document.getElementById('syncForm').addEventListener('submit', function(e) {
+        console.log('Submitting... Market:', document.getElementById('marketInput').value, 'Platform:', document.getElementById('platformInput').value);
+    });
+</script>
+{% endblock %}

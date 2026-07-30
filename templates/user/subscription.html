@@ -101,6 +101,63 @@
         opacity: 0.85;
     }
 
+    /* ── Billing Toggle ── */
+    .billing-toggle-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    .billing-toggle {
+        display: inline-flex;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 5px;
+        gap: 4px;
+        backdrop-filter: blur(12px);
+    }
+
+    .billing-toggle button {
+        padding: 12px 28px;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: transparent;
+        color: var(--text-secondary);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        position: relative;
+        white-space: nowrap;
+    }
+
+    .billing-toggle button.active {
+        background: linear-gradient(135deg, #00c2ff, #0072ff);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(0, 194, 255, 0.4);
+    }
+
+    .billing-toggle button:hover:not(.active) {
+        color: var(--text-primary);
+        background: rgba(255,255,255,0.05);
+    }
+
+    .save-badge {
+        display: inline-block;
+        background: #00e676;
+        color: #000;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-left: 6px;
+        letter-spacing: 0.5px;
+    }
+
     /* Plan Card Styling */
     .plan-card {
         background: var(--card-bg);
@@ -305,6 +362,26 @@
         margin-right: 6px;
     }
 
+    /* Yearly Discount Badge */
+    .yearly-discount {
+        display: inline-block;
+        background: linear-gradient(135deg, #00e676, #00c853);
+        color: #000;
+        font-weight: 700;
+        font-size: 0.65rem;
+        padding: 3px 10px;
+        border-radius: 12px;
+        margin-top: 6px;
+        letter-spacing: 0.5px;
+    }
+
+    .original-price {
+        text-decoration: line-through;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-right: 6px;
+    }
+
     /* Comparison Table with Dark Theme */
     .comparison-table {
         background: var(--table-bg) !important;
@@ -388,7 +465,6 @@
         color: var(--text-primary) !important;
     }
     
-    /* Table header wrapper */
     .comparison-table-header {
         background: var(--table-header) !important;
         padding: 1.25rem 1.5rem;
@@ -405,7 +481,6 @@
         color: var(--glow-cyan);
     }
     
-    /* Table footer */
     .comparison-table-footer {
         background: var(--footer-bg) !important;
         padding: 0.75rem 1.5rem;
@@ -458,25 +533,6 @@
         font-family: 'Inter', sans-serif;
     }
     
-    /* Country selector styling */
-    .country-selector {
-        background: var(--card-bg) !important;
-        border: 1px solid var(--card-border) !important;
-        color: var(--text-primary) !important;
-        backdrop-filter: blur(12px);
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 0.75rem;
-        cursor: pointer;
-        font-family: 'Inter', sans-serif;
-    }
-    
-    .country-selector option {
-        background: #0a101e;
-        color: #eaf4ff;
-    }
-    
-    /* Token counter styling */
     .token-badge {
         display: inline-block;
         background: rgba(0, 229, 255, 0.08);
@@ -493,8 +549,15 @@
         border: 1px solid rgba(255, 215, 0, 0.2);
         color: var(--glow-gold);
     }
+
+    .plan-price-section {
+        display: none;
+    }
     
-    /* Responsive fixes */
+    .plan-price-section.active {
+        display: block;
+    }
+
     @media (max-width: 768px) {
         .comparison-table .table thead th,
         .comparison-table .table tbody td {
@@ -508,6 +571,10 @@
             font-size: 0.6rem;
             padding: 6px 16px;
             top: -12px;
+        }
+        .billing-toggle button {
+            padding: 10px 18px;
+            font-size: 0.75rem;
         }
     }
 </style>
@@ -534,25 +601,22 @@
     </div>
 </div>
 
-<!-- Country Selector -->
-<div style="text-align:right;margin-bottom:10px;">
-    <select class="country-selector" onchange="setCountry(this.value)">
-        <option value="IN" {% if country == 'IN' %}selected{% endif %}>🇮🇳 India (₹)</option>
-        <option value="US" {% if country == 'US' %}selected{% endif %}>🇺🇸 USD ($)</option>
-    </select>
+<!-- Billing Toggle -->
+<div class="billing-toggle-wrapper">
+    <div class="billing-toggle">
+        <button id="btnMonthly" class="active" onclick="switchBilling('monthly')">
+            📅 Monthly
+        </button>
+        <button id="btnYearly" onclick="switchBilling('yearly')">
+            🎁 Yearly <span class="save-badge">SAVE 17%</span>
+        </button>
+    </div>
 </div>
-
-<script>
-function setCountry(country) {
-    document.cookie = "country=" + country + ";path=/;max-age=2592000";
-    location.reload();
-}
-</script>
 
 <!-- Pricing Cards -->
 <div class="row g-4 mb-5">
 
-    <!-- Free Plan -->
+    <!-- ==================== FREE PLAN ==================== -->
     <div class="col-lg-4 col-md-6">
         <div class="card plan-card free-card h-100 border-0 shadow-sm" style="border-radius: 24px;">
             <div class="card-body p-4 p-xl-5 d-flex flex-column text-center">
@@ -628,7 +692,7 @@ function setCountry(country) {
         </div>
     </div>
 
-    <!-- Pro Plan -->
+    <!-- ==================== PRO PLAN ==================== -->
     <div class="col-lg-4 col-md-6">
         <div class="card plan-card pro-card h-100 border-0" style="border-radius: 24px; z-index: 1;">
             <div class="popular-badge">🔥 MOST POPULAR</div>
@@ -637,9 +701,23 @@ function setCountry(country) {
                 <h4 class="fw-bold mt-2" style="color: var(--text-primary);">Pro</h4>
                 <p class="plan-description small mb-3">AI-powered trading insights</p>
 
-                <div class="mb-4">
-                    <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">{{ symbol }} 399</h2>
-                    <span class="price-period small">per month</span>
+                <!-- Monthly Price -->
+                <div class="plan-price-section active" id="proMonthly">
+                    <div class="mb-4">
+                        <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">₹399</h2>
+                        <span class="price-period small">per month</span>
+                    </div>
+                </div>
+
+                <!-- Yearly Price -->
+                <div class="plan-price-section" id="proYearly">
+                    <div class="mb-4">
+                        <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">
+                            <span class="original-price">₹4,788</span> ₹3,990
+                        </h2>
+                        <span class="price-period small">per year</span>
+                        <div class="yearly-discount">🎁 2 MONTHS FREE — Save ₹798</div>
+                    </div>
                 </div>
 
                 <div class="text-start flex-grow-1">
@@ -696,7 +774,7 @@ function setCountry(country) {
                             <i class="bi bi-check2-circle me-2"></i>Current Plan
                         </button>
                     {% else %}
-                        <a href="{{ url_for('payment.checkout', plan_tier='pro', plan_type='monthly') }}" class="btn btn-pro w-100 btn-upgrade text-decoration-none" style="display:flex;align-items:center;justify-content:center;">
+                        <a href="{{ url_for('payment.checkout', plan_tier='pro', plan_type='monthly') }}" class="btn btn-pro w-100 btn-upgrade text-decoration-none pro-checkout-link" style="display:flex;align-items:center;justify-content:center;">
                             <i class="bi bi-rocket-takeoff me-2"></i>Upgrade to Pro
                         </a>
                     {% endif %}
@@ -705,7 +783,7 @@ function setCountry(country) {
         </div>
     </div>
 
-    <!-- Elite Plan -->
+    <!-- ==================== ELITE PLAN ==================== -->
     <div class="col-lg-4 col-md-6">
         <div class="card plan-card elite-card h-100 border-0 shadow-sm" style="border-radius: 24px;">
             <div class="elite-badge">👑 PREMIUM</div>
@@ -714,9 +792,23 @@ function setCountry(country) {
                 <h4 class="fw-bold mt-2" style="color: var(--text-primary);">Elite</h4>
                 <p class="plan-description small mb-3">Complete AI coaching suite</p>
 
-                <div class="mb-4">
-                    <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">{{ symbol }} 799</h2>
-                    <span class="price-period small">per month</span>
+                <!-- Monthly Price -->
+                <div class="plan-price-section active" id="eliteMonthly">
+                    <div class="mb-4">
+                        <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">₹799</h2>
+                        <span class="price-period small">per month</span>
+                    </div>
+                </div>
+
+                <!-- Yearly Price -->
+                <div class="plan-price-section" id="eliteYearly">
+                    <div class="mb-4">
+                        <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">
+                            <span class="original-price">₹9,588</span> ₹7,990
+                        </h2>
+                        <span class="price-period small">per year</span>
+                        <div class="yearly-discount">🎁 2 MONTHS FREE — Save ₹1,598</div>
+                    </div>
                 </div>
 
                 <div class="text-start flex-grow-1">
@@ -774,7 +866,7 @@ function setCountry(country) {
                             <i class="bi bi-check2-circle me-2"></i>Current Plan
                         </button>
                     {% else %}
-                        <a href="{{ url_for('payment.checkout', plan_tier='elite', plan_type='monthly') }}" class="btn btn-elite w-100 btn-upgrade text-decoration-none" style="display:flex;align-items:center;justify-content:center;">
+                        <a href="{{ url_for('payment.checkout', plan_tier='elite', plan_type='monthly') }}" class="btn btn-elite w-100 btn-upgrade text-decoration-none elite-checkout-link" style="display:flex;align-items:center;justify-content:center;">
                             <i class="bi bi-gem me-2"></i>Upgrade to Elite
                         </a>
                     {% endif %}
@@ -894,5 +986,37 @@ function setCountry(country) {
         </small>
     </div>
 </div>
+
+<script>
+    let currentBilling = 'monthly';
+
+    function switchBilling(type) {
+        currentBilling = type;
+
+        // Update toggle buttons
+        document.getElementById('btnMonthly').classList.toggle('active', type === 'monthly');
+        document.getElementById('btnYearly').classList.toggle('active', type === 'yearly');
+
+        // Show/hide price sections
+        document.querySelectorAll('.plan-price-section').forEach(el => el.classList.remove('active'));
+        if (type === 'monthly') {
+            document.getElementById('proMonthly').classList.add('active');
+            document.getElementById('eliteMonthly').classList.add('active');
+        } else {
+            document.getElementById('proYearly').classList.add('active');
+            document.getElementById('eliteYearly').classList.add('active');
+        }
+
+        // Update checkout links
+        const proLink = document.querySelector('.pro-checkout-link');
+        const eliteLink = document.querySelector('.elite-checkout-link');
+        if (proLink) {
+            proLink.href = "{{ url_for('payment.checkout', plan_tier='pro', plan_type='') }}" + type;
+        }
+        if (eliteLink) {
+            eliteLink.href = "{{ url_for('payment.checkout', plan_tier='elite', plan_type='') }}" + type;
+        }
+    }
+</script>
 
 {% endblock %}

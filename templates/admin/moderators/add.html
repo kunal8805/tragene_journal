@@ -1,0 +1,81 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">{{ 'Edit' if moderator else 'Add' }} Moderator</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="full_name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="full_name" name="full_name" 
+                               value="{{ moderator.full_name if moderator else '' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ moderator.email if moderator else '' }}" required 
+                               {% if moderator %}readonly{% endif %}>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        Password{% if moderator %} <small class="text-muted">(leave blank to keep current)</small>{% else %} *{% endif %}
+                    </label>
+                    <input type="password" class="form-control" id="password" name="password"
+                           {% if not moderator %}required{% endif %}>
+                </div>
+
+                <h4 class="mt-4 mb-3">Permissions</h4>
+                {% for section, permissions in permission_groups.items() %}
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">{{ section }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for perm in permissions %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="permissions" 
+                                           value="{{ perm.permission_key }}" 
+                                           id="perm_{{ perm.permission_key }}"
+                                           {% if moderator and perm.permission_key in current_perms %}checked{% endif %}>
+                                    <label class="form-check-label" for="perm_{{ perm.permission_key }}">
+                                        <strong>{{ perm.label }}</strong><br>
+                                        <small class="text-muted">{{ perm.description }}</small>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {{ 'Update' if moderator else 'Create' }} Moderator
+                    </button>
+                    <a href="{{ url_for('moderator.manage_moderators') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

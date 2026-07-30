@@ -1,7 +1,7 @@
 """
-Payment Routes - Multi-Currency Cashfree Integration
+Payment Routes - India Only (Cashfree Integration)
 Handles: Checkout page, order creation, webhook verification, payment status
-Supports: India (₹ INR via Cashfree) + International ($ USD via Stripe)
+Supports: India (₹ INR via Cashfree)
 Security: Blocks unverified users from purchasing
 """
 
@@ -20,20 +20,13 @@ import requests
 payment_bp = Blueprint('payment', __name__, url_prefix='/payment')
 
 # ═══════════════════════════════════════════════════════════
-# 💰 FALLBACK PLAN PRICING (used only if DB is empty)
+# 💰 PLAN PRICING (India Only - INR)
 # ═══════════════════════════════════════════════════════════
 
-FALLBACK_PRICES = {
-    'IN': {
-        'pro': {'monthly': 399, 'yearly': 3999},
-        'elite': {'monthly': 799, 'yearly': 7999},
-        'currency': 'INR', 'symbol': '₹', 'gateway': 'cashfree', 'gateway_name': 'Cashfree'
-    },
-    'DEFAULT': {
-        'pro': {'monthly': 5, 'yearly': 49},
-        'elite': {'monthly': 10, 'yearly': 99},
-        'currency': 'USD', 'symbol': '$', 'gateway': 'stripe', 'gateway_name': 'Stripe'
-    }
+PRICING = {
+    'pro': {'monthly': 399, 'yearly': 3990},
+    'elite': {'monthly': 799, 'yearly': 7990},
+    'currency': 'INR', 'symbol': '₹'
 }
 
 GATEWAY_FEE_PERCENT = 2
@@ -43,63 +36,27 @@ CASHFREE_APP_ID = os.getenv('CASHFREE_APP_ID', '')
 CASHFREE_SECRET_KEY = os.getenv('CASHFREE_SECRET_KEY', '')
 CASHFREE_API_URL = 'https://api.cashfree.com/pg'
 
-# Stripe config
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
-STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', '')
 
 # ═══════════════════════════════════════════════════════════
-# 🌍 COUNTRY DETECTION
+# 💰 GET PRICING
 # ═══════════════════════════════════════════════════════════
 
-def get_user_country():
-    """Detect user's country for pricing"""
-    country = request.cookies.get('country')
-    if country:
-        return country
+def get_pricing():
+    """Get pricing from database or fallback to hardcoded"""
     try:
-        country = request.headers.get('CF-IPCountry')
-        if country:
-            return country
-        response = requests.get('https://ipapi.co/json/', timeout=3)
-        data = response.json()
-        country = data.get('country_code', 'IN')
-        return country
-    except:
-        return 'IN'
-
-
-def get_pricing_for_user():
-    """
-    Get pricing from database (PlanPrice model).
-    Falls back to hardcoded prices if DB is empty.
-    """
-    country = get_user_country()
-    
-    # Try to get prices from database
-    try:
-        plans = PlanPrice.query.filter_by(is_active=True).order_by(PlanPrice.sort_order).all()
-        
+        plans = PlanPrice.query.filter_by(is_active=True, currency='INR').order_by(PlanPrice.sort_order).all()
         if plans:
-            # Build pricing dict from database
-            currency = plans[0].currency
-            symbol = '₹' if currency == 'INR' else '$'
-            gateway = 'cashfree' if currency == 'INR' else 'stripe'
-            gateway_name = 'Cashfree' if currency == 'INR' else 'Stripe'
-            
-            pricing = {'currency': currency, 'symbol': symbol, 'gateway': gateway, 'gateway_name': gateway_name}
-            
+            pricing = {'currency': 'INR', 'symbol': '₹', 'gateway': 'cashfree', 'gateway_name': 'Cashfree'}
             for plan in plans:
                 if plan.plan_tier not in pricing:
                     pricing[plan.plan_tier] = {}
-                pricing[plan.plan_tier][plan.plan_type] = plan.total_price  # Use total price (includes fee)
-            
-            return pricing, country
+                pricing[plan.plan_tier][plan.plan_type] = plan.total_price
+                pricing[plan.plan_tier][plan.plan_type + '_base'] = plan.price
+            return pricing
     except Exception as e:
         print(f"⚠️ Could not load prices from DB: {e}")
     
-    # Fallback to hardcoded prices
-    fallback = FALLBACK_PRICES.get(country, FALLBACK_PRICES['DEFAULT'])
-    return fallback, country
+    return PRICING
 
 
 # ═══════════════════════════════════════════════════════════
@@ -114,10 +71,10 @@ def checkout(plan_tier, plan_type):
         flash('Please verify your email before purchasing a plan. Check your inbox or go to Settings to resend the verification email.', 'warning')
         return redirect(url_for('user.settings'))
     
-    pricing, country = get_pricing_for_user()
+    pricing = get_pricing()
     
     # Get valid plan types from pricing
-    valid_types = pricing.get(plan_tier, {}).keys()
+    valid_types = {k for k in pricing.get(plan_tier, {}).keys() if not k.endswith('_base')}
     if plan_tier not in pricing or plan_type not in valid_types:
         flash('Invalid plan selected.', 'danger')
         return redirect(url_for('user.subscription'))
@@ -127,7 +84,7 @@ def checkout(plan_tier, plan_type):
         return redirect(url_for('user.subscription'))
     
     # Get plan details from database if available
-    plan = PlanPrice.query.filter_by(plan_tier=plan_tier, plan_type=plan_type, is_active=True).first()
+    plan = PlanPrice.query.filter_by(plan_tier=plan_tier, plan_type=plan_type, is_active=True, currency='INR').first()
     
     if plan:
         base_price = plan.price
@@ -144,22 +101,20 @@ def checkout(plan_tier, plan_type):
     
     plan_label = plan_type.replace('_', ' ').title()
     if plan_type == 'yearly':
-        plan_label = 'Yearly (Save ~16%)'
+        plan_label = 'Yearly (2 Months Free!)'
     elif plan_type == 'quarterly':
         plan_label = 'Quarterly'
     elif plan_type == 'half_yearly':
         plan_label = '6 Months'
-    
-    is_india = (pricing.get('currency', 'USD') == 'INR')
     
     return render_template('user/payment/checkout.html',
         plan_tier=plan_tier, plan_type=plan_type,
         plan_name=plan_name, plan_label=plan_label,
         base_price=base_price, gateway_fee=gateway_fee,
         total_price=total_price, total_paise=int(total_price * 100),
-        currency=pricing.get('currency', 'USD'), symbol=pricing.get('symbol', '$'),
-        is_india=is_india, gateway=pricing.get('gateway', 'stripe'),
-        gateway_name=pricing.get('gateway_name', 'Stripe'), country=country
+        currency='INR', symbol='₹',
+        is_india=True, gateway='cashfree',
+        gateway_name='Cashfree', country='IN'
     )
 
 
@@ -170,7 +125,7 @@ def checkout(plan_tier, plan_type):
 @payment_bp.route('/create-order', methods=['POST'])
 @login_required
 def create_order():
-    """Create a payment order with Cashfree/Stripe"""
+    """Create a payment order with Cashfree"""
     if not current_user.email_verified:
         return jsonify({'success': False, 'message': 'Please verify your email before purchasing. Go to Settings to verify.'})
     
@@ -178,9 +133,9 @@ def create_order():
     plan_tier = data.get('plan_tier')
     plan_type = data.get('plan_type')
     
-    pricing, country = get_pricing_for_user()
+    pricing = get_pricing()
     
-    valid_types = pricing.get(plan_tier, {}).keys()
+    valid_types = {k for k in pricing.get(plan_tier, {}).keys() if not k.endswith('_base')}
     if plan_tier not in pricing or plan_type not in valid_types:
         return jsonify({'success': False, 'message': 'Invalid plan.'})
     
@@ -213,7 +168,7 @@ def create_order():
         db.session.commit()
     
     # Get price from database
-    plan = PlanPrice.query.filter_by(plan_tier=plan_tier, plan_type=plan_type, is_active=True).first()
+    plan = PlanPrice.query.filter_by(plan_tier=plan_tier, plan_type=plan_type, is_active=True, currency='INR').first()
     
     if plan:
         base_price = plan.price
@@ -226,8 +181,6 @@ def create_order():
         total_price = round(base_price + gateway_fee, 2)
     
     total_paise = int(total_price * 100)
-    currency = pricing.get('currency', 'INR')
-    gateway = pricing.get('gateway', 'cashfree')
     
     order_id = f"TRADEJ_{current_user.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
     
@@ -237,7 +190,7 @@ def create_order():
         base_amount=int(base_price * 100),
         gateway_fee=int(gateway_fee * 100),
         total_amount=total_paise,
-        currency=currency,
+        currency='INR',
         plan_tier=plan_tier,
         plan_type=plan_type,
         status='PENDING'
@@ -245,26 +198,17 @@ def create_order():
     db.session.add(payment)
     db.session.commit()
     
-    if gateway == 'cashfree':
-        result = _create_cashfree_order(order_id, total_paise, current_user)
-        if result and result.get('payment_session_id'):
-            payment.cashfree_session_id = result['payment_session_id']
-            db.session.commit()
-            return jsonify({
-                'success': True,
-                'payment_session_id': result['payment_session_id'],
-                'order_id': order_id,
-                'gateway': 'cashfree'
-            })
-    elif gateway == 'stripe':
-        result = _create_stripe_session(order_id, total_price, currency, plan_tier, plan_type, current_user)
-        if result and result.get('url'):
-            return jsonify({
-                'success': True,
-                'url': result['url'],
-                'order_id': order_id,
-                'gateway': 'stripe'
-            })
+    # Create Cashfree order
+    result = _create_cashfree_order(order_id, total_paise, current_user)
+    if result and result.get('payment_session_id'):
+        payment.cashfree_session_id = result['payment_session_id']
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'payment_session_id': result['payment_session_id'],
+            'order_id': order_id,
+            'gateway': 'cashfree'
+        })
     
     payment.status = 'FAILED'
     payment.error_message = 'Failed to create payment session.'
@@ -329,42 +273,6 @@ def webhook():
 
 
 # ═══════════════════════════════════════════════════════════
-# 🔄 STRIPE WEBHOOK
-# ═══════════════════════════════════════════════════════════
-
-@payment_bp.route('/stripe-webhook', methods=['POST'])
-def stripe_webhook():
-    """Handle Stripe webhook notifications"""
-    payload = request.get_data(as_text=True)
-    sig_header = request.headers.get('Stripe-Signature')
-    
-    try:
-        import stripe
-        stripe.api_key = STRIPE_SECRET_KEY
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, os.getenv('STRIPE_WEBHOOK_SECRET', '')
-        )
-    except Exception as e:
-        print(f"❌ Stripe Webhook Error: {e}")
-        return jsonify({'status': 'error'}), 400
-    
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        order_id = session.get('client_reference_id')
-        payment = Payment.query.filter_by(cashfree_order_id=order_id).first()
-        if payment and payment.status != 'SUCCESS':
-            payment.status = 'SUCCESS'
-            payment.cashfree_payment_id = session.get('id')
-            payment.webhook_response = json.dumps(session)
-            payment.payment_completed_at = datetime.utcnow()
-            _activate_subscription(payment.user_id, payment.plan_tier, payment.plan_type)
-            db.session.commit()
-            print(f"✅ Stripe payment SUCCESS: {order_id}")
-    
-    return jsonify({'status': 'ok'})
-
-
-# ═══════════════════════════════════════════════════════════
 # ✅ SUCCESS / ❌ CANCEL / FAILED
 # ═══════════════════════════════════════════════════════════
 
@@ -390,7 +298,7 @@ def success():
     if payment.status != 'SUCCESS':
         status_verified = False
         
-        if payment.cashfree_session_id:
+        if payment.cashfree_session_id and not payment.cashfree_session_id.startswith('mock_'):
             status_data = _get_cashfree_order_status(order_id)
             
             if status_data:
@@ -463,7 +371,7 @@ def check_payment_status(order_id):
     if not payment:
         return jsonify({'status': 'NOT_FOUND'})
     
-    if payment.status == 'PENDING' and payment.cashfree_session_id:
+    if payment.status == 'PENDING' and payment.cashfree_session_id and not payment.cashfree_session_id.startswith('mock_'):
         status_data = _get_cashfree_order_status(order_id)
         if status_data:
             order_status = status_data.get('order_status')
@@ -504,7 +412,7 @@ def verify_payment(order_id):
     if payment.status == 'SUCCESS':
         return jsonify({'success': True, 'message': 'Payment already confirmed'})
     
-    if payment.cashfree_session_id:
+    if payment.cashfree_session_id and not payment.cashfree_session_id.startswith('mock_'):
         status_data = _get_cashfree_order_status(order_id)
         if status_data:
             order_status = status_data.get('order_status')
@@ -531,21 +439,11 @@ def verify_payment(order_id):
 
 
 # ═══════════════════════════════════════════════════════════
-# 🌍 SET COUNTRY
-# ═══════════════════════════════════════════════════════════
-
-@payment_bp.route('/set-country/<country>')
-def set_country(country):
-    resp = redirect(request.referrer or url_for('user.subscription'))
-    resp.set_cookie('country', country, max_age=86400 * 30)
-    return resp
-
-
-# ═══════════════════════════════════════════════════════════
 # 🔧 HELPERS
 # ═══════════════════════════════════════════════════════════
 
 def _create_cashfree_order(order_id, amount_paise, user):
+    """Create Cashfree order - INR only"""
     if not CASHFREE_APP_ID or not CASHFREE_SECRET_KEY:
         print("⚠️ Cashfree not configured. Using mock.")
         return {'payment_session_id': f'mock_{order_id}'}
@@ -563,7 +461,7 @@ def _create_cashfree_order(order_id, amount_paise, user):
         'order_currency': 'INR',
         'customer_details': {
             'customer_id': str(user.id),
-            'customer_name': user.username or 'User',
+            'customer_name': user.full_name or user.username or 'User',
             'customer_email': user.email,
             'customer_phone': '9999999999'
         },
@@ -574,7 +472,7 @@ def _create_cashfree_order(order_id, amount_paise, user):
     }
     
     try:
-        print(f"🔄 Creating Cashfree order: {order_id}")
+        print(f"🔄 Creating Cashfree order: {order_id} (₹{amount_paise/100})")
         response = requests.post(f"{CASHFREE_API_URL}/orders", headers=headers, json=payload, timeout=10)
         response_data = response.json()
         print(f"📦 Cashfree response: {response.status_code}")
@@ -589,43 +487,8 @@ def _create_cashfree_order(order_id, amount_paise, user):
         return None
 
 
-def _create_stripe_session(order_id, amount, currency, plan_tier, plan_type, user):
-    if not STRIPE_SECRET_KEY:
-        print("⚠️ Stripe not configured.")
-        return None
-    
-    try:
-        import stripe
-        stripe.api_key = STRIPE_SECRET_KEY
-        
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': currency.lower(),
-                    'product_data': {
-                        'name': f'Tragene Journal {plan_tier.upper()} Plan - {plan_type.title()}',
-                        'description': f'{plan_tier.upper()} subscription - {plan_type} billing',
-                    },
-                    'unit_amount': int(amount * 100),
-                },
-                'quantity': 1,
-            }],
-            mode='subscription' if plan_type == 'monthly' else 'payment',
-            client_reference_id=order_id,
-            customer_email=user.email,
-            success_url=f"{request.host_url}payment/success?order_id={order_id}",
-            cancel_url=f"{request.host_url}payment/cancel",
-        )
-        
-        print(f"✅ Stripe session created: {session.id}")
-        return {'url': session.url}
-    except Exception as e:
-        print(f"❌ Stripe Error: {e}")
-        return None
-
-
 def _verify_webhook_signature(raw_body, timestamp, signature):
+    """Verify Cashfree webhook signature"""
     if not CASHFREE_SECRET_KEY:
         print("⚠️ Webhook verification skipped - no secret key configured")
         return True
@@ -649,6 +512,7 @@ def _verify_webhook_signature(raw_body, timestamp, signature):
 
 
 def _get_cashfree_order_status(order_id):
+    """Check Cashfree order status"""
     if not CASHFREE_APP_ID or not CASHFREE_SECRET_KEY:
         print("⚠️ Cashfree not configured - cannot check order status")
         return None

@@ -1,7 +1,7 @@
-from flask import Flask, render_template, flash, redirect, url_for, request
+from flask import Flask, render_template, flash, redirect, url_for, request, session
 from extensions import db, login_manager, migrate
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -36,6 +36,7 @@ def create_app():
     from payment_routes import payment_bp
     from blog_routes import blog_bp
     from seo_routes import seo_bp
+    from moderator_routes import moderator_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
@@ -45,6 +46,7 @@ def create_app():
     app.register_blueprint(payment_bp)
     app.register_blueprint(blog_bp)
     app.register_blueprint(seo_bp)
+    app.register_blueprint(moderator_bp)
     
     with app.app_context():
         db_path = os.path.join(basedir, 'trading_journal.db')
@@ -53,14 +55,13 @@ def create_app():
             create_admin()
             seed_template_rules()
             seed_ai_plan_defaults()
+            seed_moderator_permissions()
             print("✅ Database created with all tables!")
         else:
-            # Create any missing tables first
             db.create_all()
-            # Seed template rules if needed
             seed_template_rules()
-            # Seed AI plan defaults
             seed_ai_plan_defaults()
+            seed_moderator_permissions()
             migrate_existing_data()
 
     @app.context_processor
@@ -73,6 +74,37 @@ def create_app():
         if not page_meta and path == '/':
             page_meta = PageMetadata.query.filter_by(page_route='index').first()
         return dict(seo_settings=settings, page_meta=page_meta)
+
+    @app.context_processor
+    def inject_market_helpers():
+        from models import detect_market, get_market_info, get_currency_for_market
+        return dict(
+            detect_market=detect_market,
+            get_market_info=get_market_info,
+            get_currency_for_market=get_currency_for_market
+        )
+
+    @app.context_processor
+    def inject_moderator_permissions():
+        """Make moderator permissions available in all templates"""
+        from models import Moderator
+        
+        mod_id = session.get('moderator_id')
+        if mod_id:
+            moderator = Moderator.query.get(mod_id)
+            if moderator:
+                allowed = moderator.get_allowed_permissions()
+                return {
+                    'is_moderator': True,
+                    'moderator': moderator,
+                    'can_access': lambda key: key in allowed
+                }
+        
+        return {
+            'is_moderator': False,
+            'moderator': None,
+            'can_access': lambda key: True  # Admin sees everything
+        }
 
     @app.before_request
     def check_redirects():
@@ -96,7 +128,6 @@ def create_app():
             
     @app.after_request
     def add_security_headers(response):
-        # Security headers for production grade apps
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
@@ -108,53 +139,43 @@ def create_app():
     @app.route('/')
     @app.route('/home')
     def home():
-        """Home page - main landing page"""
         return render_template('index.html')
     
     # ===== LEGAL AND STATIC PAGES =====
     @app.route('/terms')
     def terms():
-        """Terms and Conditions page"""
         return render_template('terms.html', now=datetime.now())
 
     @app.route('/privacy')
     def privacy():
-        """Privacy Policy page"""
         return render_template('privacy.html', now=datetime.now())
 
     @app.route('/refund-policy')
     @app.route('/refund')
     def refund_policy():
-        """Refund Policy page"""
         return render_template('refund.html', now=datetime.now())
 
     @app.route('/faq')
     def faq():
-        """Frequently Asked Questions page"""
         return render_template('faq.html', now=datetime.now())
 
     @app.route('/contact')
     def contact():
-        """Contact page"""
         return render_template('contact.html', now=datetime.now())
 
     @app.route('/contact/submit', methods=['POST'])
     def contact_submit():
-        """Handle contact form submission"""
         try:
-            # Get form data
             full_name = request.form.get('full_name', '').strip()
             email = request.form.get('email', '').strip()
             subject = request.form.get('subject', '').strip()
             category = request.form.get('category', '').strip()
             message = request.form.get('message', '').strip()
             
-            # Validate required fields
             if not all([full_name, email, subject, category, message]):
                 flash('Please fill in all required fields.', 'error')
                 return redirect(url_for('contact'))
             
-            # Save to database
             contact = ContactMessage(
                 full_name=full_name,
                 email=email,
@@ -178,13 +199,15 @@ def create_app():
 
     @app.route('/about')
     def about():
-        """About page"""
         return render_template('about.html')
+    
+    # Start sync scheduler
+    from sync_service import start_scheduler
+    start_scheduler()
     
     return app
 
 def create_admin():
-    """Create admin user with default trading account"""
     from models import User, TradingAccount
     
     admin_email = os.environ.get('ADMIN_EMAIL', 'kunaldhade@tragene.com')
@@ -238,7 +261,6 @@ def create_admin():
         print(f"✅ Admin verified: {admin_email}")
 
 def seed_template_rules():
-    """Create pre-built rule templates if they don't exist"""
     from models import TradingRule
     import json
     
@@ -323,23 +345,26 @@ def seed_template_rules():
     print("✅ Template rules seeded!")
 
 def seed_ai_plan_defaults():
-    """Seed default AI plan settings"""
     try:
         from ai_service import seed_plan_defaults
         seed_plan_defaults()
     except ImportError:
         print("⚠️ AI service not available - skipping AI plan defaults")
 
+def seed_moderator_permissions():
+    """Seed default permissions for moderator system"""
+    try:
+        from moderator_routes import seed_default_permissions
+        seed_default_permissions()
+        print("✅ Moderator permissions seeded!")
+    except Exception as e:
+        print(f"⚠️ Could not seed moderator permissions: {e}")
+
 def migrate_existing_data():
-    """
-    Migrate existing database to support multi-account feature.
-    Creates default accounts for existing users and assigns their data.
-    """
     from models import User, TradingAccount, Trade, DayNote, DiaryEntry, ImportHistory
     
     print("\n📦 Checking database for migration needs...")
     
-    # Check if users exist without accounts
     try:
         users_without_accounts = User.query.filter(
             ~User.accounts.any()
@@ -348,13 +373,11 @@ def migrate_existing_data():
         print(f"⚠️  Could not check accounts (this is normal if tables just created): {e}")
         users_without_accounts = []
     
-    # Check if trades have null account_id
     try:
         orphan_trades = Trade.query.filter(Trade.account_id == None).count()
     except:
         orphan_trades = 0
     
-    # Check if day_notes have null account_id
     try:
         orphan_notes = DayNote.query.filter(DayNote.account_id == None).count()
     except:
@@ -380,22 +403,18 @@ def migrate_existing_data():
                 
                 user.current_account_id = account.id
                 
-                # Assign all existing trades to this account
                 Trade.query.filter_by(user_id=user.id, account_id=None).update(
                     {Trade.account_id: account.id}
                 )
                 
-                # Assign all existing day notes
                 DayNote.query.filter_by(user_id=user.id, account_id=None).update(
                     {DayNote.account_id: account.id}
                 )
                 
-                # Assign all existing diary entries
                 DiaryEntry.query.filter_by(user_id=user.id, account_id=None).update(
                     {DiaryEntry.account_id: account.id}
                 )
                 
-                # Assign all existing import history
                 ImportHistory.query.filter_by(user_id=user.id, account_id=None).update(
                     {ImportHistory.account_id: account.id}
                 )
@@ -412,7 +431,6 @@ def migrate_existing_data():
     else:
         print("✅ No migration needed - database is up to date.\n")
     
-    # Fix any users missing current_account_id
     try:
         users_without_current = User.query.filter(User.current_account_id == None).all()
         if users_without_current:

@@ -1,0 +1,114 @@
+{% extends "base_admin.html" %}
+{% block title %}Moderator Activity - Tragene Journal{% endblock %}
+{% block page_title %}📊 Moderator Activity Log{% endblock %}
+
+{% block content %}
+<style>
+    .log-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    .log-table th {
+        background: rgba(15,23,42,0.8); color: #64748b; font-size: 0.62rem;
+        text-transform: uppercase; letter-spacing: 0.8px; padding: 12px 10px;
+        text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .log-table td {
+        padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);
+        color: #94a3b8; vertical-align: middle;
+    }
+    .log-table tr:hover { background: rgba(38,166,154,0.02); }
+    .badge-action {
+        padding: 3px 10px; border-radius: 12px; font-size: 0.6rem;
+        font-weight: 700; font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-action.create { background: rgba(0,230,118,0.1); color: #00e676; }
+    .badge-action.update { background: rgba(79,142,247,0.1); color: #4f8ef7; }
+    .badge-action.delete { background: rgba(255,82,82,0.1); color: #ff5252; }
+    .badge-action.ban { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .badge-action.login { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+    
+    .filter-bar {
+        display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .filter-bar select, .filter-bar input {
+        padding: 8px 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08);
+        color: #e0f0ed; border-radius: 8px; font-size: 0.72rem;
+    }
+    .btn-back {
+        padding: 7px 16px; border-radius: 8px; font-size: 0.7rem;
+        font-weight: 600; text-decoration: none; border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03); color: #94a3b8;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .btn-back:hover { background: rgba(38,166,154,0.1); color: var(--accent); }
+</style>
+
+<div class="mb-3">
+    <a href="{{ url_for('moderator.manage_moderators') }}" class="btn-back">← Back to Moderators</a>
+</div>
+
+<div class="filter-bar">
+    <select onchange="location.href='?moderator_id='+this.value+'&action_type={{ current_action }}'">
+        <option value="">All Moderators</option>
+        {% for mod in moderators %}
+        <option value="{{ mod.id }}" {% if current_moderator == mod.id %}selected{% endif %}>{{ mod.full_name }}</option>
+        {% endfor %}
+    </select>
+    <select onchange="location.href='?moderator_id={{ current_moderator }}&action_type='+this.value">
+        <option value="">All Actions</option>
+        <option value="login" {% if current_action == 'login' %}selected{% endif %}>Login</option>
+        <option value="create" {% if current_action == 'create' %}selected{% endif %}>Create</option>
+        <option value="update" {% if current_action == 'update' %}selected{% endif %}>Update</option>
+        <option value="delete" {% if current_action == 'delete' %}selected{% endif %}>Delete</option>
+        <option value="ban" {% if current_action == 'ban' %}selected{% endif %}>Ban</option>
+        <option value="reply" {% if current_action == 'reply' %}selected{% endif %}>Reply</option>
+    </select>
+</div>
+
+{% if logs.items %}
+<div class="table-responsive">
+    <table class="log-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Moderator</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Description</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs.items %}
+            <tr>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;">{{ log.created_at.strftime('%d %b %Y, %H:%M:%S') }}</td>
+                <td><strong style="color:#e0f0ed;">{{ log.moderator.full_name }}</strong></td>
+                <td><span class="badge-action {{ log.action_type }}">{{ log.action_type.upper() }}</span></td>
+                <td>{{ log.target_type }} #{{ log.target_id }}</td>
+                <td>{{ log.description[:100] }}</td>
+                <td style="font-size:0.62rem;">{{ log.ip_address }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if logs.pages > 1 %}
+<div style="display:flex;justify-content:center;gap:8px;margin-top:16px;">
+    {% for page in range(1, logs.pages + 1) %}
+    <a href="?page={{ page }}&moderator_id={{ current_moderator }}&action_type={{ current_action }}" 
+       style="padding:6px 12px;border-radius:6px;font-size:0.7rem;text-decoration:none;
+              {% if page == logs.page %}background:var(--accent);color:#000;{% else %}background:rgba(255,255,255,0.03);color:#94a3b8;{% endif %}">
+        {{ page }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% else %}
+<div style="text-align:center;padding:50px;color:#64748b;">
+    <div style="font-size:3rem;opacity:0.2;margin-bottom:12px;">📊</div>
+    <h5 style="color:#e0f0ed;">No Activity Yet</h5>
+    <p style="font-size:0.8rem;">Moderator actions will appear here.</p>
+</div>
+{% endif %}
+{% endblock %}

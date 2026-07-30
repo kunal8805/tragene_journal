@@ -5,114 +5,249 @@
 {% block content %}
 
 <style>
+    /* ═══════════════════════════════════════════════════════════ */
+    /* TRAGENE JOURNAL — FUTURISTIC DARK HUD */
+    /* ═══════════════════════════════════════════════════════════ */
+    
     .journal-toolbar {
         display: flex; justify-content: space-between; align-items: center;
-        flex-wrap: wrap; gap: 10px; margin-bottom: 16px;
+        flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
     }
+    
     .journal-search {
         display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
     }
+    
     .journal-search input, .journal-search select {
-        background: var(--input-bg); border: 1px solid var(--border-color);
-        color: var(--text-primary); border-radius: 8px; padding: 8px 12px;
-        font-size: 0.85rem; outline: none;
+        background: rgba(15, 23, 42, 0.8); 
+        border: 1px solid rgba(38, 166, 154, 0.2);
+        color: #e0f0ed; border-radius: 10px; padding: 9px 14px;
+        font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace;
+        backdrop-filter: blur(10px); transition: all 0.3s ease;
     }
     .journal-search input:focus, .journal-search select:focus {
-        border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,0.1);
+        border-color: var(--accent); 
+        box-shadow: 0 0 20px rgba(38, 166, 154, 0.15), 0 0 0 3px rgba(38, 166, 154, 0.05);
+        background: rgba(15, 23, 42, 1);
     }
-    .journal-search input { width: 180px; }
+    .journal-search input { width: 170px; }
     .journal-search select { width: 120px; }
-    .journal-search input::placeholder { color: var(--text-muted); }
+    .journal-search input::placeholder { color: rgba(148, 163, 184, 0.5); }
     
     .btn-add-trade {
-        background: var(--accent); color: #fff; border: none; padding: 9px 18px;
-        border-radius: 8px; font-weight: 600; font-size: 0.85rem;
-        text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
-        transition: all 0.2s;
+        background: linear-gradient(135deg, #26a69a, #1de9b6);
+        color: #000; border: none; padding: 10px 20px;
+        border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+        text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+        transition: all 0.3s ease; font-family: 'Space Grotesk', sans-serif;
+        letter-spacing: 0.3px; box-shadow: 0 4px 20px rgba(38, 166, 154, 0.25);
     }
-    .btn-add-trade:hover { opacity: 0.9; color: #fff; transform: translateY(-1px); }
+    .btn-add-trade:hover { 
+        transform: translateY(-2px); color: #000;
+        box-shadow: 0 8px 35px rgba(38, 166, 154, 0.45);
+    }
     
+    /* ═══════════════════════════════════════ */
+    /* TRADE TABLE */
+    /* ═══════════════════════════════════════ */
     .trade-table-wrap {
-        border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color);
+        border-radius: 16px; overflow: hidden;
+        border: 1px solid rgba(38, 166, 154, 0.15);
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
     }
-    .trade-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    
+    .trade-table { 
+        width: 100%; border-collapse: collapse; font-size: 0.84rem;
+    }
+    
     .trade-table thead th {
-        background: var(--bg-body); color: var(--text-muted);
-        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px;
-        padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border-color);
-        font-weight: 700; white-space: nowrap;
+        background: rgba(10, 18, 32, 0.95);
+        color: var(--accent); font-size: 0.68rem;
+        text-transform: uppercase; letter-spacing: 1px;
+        padding: 14px 16px; text-align: left;
+        border-bottom: 2px solid rgba(38, 166, 154, 0.2);
+        font-weight: 700; white-space: nowrap; font-family: 'JetBrains Mono', monospace;
     }
+    
     .trade-table tbody td {
-        padding: 11px 14px; border-bottom: 1px solid var(--border-color);
-        color: var(--text-primary); vertical-align: middle; white-space: nowrap;
+        padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,0.03);
+        color: #e0f0ed; vertical-align: middle; white-space: nowrap;
+        font-size: 0.82rem;
+    }
+    
+    .trade-table tbody tr { 
+        transition: all 0.2s ease; 
+        border-left: 3px solid transparent;
+    }
+    .trade-table tbody tr:hover { 
+        background: rgba(38, 166, 154, 0.04);
+        border-left: 3px solid var(--accent);
     }
     .trade-table tbody tr:last-child td { border-bottom: none; }
-    .trade-table tbody tr { transition: background 0.15s; }
-    .trade-table tbody tr:hover { background: rgba(79,142,247,0.03); }
     
+    /* ═══════════════════════════════════════ */
+    /* MARKET BADGE */
+    /* ═══════════════════════════════════════ */
+    .market-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 10px; border-radius: 20px;
+        font-size: 0.62rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .market-badge.forex { 
+        background: rgba(79, 142, 247, 0.12); 
+        color: #4f8ef7; 
+        border: 1px solid rgba(79, 142, 247, 0.2);
+    }
+    .market-badge.crypto { 
+        background: rgba(255, 107, 107, 0.12); 
+        color: #ff6b6b; 
+        border: 1px solid rgba(255, 107, 107, 0.2);
+    }
+    .market-badge.indian_stock { 
+        background: rgba(255, 179, 0, 0.12); 
+        color: #ffb300; 
+        border: 1px solid rgba(255, 179, 0, 0.2);
+    }
+    
+    /* ═══════════════════════════════════════ */
+    /* TYPE BADGE */
+    /* ═══════════════════════════════════════ */
     .badge-type {
-        padding: 4px 10px; border-radius: 5px; font-size: 0.7rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.3px;
+        padding: 5px 12px; border-radius: 6px; font-size: 0.68rem; 
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        font-family: 'JetBrains Mono', monospace;
     }
-    .badge-type.buy { background: rgba(0,230,118,0.15); color: #00e676; }
-    .badge-type.sell { background: rgba(255,82,82,0.15); color: #ff5252; }
+    .badge-type.buy { 
+        background: rgba(0, 230, 118, 0.1); color: #00e676; 
+        border: 1px solid rgba(0, 230, 118, 0.2);
+    }
+    .badge-type.sell { 
+        background: rgba(255, 82, 82, 0.1); color: #ff5252; 
+        border: 1px solid rgba(255, 82, 82, 0.2);
+    }
     
-    .pnl-value { font-weight: 700; font-size: 0.85rem; }
+    /* ═══════════════════════════════════════ */
+    /* P&L */
+    /* ═══════════════════════════════════════ */
+    .pnl-value { 
+        font-weight: 700; font-size: 0.85rem; 
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .pnl-positive { color: #00e676; text-shadow: 0 0 8px rgba(0, 230, 118, 0.3); }
+    .pnl-negative { color: #ff5252; text-shadow: 0 0 8px rgba(255, 82, 82, 0.3); }
+    .pnl-neutral { color: #ffb300; }
     
-    .source-icon { font-size: 0.85rem; }
-    .source-icon.manual { color: var(--text-muted); }
-    .source-icon.csv { color: var(--accent); }
-    .source-icon.auto { color: #00bcd4; }
-    
+    /* ═══════════════════════════════════════ */
+    /* ACTION BUTTONS */
+    /* ═══════════════════════════════════════ */
     .btn-view {
-        background: var(--bg-body); border: 1px solid var(--border-color);
-        color: var(--text-secondary); padding: 5px 12px; border-radius: 6px;
-        font-size: 0.75rem; font-weight: 600; cursor: pointer; text-decoration: none;
-        display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+        color: #94a3b8; padding: 6px 14px; border-radius: 8px;
+        font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 5px; 
+        transition: all 0.25s ease; font-family: 'Space Grotesk', sans-serif;
+        text-decoration: none;
     }
-    .btn-view:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-view:hover { 
+        background: var(--accent); border-color: var(--accent); 
+        color: #000; box-shadow: 0 0 20px rgba(38, 166, 154, 0.3);
+    }
     
-    .empty-state { text-align: center; padding: 50px 20px; }
-    .empty-state .icon { font-size: 3.5rem; color: var(--text-muted); opacity: 0.3; margin-bottom: 16px; }
-    .empty-state h4 { color: var(--text-primary); margin-bottom: 8px; }
-    .empty-state p { color: var(--text-muted); margin-bottom: 20px; }
+    .btn-ai {
+        background: rgba(139, 92, 246, 0.1); 
+        border: 1px solid rgba(139, 92, 246, 0.25);
+        color: #a78bfa; padding: 6px 12px; border-radius: 8px;
+        font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 4px; 
+        transition: all 0.25s ease; font-family: 'Space Grotesk', sans-serif;
+        text-decoration: none;
+    }
+    .btn-ai:hover { 
+        background: rgba(139, 92, 246, 0.2); 
+        border-color: #8b5cf6; color: #c4b5fd;
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
+    }
+    
+    /* ═══════════════════════════════════════ */
+    /* EMPTY STATE */
+    /* ═══════════════════════════════════════ */
+    .empty-state { 
+        text-align: center; padding: 60px 20px; 
+    }
+    .empty-state .icon { 
+        font-size: 4rem; opacity: 0.15; margin-bottom: 20px; 
+    }
+    .empty-state h4 { 
+        color: #e0f0ed; margin-bottom: 8px; 
+        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    }
+    .empty-state p { color: #64748b; margin-bottom: 24px; }
     
     .trade-count-badge {
-        background: var(--bg-body); border: 1px solid var(--border-color);
-        color: var(--text-secondary); padding: 4px 10px; border-radius: 20px;
-        font-size: 0.7rem; font-weight: 600;
+        background: rgba(38, 166, 154, 0.1); 
+        border: 1px solid rgba(38, 166, 154, 0.2);
+        color: var(--accent); padding: 6px 14px; border-radius: 20px;
+        font-size: 0.72rem; font-weight: 700; 
+        font-family: 'JetBrains Mono', monospace;
     }
-
+    
+    .no-trades-found {
+        text-align: center; padding: 30px; color: #64748b; 
+        font-size: 0.85rem; display: none;
+    }
+    
+    /* ═══════════════════════════════════════ */
+    /* RESPONSIVE */
+    /* ═══════════════════════════════════════ */
     @media (max-width: 768px) {
-        .trade-table thead th, .trade-table tbody td { padding: 8px 10px; font-size: 0.78rem; }
-        .journal-search input { width: 130px; }
+        .trade-table thead th, .trade-table tbody td { 
+            padding: 10px 8px; font-size: 0.75rem; 
+        }
+        .journal-search input { width: 120px; }
         .journal-search select { width: 90px; }
-        .btn-add-trade { padding: 7px 14px; font-size: 0.8rem; }
+        .btn-add-trade { padding: 8px 16px; font-size: 0.78rem; }
+        .market-badge { font-size: 0.55rem; padding: 3px 8px; }
     }
 </style>
 
-<!-- Toolbar -->
+<!-- ═══════════════════════════════════════ -->
+<!-- TOOLBAR -->
+<!-- ═══════════════════════════════════════ -->
 <div class="journal-toolbar">
-    <a href="{{ url_for('user.import_trades') }}" class="btn-add-trade">
+    <a href="{{ url_for('user.add_trade') }}" class="btn-add-trade">
         <i class="bi bi-plus-circle"></i> Add Trade
     </a>
     <div class="journal-search">
-        <input type="text" id="searchInput" placeholder="Search trades..." onkeyup="filterTrades()">
+        <select id="marketFilter" onchange="filterTrades()">
+            <option value="all">🌐 All Markets</option>
+            <option value="forex">💱 Forex</option>
+            <option value="crypto">₿ Crypto</option>
+            <option value="indian_stock">📈 Indian</option>
+            <option value="other">📊 Other</option>
+        </select>
         <select id="symbolFilter" onchange="filterTrades()">
             <option value="all">All Symbols</option>
         </select>
+        <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterTrades()">
         {% if trades %}
-        <span class="trade-count-badge">{{ trades|length }} trade{{ 's' if trades|length != 1 else '' }}</span>
+        <span class="trade-count-badge" id="tradeCount">{{ trades|length }} trade{{ 's' if trades|length != 1 else '' }}</span>
         {% endif %}
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════ -->
+<!-- TRADES TABLE -->
+<!-- ═══════════════════════════════════════ -->
 {% if trades %}
-<!-- Trades Table -->
 <div class="trade-table-wrap">
     <table class="trade-table" id="tradesTable">
         <thead>
             <tr>
+                <th>Market</th>
                 <th>Date</th>
                 <th>Symbol</th>
                 <th>Type</th>
@@ -124,7 +259,17 @@
         </thead>
         <tbody>
             {% for trade in trades %}
-            <tr class="trade-row" data-symbol="{{ trade.symbol }}">
+            {% set market_info = get_market_info(trade.symbol) %}
+            {% set currency = market_info.currency %}
+            <tr class="trade-row" 
+                data-symbol="{{ trade.symbol }}" 
+                data-market="{{ trade.market or detect_market(trade.symbol) }}"
+                data-pnl="{{ trade.profit_loss or 0 }}">
+                <td>
+                    <span class="market-badge {{ trade.market or detect_market(trade.symbol) }}">
+                        {{ market_info.icon }} {{ market_info.label }}
+                    </span>
+                </td>
                 <td>{{ trade.entry_date.strftime('%d %b %y') }}</td>
                 <td><strong>{{ trade.symbol }}</strong></td>
                 <td>
@@ -136,16 +281,19 @@
                 <td>{{ trade.exit_price if trade.exit_price else '-' }}</td>
                 <td>
                     {% if trade.profit_loss is not none %}
-                        <span class="pnl-value" style="color: {{ '#00e676' if trade.profit_loss > 0 else '#ff5252' if trade.profit_loss < 0 else '#ffb300' }};">
-                            {{ '+' if trade.profit_loss > 0 else '' }}${{ '%.2f'|format(trade.profit_loss) }}
+                        <span class="pnl-value {{ 'pnl-positive' if trade.profit_loss > 0 else 'pnl-negative' if trade.profit_loss < 0 else 'pnl-neutral' }}">
+                            {{ '+' if trade.profit_loss > 0 else '' }}{{ currency }}{{ '%.2f'|format(trade.profit_loss|abs) }}
                         </span>
                     {% else %}
-                        <span style="color: var(--text-muted);">-</span>
+                        <span style="color: #64748b;">-</span>
                     {% endif %}
                 </td>
-                <td>
-                    <a href="{{ url_for('user.trade_detail', trade_id=trade.id) }}" class="btn-view">
-                        View <i class="bi bi-arrow-right"></i>
+                <td style="display:flex;gap:6px;">
+                    <a href="{{ url_for('user.trade_detail', trade_id=trade.id) }}" class="btn-view" title="View Details">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    <a href="{{ url_for('user.trade_detail', trade_id=trade.id) }}#ai" class="btn-ai" title="AI Analysis">
+                        🤖
                     </a>
                 </td>
             </tr>
@@ -153,13 +301,16 @@
         </tbody>
     </table>
 </div>
+<div class="no-trades-found" id="noTradesFound">
+    <i class="bi bi-search"></i> No trades match your filters
+</div>
 {% else %}
 <!-- Empty State -->
 <div class="empty-state">
     <div class="icon"><i class="bi bi-journal-text"></i></div>
     <h4>No Trades Yet</h4>
-    <p>Start recording your trades to track your performance.</p>
-    <a href="{{ url_for('user.import_trades') }}" class="btn-add-trade">
+    <p>Start recording your trades across Forex, Crypto, or Indian markets.</p>
+    <a href="{{ url_for('user.add_trade') }}" class="btn-add-trade">
         <i class="bi bi-plus-circle"></i> Add Your First Trade
     </a>
 </div>
@@ -169,19 +320,45 @@
     // Populate symbol filter
     const symbols = new Set();
     document.querySelectorAll('.trade-row').forEach(row => symbols.add(row.dataset.symbol));
-    const filter = document.getElementById('symbolFilter');
+    const symbolFilter = document.getElementById('symbolFilter');
     [...symbols].sort().forEach(s => {
-        filter.innerHTML += `<option value="${s}">${s}</option>`;
+        symbolFilter.innerHTML += `<option value="${s}">${s}</option>`;
     });
 
     function filterTrades() {
         const search = document.getElementById('searchInput').value.toLowerCase();
         const symbol = document.getElementById('symbolFilter').value;
+        const market = document.getElementById('marketFilter').value;
+        let visibleCount = 0;
+        
         document.querySelectorAll('.trade-row').forEach(row => {
             const text = row.textContent.toLowerCase();
             const sym = row.dataset.symbol;
-            row.style.display = (text.includes(search) && (symbol === 'all' || sym === symbol)) ? '' : 'none';
+            const mkt = row.dataset.market;
+            
+            const matchSearch = text.includes(search);
+            const matchSymbol = symbol === 'all' || sym === symbol;
+            const matchMarket = market === 'all' || mkt === market;
+            
+            if (matchSearch && matchSymbol && matchMarket) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
         });
+        
+        // Update count badge
+        const badge = document.getElementById('tradeCount');
+        if (badge) {
+            badge.textContent = visibleCount + ' trade' + (visibleCount !== 1 ? 's' : '');
+        }
+        
+        // Show/hide no results
+        const noResults = document.getElementById('noTradesFound');
+        if (noResults) {
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
     }
 </script>
 {% endblock %}

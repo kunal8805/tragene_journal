@@ -3,60 +3,402 @@
 {% block page_title %}Trade #{{ trade.id }}{% endblock %}
 {% block content %}
 
-<div class="mb-3 d-flex gap-2">
-    <a href="{{ url_for('user.journal') }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px;">
-        <i class="bi bi-arrow-left"></i> Back
+<style>
+    .detail-card {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(38, 166, 154, 0.12);
+        border-radius: 16px; padding: 20px; margin-bottom: 16px;
+        backdrop-filter: blur(10px);
+    }
+    .detail-card h6 {
+        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+        font-size: 0.8rem; margin-bottom: 14px; color: #e0f0ed;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .detail-card h6 i { color: var(--accent); }
+    
+    .detail-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 14px;
+    }
+    .detail-item small {
+        color: #64748b; font-size: 0.62rem;
+        text-transform: uppercase; letter-spacing: 0.8px; display: block;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .detail-item strong {
+        color: #e0f0ed; font-size: 0.85rem; font-weight: 600;
+    }
+    
+    .pnl-big {
+        font-size: 1.5rem; font-weight: 800;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .market-badge-large {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 14px; border-radius: 20px;
+        font-size: 0.7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .market-badge-large.forex { background: rgba(79,142,247,0.12); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.2); }
+    .market-badge-large.crypto { background: rgba(255,107,107,0.12); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.2); }
+    .market-badge-large.indian_stock { background: rgba(255,179,0,0.12); color: #ffb300; border: 1px solid rgba(255,179,0,0.2); }
+    
+    .tag-badge {
+        display: inline-block; padding: 4px 10px; border-radius: 15px;
+        font-size: 0.68rem; font-weight: 600;
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+        color: #94a3b8; margin: 2px;
+    }
+    
+    .screenshot-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px; margin-top: 12px;
+    }
+    .screenshot-item {
+        position: relative; border-radius: 10px; overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.06); aspect-ratio: 16/10;
+    }
+    .screenshot-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+    .screenshot-item .delete-btn {
+        position: absolute; top: 4px; right: 4px;
+        background: rgba(255,82,82,0.9); color: #fff; border: none;
+        border-radius: 50%; width: 22px; height: 22px; font-size: 0.6rem;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        opacity: 0; transition: opacity 0.2s;
+    }
+    .screenshot-item:hover .delete-btn { opacity: 1; }
+    
+    .upload-zone {
+        border: 2px dashed rgba(255,255,255,0.08); border-radius: 10px;
+        padding: 20px; text-align: center; cursor: pointer;
+        aspect-ratio: 16/10; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; transition: all 0.2s;
+        font-size: 0.68rem; color: #64748b;
+    }
+    .upload-zone:hover { border-color: var(--accent); background: rgba(38,166,154,0.03); }
+    .upload-zone i { font-size: 1.4rem; margin-bottom: 4px; }
+    
+    .btn-edit-save {
+        background: var(--accent); color: #000; border: none;
+        padding: 10px 20px; border-radius: 8px; font-weight: 700;
+        font-size: 0.8rem; cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .notes-textarea {
+        width: 100%; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08);
+        color: #e0f0ed; border-radius: 8px; padding: 12px;
+        font-size: 0.82rem; resize: vertical; min-height: 80px;
+    }
+    .notes-textarea:focus { border-color: var(--accent); outline: none; }
+    
+    .image-viewer-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.92); z-index: 99999;
+        align-items: center; justify-content: center; cursor: pointer;
+    }
+    .image-viewer-overlay.show { display: flex; }
+    .image-viewer-overlay img { max-width: 95vw; max-height: 95vh; border-radius: 8px; }
+    
+    .toast-mini {
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+        z-index: 99999; padding: 10px 24px; border-radius: 25px;
+        font-weight: 700; font-size: 0.85rem; font-family: 'Space Grotesk', sans-serif;
+        animation: toastUp 0.4s ease, toastDown 0.4s ease 2.5s forwards;
+    }
+    @keyframes toastUp { from { transform: translateX(-50%) translateY(20px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
+    @keyframes toastDown { from { transform: translateX(-50%) translateY(0); opacity:1; } to { transform: translateX(-50%) translateY(20px); opacity:0; } }
+    
+    .ai-section {
+        background: linear-gradient(135deg, rgba(139,92,246,0.04), rgba(79,142,247,0.04));
+        border: 1px solid rgba(139,92,246,0.15); border-radius: 16px;
+        padding: 20px; margin-bottom: 16px;
+    }
+    .ai-chat-area { max-height: 280px; overflow-y: auto; margin-bottom: 12px; }
+    .ai-msg {
+        padding: 10px 14px; border-radius: 12px; font-size: 0.76rem;
+        line-height: 1.5; margin-bottom: 8px; max-width: 90%;
+    }
+    .ai-msg.user { background: var(--accent); color: #000; margin-left: auto; }
+    .ai-msg.ai { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: #e0f0ed; }
+    .ai-msg.system { background: transparent; color: #64748b; font-style: italic; text-align: center; max-width: 100%; }
+    .ai-input-row { display: flex; gap: 8px; }
+    .ai-input-row input {
+        flex: 1; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08);
+        color: #e0f0ed; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem;
+    }
+    .ai-input-row input:focus { border-color: #8b5cf6; outline: none; }
+    .btn-ai-send { background: #8b5cf6; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 0.78rem; cursor: pointer; }
+    .btn-ai-analyze { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; width: 100%; font-family: 'Space Grotesk', sans-serif; }
+</style>
+
+<!-- Top Bar -->
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('user.journal') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;">
+        <i class="bi bi-arrow-left"></i> Back to Journal
     </a>
-    <a href="{{ url_for('user.edit_trade', trade_id=trade.id) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px;">
+    <a href="{{ url_for('user.edit_trade', trade_id=trade.id) }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;">
         <i class="bi bi-pencil"></i> Edit
     </a>
-    <form method="POST" action="{{ url_for('user.delete_trade', trade_id=trade.id) }}" onsubmit="return confirm('Delete this trade?');" class="d-inline">
-        <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius: 8px;">
+    <form method="POST" action="{{ url_for('user.delete_trade', trade_id=trade.id) }}" onsubmit="return confirm('Delete this trade?');">
+        <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:8px;">
             <i class="bi bi-trash"></i> Delete
         </button>
     </form>
 </div>
 
+{% set market_info = get_market_info(trade.symbol) %}
+{% set currency = market_info.currency %}
+
 <div class="row g-3">
+    <!-- Left Column -->
     <div class="col-lg-8">
-        <div class="card p-3">
-            <h6 class="fw-bold mb-3">Trade Details</h6>
-            <div class="row g-2">
-                <div class="col-6 col-md-3"><small class="text-muted">Symbol</small><br><strong>{{ trade.symbol }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">Type</small><br><strong class="{% if trade.trade_type == 'buy' %}text-success{% else %}text-danger{% endif %}">{{ trade.trade_type.upper() }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">P&L</small><br>
+        <!-- Market & Trade Details -->
+        <div class="detail-card">
+            <h6>
+                <span class="market-badge-large {{ trade.market or detect_market(trade.symbol) }}">
+                    {{ market_info.icon }} {{ market_info.label }}
+                </span>
+                Trade Details
+            </h6>
+            <div class="detail-grid">
+                <div class="detail-item"><small>Symbol</small><strong>{{ trade.symbol }}</strong></div>
+                <div class="detail-item"><small>Type</small><strong style="color:{{ '#00e676' if trade.trade_type == 'buy' else '#ff5252' }};">{{ trade.trade_type.upper() }}</strong></div>
+                <div class="detail-item">
+                    <small>P&L</small>
                     {% if trade.profit_loss is not none %}
-                        <strong class="{% if trade.profit_loss > 0 %}text-success{% else %}text-danger{% endif %}">
-                            {{ '+' if trade.profit_loss > 0 else '' }}{{ '%.2f'|format(trade.profit_loss) }}
+                        <strong class="pnl-big" style="color:{{ '#00e676' if trade.profit_loss > 0 else '#ff5252' if trade.profit_loss < 0 else '#ffb300' }};">
+                            {{ '+' if trade.profit_loss > 0 else '' }}{{ currency }}{{ '%.2f'|format(trade.profit_loss|abs) }}
                         </strong>
                     {% else %}<span class="text-muted">-</span>{% endif %}
                 </div>
-                <div class="col-6 col-md-3"><small class="text-muted">Date</small><br><strong>{{ trade.entry_date.strftime('%d %b %Y') }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">Entry</small><br><strong>{{ trade.entry_price }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">Exit</small><br><strong>{{ trade.exit_price if trade.exit_price else '-' }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">SL</small><br><strong>{{ trade.stop_loss if trade.stop_loss else '-' }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">TP</small><br><strong>{{ trade.take_profit if trade.take_profit else '-' }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">Lot Size</small><br><strong>{{ trade.lot_size }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">Session</small><br><strong>{{ trade.session if trade.session else '-' }}</strong></div>
-                <div class="col-6 col-md-3"><small class="text-muted">Source</small><br><span class="badge bg-secondary">{{ trade.import_source }}</span></div>
+                <div class="detail-item"><small>Date</small><strong>{{ trade.entry_date.strftime('%d %b %Y, %H:%M') }}</strong></div>
+                <div class="detail-item"><small>Entry Price</small><strong>{{ trade.entry_price }}</strong></div>
+                <div class="detail-item"><small>Exit Price</small><strong>{{ trade.exit_price if trade.exit_price else '-' }}</strong></div>
+                <div class="detail-item"><small>Stop Loss</small><strong>{{ trade.stop_loss if trade.stop_loss else '-' }}</strong></div>
+                <div class="detail-item"><small>Take Profit</small><strong>{{ trade.take_profit if trade.take_profit else '-' }}</strong></div>
+                <div class="detail-item"><small>Quantity</small><strong>{{ trade.quantity }}</strong></div>
+                <div class="detail-item"><small>Risk:Reward</small><strong>{{ ('1:' + '%.1f'|format(trade.risk_reward_ratio)) if trade.risk_reward_ratio else '-' }}</strong></div>
             </div>
         </div>
-        <div class="card p-3 mt-3">
-            <h6 class="fw-bold">Notes</h6>
-            <p class="mb-0 {% if not trade.notes %}text-muted{% endif %}">{{ trade.notes if trade.notes else 'No notes added.' }}</p>
+
+        <!-- Market-Specific Fields -->
+        {% if trade.market == 'forex' or detect_market(trade.symbol) == 'forex' %}
+        <div class="detail-card">
+            <h6><i class="bi bi-globe"></i> Forex Details</h6>
+            <div class="detail-grid">
+                <div class="detail-item"><small>Session</small><strong>{{ trade.session or 'Auto' }}</strong></div>
+                <div class="detail-item"><small>Leverage</small><strong>1:{{ trade.leverage or '100' }}</strong></div>
+                <div class="detail-item"><small>Setup</small><strong>{{ trade.setup_type or '-' }}</strong></div>
+                <div class="detail-item"><small>Pips</small><strong>{{ '%.1f'|format(trade.profit_loss_pips) if trade.profit_loss_pips else '-' }}</strong></div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if trade.market == 'crypto' or detect_market(trade.symbol) == 'crypto' %}
+        <div class="detail-card">
+            <h6><i class="bi bi-currency-bitcoin"></i> Crypto Details</h6>
+            <div class="detail-grid">
+                <div class="detail-item"><small>Exchange</small><strong>{{ trade.exchange or '-' }}</strong></div>
+                <div class="detail-item"><small>Segment</small><strong>{{ trade.crypto_segment or 'Spot' }}</strong></div>
+                <div class="detail-item"><small>Leverage</small><strong>{{ trade.leverage or '1' }}x</strong></div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if trade.market == 'indian_stock' or detect_market(trade.symbol) == 'indian_stock' %}
+        <div class="detail-card">
+            <h6><i class="bi bi-bank"></i> Indian Market Details</h6>
+            <div class="detail-grid">
+                <div class="detail-item"><small>Exchange</small><strong>{{ trade.exchange or 'NSE' }}</strong></div>
+                <div class="detail-item"><small>Segment</small><strong>{{ trade.segment or 'Equity' }}</strong></div>
+                <div class="detail-item"><small>Instrument</small><strong>{{ trade.instrument or 'Stock' }}</strong></div>
+                {% if trade.segment in ['futures', 'options'] %}
+                <div class="detail-item"><small>Expiry</small><strong>{{ trade.expiry_date.strftime('%d %b %Y') if trade.expiry_date else '-' }}</strong></div>
+                <div class="detail-item"><small>Strike</small><strong>{{ trade.strike_price if trade.strike_price else '-' }}</strong></div>
+                <div class="detail-item"><small>Option</small><strong>{{ trade.option_type or '-' }}</strong></div>
+                {% endif %}
+                <div class="detail-item"><small>Broker</small><strong>{{ trade.broker or '-' }}</strong></div>
+            </div>
+            {% if trade.brokerage or trade.taxes %}
+            <div class="detail-grid mt-3">
+                <div class="detail-item"><small>Brokerage</small><strong>₹{{ '%.2f'|format(trade.brokerage or 0) }}</strong></div>
+                <div class="detail-item"><small>Taxes/STT</small><strong>₹{{ '%.2f'|format(trade.taxes or 0) }}</strong></div>
+                <div class="detail-item"><small>Other Charges</small><strong>₹{{ '%.2f'|format(trade.other_charges or 0) }}</strong></div>
+                <div class="detail-item"><small>Net P&L</small><strong style="color:{{ '#00e676' if (trade.net_pnl_after_charges or trade.profit_loss or 0) > 0 else '#ff5252' }};">₹{{ '%.2f'|format(trade.net_pnl_after_charges or trade.profit_loss or 0) }}</strong></div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Notes -->
+        <div class="detail-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h6 style="margin:0;"><i class="bi bi-journal-text"></i> Notes</h6>
+                <button class="btn btn-sm btn-outline-secondary" id="editNotesBtn" onclick="toggleEditNotes()" style="border-radius:8px;"><i class="bi bi-pencil"></i> Edit</button>
+            </div>
+            <div id="notesDisplay" style="color:{{ '#e0f0ed' if trade.notes else '#64748b' }};font-size:0.82rem;line-height:1.6;">{{ trade.notes if trade.notes else 'No notes added.' }}</div>
+            <div id="notesEditor" style="display:none;">
+                <textarea id="notesTextarea" class="notes-textarea">{{ trade.notes if trade.notes else '' }}</textarea>
+                <div class="mt-2 d-flex gap-2">
+                    <button class="btn-edit-save" onclick="saveNotes()"><i class="bi bi-check-lg"></i> Save</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleEditNotes()" style="border-radius:8px;">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screenshots -->
+        <div class="detail-card">
+            <h6><i class="bi bi-camera"></i> Screenshots</h6>
+            <div class="screenshot-grid" id="screenshotGrid">
+                {% if trade.screenshots %}
+                    {% for ss in trade.screenshots %}
+                    <div class="screenshot-item" id="ss-{{ ss.id }}">
+                        <img src="/{{ ss.filepath }}" alt="Screenshot" onclick="viewImage('/{{ ss.filepath }}')" loading="lazy">
+                        <button class="delete-btn" onclick="deleteScreenshot({{ ss.id }})"><i class="bi bi-x"></i></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                {% if trade.screenshots|length < 3 %}
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                    <i class="bi bi-cloud-upload"></i><span>Add Screenshot</span>
+                </div>
+                {% endif %}
+            </div>
+            <input type="file" id="fileInput" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" onchange="uploadScreenshot()">
         </div>
     </div>
+
+    <!-- Right Column -->
     <div class="col-lg-4">
-        <div class="card p-3">
-            <h6 class="fw-bold">Tags</h6>
-            {% if trade.tags %}
-                {% for tag in trade.tags.split(',') %}
-                    <span class="badge bg-secondary me-1">{{ tag.strip() }}</span>
-                {% endfor %}
-            {% else %}
-                <p class="text-muted small mb-0">No tags</p>
-            {% endif %}
+        <!-- Tags -->
+        <div class="detail-card">
+            <h6><i class="bi bi-tags"></i> Tags</h6>
+            {% if trade.tags %}{% for tag in trade.tags.split(',') %}<span class="tag-badge">{{ tag.strip() }}</span>{% endfor %}{% else %}<p class="text-muted small mb-0">No tags</p>{% endif %}
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="detail-card">
+            <h6><i class="bi bi-bar-chart"></i> Quick Stats</h6>
+            <div style="font-size:0.78rem;color:#94a3b8;">
+                {% if trade.profit_loss is not none and trade.profit_loss > 0 %}<div class="mb-1">✅ Winning trade</div>{% elif trade.profit_loss is not none and trade.profit_loss < 0 %}<div class="mb-1">❌ Losing trade</div>{% endif %}
+                {% if trade.stop_loss %}<div class="mb-1">🛡 Stop Loss: Set</div>{% else %}<div class="mb-1">⚠️ Stop Loss: Not set</div>{% endif %}
+                {% if trade.take_profit %}<div class="mb-1">🎯 Take Profit: Set</div>{% else %}<div class="mb-1">⚠️ Take Profit: Not set</div>{% endif %}
+                {% if trade.risk_reward_ratio and trade.risk_reward_ratio >= 2 %}<div class="mb-1">💪 Good R:R (1:{{ '%.1f'|format(trade.risk_reward_ratio) }})</div>{% elif trade.risk_reward_ratio %}<div class="mb-1">📉 Low R:R (1:{{ '%.1f'|format(trade.risk_reward_ratio) }})</div>{% endif %}
+            </div>
+        </div>
+
+        <!-- AI Trade Analysis -->
+        <div class="ai-section">
+            <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.8rem;margin-bottom:12px;color:#e0f0ed;">🤖 AI Trade Analysis</h6>
+            <div class="ai-chat-area" id="aiChatArea">
+                <div class="ai-msg system" id="aiPlaceholder">Click analyze to get AI insights on this trade.</div>
+                <div id="aiMessages"></div>
+            </div>
+            <button class="btn-ai-analyze mb-2" id="btnAnalyze" onclick="analyzeTrade()">
+                <i class="bi bi-magic"></i> Analyze This Trade
+            </button>
+            <div class="ai-input-row">
+                <input type="text" id="aiChatInput" placeholder="Ask about this trade..." onkeypress="if(event.key==='Enter')sendAIChat()">
+                <button class="btn-ai-send" onclick="sendAIChat()"><i class="bi bi-send"></i></button>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Image Viewer -->
+<div class="image-viewer-overlay" id="imageViewer" onclick="closeViewer()">
+    <img id="viewerImage" src="" alt="Full size screenshot">
+</div>
+
+<script>
+    let chatHistory = [];
+    const tradeId = {{ trade.id }};
+
+    function toggleEditNotes() {
+        document.getElementById('notesDisplay').style.display = document.getElementById('notesEditor').style.display === 'none' ? 'none' : 'block';
+        document.getElementById('notesEditor').style.display = document.getElementById('notesEditor').style.display === 'none' ? 'block' : 'none';
+        document.getElementById('editNotesBtn').style.display = document.getElementById('editNotesBtn').style.display === 'none' ? 'inline-flex' : 'none';
+    }
+    function saveNotes() {
+        const notes = document.getElementById('notesTextarea').value;
+        fetch(`/user/trade/${tradeId}/update-notes`, {
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({notes})
+        }).then(r=>r.json()).then(d=>{
+            if(d.success){document.getElementById('notesDisplay').textContent=notes||'No notes added.';toggleEditNotes();showToast('✅ Notes saved!','#00e676');}
+        });
+    }
+
+    function uploadScreenshot() {
+        const file = document.getElementById('fileInput').files[0];
+        if(!file)return;
+        const fd=new FormData();fd.append('screenshot',file);
+        const zone=document.getElementById('uploadZone');zone.innerHTML='<span class="spinner-border spinner-border-sm"></span>';
+        fetch(`/user/trade/${tradeId}/upload-screenshot`,{method:'POST',body:fd})
+        .then(r=>r.json()).then(d=>{
+            if(d.success){
+                const grid=document.getElementById('screenshotGrid');
+                const el=document.createElement('div');el.className='screenshot-item';el.id='ss-'+d.screenshot.id;
+                el.innerHTML=`<img src="${d.screenshot.filepath}" onclick="viewImage('${d.screenshot.filepath}')" loading="lazy"><button class="delete-btn" onclick="deleteScreenshot(${d.screenshot.id})"><i class="bi bi-x"></i></button>`;
+                grid.insertBefore(el,zone);
+                if(grid.querySelectorAll('.screenshot-item').length>=3)zone.style.display='none';
+                else zone.innerHTML='<i class="bi bi-cloud-upload"></i><span>Add Screenshot</span>';
+                showToast('✅ Screenshot uploaded!','#00e676');
+            }else{zone.innerHTML='<i class="bi bi-cloud-upload"></i><span>Add Screenshot</span>';showToast('❌ '+d.message,'#ff5252');}
+        }).catch(()=>{zone.innerHTML='<i class="bi bi-cloud-upload"></i><span>Add Screenshot</span>';showToast('❌ Upload failed','#ff5252');});
+        document.getElementById('fileInput').value='';
+    }
+    function deleteScreenshot(id){
+        if(!confirm('Delete?'))return;
+        fetch(`/user/trade/screenshot/${id}/delete`,{method:'POST'}).then(r=>r.json()).then(d=>{
+            if(d.success){document.getElementById('ss-'+id)?.remove();if(document.getElementById('screenshotGrid').querySelectorAll('.screenshot-item').length<3)document.getElementById('uploadZone').style.display='flex';showToast('🗑 Deleted','#ffb300');}
+        });
+    }
+    function viewImage(src){document.getElementById('viewerImage').src=src;document.getElementById('imageViewer').classList.add('show');}
+    function closeViewer(){document.getElementById('imageViewer').classList.remove('show');}
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeViewer();});
+
+    function analyzeTrade(){
+        document.getElementById('aiPlaceholder').style.display='none';
+        document.getElementById('btnAnalyze').disabled=true;
+        document.getElementById('btnAnalyze').innerHTML='<span class="spinner-border spinner-border-sm"></span> Analyzing...';
+        addAIMsg('system','Analyzing this trade...');
+        fetch(`/user/api/trade/${tradeId}/analyse`,{method:'POST',headers:{'Content-Type':'application/json'}})
+        .then(r=>r.json()).then(d=>{
+            document.querySelector('.ai-msg.system')?.remove();
+            document.getElementById('btnAnalyze').disabled=false;
+            document.getElementById('btnAnalyze').innerHTML='<i class="bi bi-magic"></i> Analyze This Trade';
+            if(d.success){addAIMsg('ai',d.analysis);chatHistory.push({role:'ai',content:d.analysis});}
+            else addAIMsg('ai','❌ '+d.message);
+        }).catch(()=>{document.querySelector('.ai-msg.system')?.remove();document.getElementById('btnAnalyze').disabled=false;document.getElementById('btnAnalyze').innerHTML='<i class="bi bi-magic"></i> Analyze This Trade';addAIMsg('ai','❌ Failed.');});
+    }
+    function sendAIChat(){
+        const q=document.getElementById('aiChatInput').value.trim();
+        if(!q)return;
+        document.getElementById('aiChatInput').value='';
+        addAIMsg('user',q);
+        chatHistory.push({role:'user',content:q});
+        const tid='msg-'+Date.now();
+        addAIMsg('system','Thinking...',tid);
+        fetch(`/user/api/trade/${tradeId}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,history:chatHistory})})
+        .then(r=>r.json()).then(d=>{document.getElementById(tid)?.remove();if(d.success){addAIMsg('ai',d.response);chatHistory.push({role:'ai',content:d.response});}else addAIMsg('ai','❌ '+d.message);})
+        .catch(()=>{document.getElementById(tid)?.remove();addAIMsg('ai','❌ Failed.');});
+    }
+    function addAIMsg(role,content,id){
+        const area=document.getElementById('aiMessages');
+        const div=document.createElement('div');
+        div.className='ai-msg '+role;
+        div.textContent=content;
+        if(id)div.id=id;
+        area.appendChild(div);
+        document.getElementById('aiChatArea').scrollTop=document.getElementById('aiChatArea').scrollHeight;
+    }
+    function showToast(message,color){
+        const t=document.createElement('div');t.className='toast-mini';
+        t.style.cssText=`background:var(--bg-card);border:1px solid ${color};color:${color};`;
+        t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+    }
+</script>
 {% endblock %}

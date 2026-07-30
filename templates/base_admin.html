@@ -51,6 +51,14 @@
             --info: #4f8ef7;
             --purple: #8b5cf6;
             --overlay: rgba(0,0,0,0.75);
+            --stat-bg: var(--bg-card);
+            --stat-border: var(--border-color);
+            --hover-bg: var(--sidebar-hover);
+            --teal: var(--accent);
+            --gold: var(--warning);
+            --blue: var(--info);
+            --red: var(--danger);
+            --green: var(--success);
         }
         
         /* ===== LIGHT THEME ===== */
@@ -79,6 +87,14 @@
             --info: #2979ff;
             --purple: #7c3aed;
             --overlay: rgba(0,0,0,0.5);
+            --stat-bg: var(--bg-card);
+            --stat-border: var(--border-color);
+            --hover-bg: var(--sidebar-hover);
+            --teal: var(--accent);
+            --gold: var(--warning);
+            --blue: var(--info);
+            --red: var(--danger);
+            --green: var(--success);
         }
 
         /* ===== BASE STYLES ===== */
@@ -545,50 +561,98 @@
     
     <nav>
         <div class="nav-label">Main</div>
+        
+        {% if current_user.is_admin or can_access('dashboard') %}
         <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('users') %}
         <a href="{{ url_for('admin.users') }}" class="nav-link {% if request.endpoint == 'admin.users' %}active{% endif %}">
             <i class="bi bi-people"></i> Users
         </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('subscriptions') %}
         <a href="{{ url_for('admin.subscriptions') }}" class="nav-link {% if request.endpoint == 'admin.subscriptions' %}active{% endif %}">
             <i class="bi bi-credit-card"></i> Subscriptions
         </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('sync') %}
+        <a href="{{ url_for('admin.admin_sync') }}" class="nav-link {% if request.endpoint == 'admin.admin_sync' %}active{% endif %}">
+            <i class="bi bi-arrow-repeat"></i> Sync Manager
+        </a>
+        {% endif %}
+        
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('moderator.manage_moderators') }}" class="nav-link {% if request.endpoint and 'moderator.manage' in request.endpoint %}active{% endif %}">
+            <i class="bi bi-shield-lock"></i> Moderators
+        </a>
+        {% endif %}
         
         <div class="nav-label">Analytics & AI</div>
+        
+        {% if current_user.is_admin or can_access('analytics') %}
         <a href="{{ url_for('admin.analytics') }}" class="nav-link {% if request.endpoint == 'admin.analytics' %}active{% endif %}">
             <i class="bi bi-graph-up"></i> Analytics
         </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('ai_control') %}
         <a href="{{ url_for('admin.ai_control') }}" class="nav-link {% if request.endpoint == 'admin.ai_control' %}active{% endif %}">
             <i class="bi bi-robot"></i> AI Control
         </a>
+        {% endif %}
         
         <div class="nav-label">Content</div>
+        
+        {% if current_user.is_admin or can_access('faq') %}
         <a href="{{ url_for('admin.faq_manage') }}" class="nav-link {% if request.endpoint == 'admin.faq_manage' %}active{% endif %}">
             <i class="bi bi-question-circle"></i> FAQ
         </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('support') %}
         <a href="{{ url_for('admin.support_tickets') }}" class="nav-link {% if request.endpoint == 'admin.support_tickets' %}active{% endif %}">
             <i class="bi bi-ticket-detailed"></i> Support
             {% set open_count = namespace(count=0) %}
             {% if open_count.count > 0 %}<span class="badge-nav">{{ open_count.count }}</span>{% endif %}
         </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('blog') %}
         <a href="{{ url_for('admin.blog_list') }}" class="nav-link {% if 'admin.blog' in request.endpoint %}active{% endif %}">
             <i class="bi bi-file-earmark-text"></i> Blog CMS
         </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('subscriptions.edit') %}
         <a href="{{ url_for('admin.subscription_manager') }}" class="nav-link {% if request.endpoint == 'admin.subscription_manager' %}active{% endif %}">
-    <i class="bi bi-sliders"></i> Subscription Manager
-</a>
+            <i class="bi bi-sliders"></i> Subscription Manager
+        </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('subscriptions.payment') %}
         <a href="{{ url_for('admin.payment_analytics') }}" class="nav-link {% if request.endpoint == 'admin.payment_analytics' %}active{% endif %}">
-    <i class="bi bi-cash-stack"></i> Payment Analytics
-</a>
+            <i class="bi bi-cash-stack"></i> Payment Analytics
+        </a>
+        {% endif %}
         
         <div class="nav-label">Settings</div>
+        
+        {% if current_user.is_admin or can_access('seo') %}
         <a href="{{ url_for('admin.seo_settings') }}" class="nav-link {% if request.endpoint == 'admin.seo_settings' %}active{% endif %}">
             <i class="bi bi-search"></i> SEO
         </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('settings') %}
         <a href="{{ url_for('admin.settings') }}" class="nav-link {% if request.endpoint == 'admin.settings' %}active{% endif %}">
             <i class="bi bi-gear"></i> Settings
         </a>
+        {% endif %}
     </nav>
     
     <div class="sidebar-footer">

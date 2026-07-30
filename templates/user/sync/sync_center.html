@@ -1,0 +1,183 @@
+{% extends "base_user.html" %}
+{% block title %}Sync Center - Tragene Journal{% endblock %}
+{% block page_title %}🔄 Sync Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sync-stats-bar {
+        display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .sync-stat-card {
+        flex: 1; min-width: 120px; background: rgba(15,23,42,0.6);
+        border: 1px solid rgba(38,166,154,0.15); border-radius: 14px;
+        padding: 16px; text-align: center; backdrop-filter: blur(10px);
+    }
+    .sync-stat-card .ssc-value {
+        font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem;
+        font-weight: 700; color: #e0f0ed;
+    }
+    .sync-stat-card .ssc-label {
+        font-size: 0.62rem; color: #64748b; text-transform: uppercase;
+        letter-spacing: 0.8px; margin-top: 4px;
+    }
+    
+    .connection-card {
+        background: rgba(15,23,42,0.5); border: 1px solid rgba(38,166,154,0.12);
+        border-radius: 16px; padding: 18px 20px; margin-bottom: 12px;
+        backdrop-filter: blur(10px); transition: all 0.2s;
+        display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .connection-card:hover { border-color: rgba(38,166,154,0.3); }
+    .connection-card.paused { opacity: 0.6; }
+    .connection-card.error { border-color: rgba(255,82,82,0.3); }
+    
+    .conn-icon {
+        width: 48px; height: 48px; border-radius: 12px; display: flex;
+        align-items: center; justify-content: center; font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    .conn-icon.crypto { background: rgba(255,107,107,0.12); }
+    .conn-icon.forex { background: rgba(79,142,247,0.12); }
+    .conn-icon.indian_stock { background: rgba(255,179,0,0.12); }
+    
+    .conn-info { flex: 1; min-width: 150px; }
+    .conn-info .conn-name { font-weight: 700; font-size: 0.85rem; color: #e0f0ed; font-family: 'Space Grotesk', sans-serif; }
+    .conn-info .conn-meta { font-size: 0.68rem; color: #64748b; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+    
+    .conn-status {
+        padding: 5px 12px; border-radius: 20px; font-size: 0.65rem;
+        font-weight: 700; font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    .conn-status.active { background: rgba(0,230,118,0.1); color: #00e676; border: 1px solid rgba(0,230,118,0.2); }
+    .conn-status.error { background: rgba(255,82,82,0.1); color: #ff5252; border: 1px solid rgba(255,82,82,0.2); }
+    .conn-status.paused { background: rgba(255,179,0,0.1); color: #ffb300; border: 1px solid rgba(255,179,0,0.2); }
+    .conn-status.stopped { background: rgba(255,255,255,0.05); color: #64748b; border: 1px solid rgba(255,255,255,0.08); }
+    
+    .conn-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-conn {
+        padding: 7px 14px; border-radius: 8px; font-size: 0.68rem;
+        font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03); color: #94a3b8;
+        transition: all 0.2s; font-family: 'Space Grotesk', sans-serif;
+        white-space: nowrap; text-decoration: none;
+    }
+    .btn-conn:hover { background: rgba(38,166,154,0.1); border-color: var(--accent); color: var(--accent); }
+    .btn-conn.danger:hover { background: rgba(255,82,82,0.1); border-color: #ff5252; color: #ff5252; }
+    
+    .btn-add-sync {
+        background: var(--accent); color: #000; border: none;
+        padding: 12px 24px; border-radius: 12px; font-weight: 700;
+        font-size: 0.85rem; cursor: pointer; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .btn-add-sync:hover { color: #000; opacity: 0.9; }
+    
+    .empty-state { text-align: center; padding: 50px 20px; }
+    .empty-state .icon { font-size: 3rem; opacity: 0.2; margin-bottom: 16px; }
+    .empty-state h4 { color: #e0f0ed; margin-bottom: 8px; font-family: 'Space Grotesk', sans-serif; }
+    .empty-state p { color: #64748b; margin-bottom: 20px; font-size: 0.82rem; }
+    
+    .limit-bar {
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 10px; padding: 10px 14px; margin-bottom: 20px;
+        display: flex; align-items: center; justify-content: space-between;
+        font-size: 0.72rem; color: #94a3b8;
+    }
+    .limit-bar strong { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats Bar -->
+<div class="sync-stats-bar">
+    <div class="sync-stat-card">
+        <div class="ssc-value">{{ connections|length }}</div>
+        <div class="ssc-label">Total Connections</div>
+    </div>
+    <div class="sync-stat-card">
+        {% set active_count = connections|selectattr('is_active')|list|length %}
+        <div class="ssc-value" style="color:#00e676;">{{ active_count }}</div>
+        <div class="ssc-label">Active</div>
+    </div>
+    <div class="sync-stat-card">
+        {% set error_count = connections|selectattr('sync_status', 'equalto', 'error')|list|length %}
+        <div class="ssc-value" style="color:#ff5252;">{{ error_count }}</div>
+        <div class="ssc-label">Errors</div>
+    </div>
+    <div class="sync-stat-card">
+        {% set total_trades = connections|sum(attribute='total_trades_fetched') %}
+        <div class="ssc-value" style="color:#4f8ef7;">{{ total_trades }}</div>
+        <div class="ssc-label">Trades Fetched</div>
+    </div>
+</div>
+
+<!-- Limit Bar -->
+<div class="limit-bar">
+    <span>📊 Sync connections: <strong>{{ current_count }}/{{ max_sync }}</strong> ({{ current_user.subscription_tier.upper() }} plan)</span>
+    {% if not can_add %}
+    <a href="{{ url_for('user.subscription') }}" style="color:var(--accent);">Upgrade →</a>
+    {% endif %}
+</div>
+
+<!-- Add Button -->
+{% if can_add %}
+<div class="mb-4">
+    <a href="{{ url_for('user.sync_setup') }}" class="btn-add-sync">
+        <i class="bi bi-plus-circle"></i> Add Connection
+    </a>
+</div>
+{% endif %}
+
+<!-- Connections List -->
+{% if connections %}
+    {% for conn in connections %}
+    {% set market_info = get_market_info(conn.market) if conn.market in ['forex','crypto','indian_stock'] else {'icon':'📊','color':'#8b5cf6'} %}
+    <div class="connection-card {{ 'error' if conn.sync_status == 'error' }} {{ 'paused' if not conn.is_active }}">
+        <div class="conn-icon {{ conn.market }}">{{ market_info.icon }}</div>
+        <div class="conn-info">
+            <div class="conn-name">{{ conn.label or conn.platform.upper() }}</div>
+            <div class="conn-meta">
+                {{ conn.platform.upper() }} · {{ conn.market.title() }} · 
+                {% if conn.last_synced_at %}
+                    Last sync: {{ conn.last_synced_at.strftime('%d %b %Y, %H:%M') }}
+                {% else %}
+                    Never synced
+                {% endif %}
+            </div>
+            {% if conn.last_error %}
+            <div class="conn-meta" style="color:#ff5252;margin-top:4px;">⚠️ {{ conn.last_error[:120] }}</div>
+            {% endif %}
+        </div>
+        <span class="conn-status {{ conn.sync_status if conn.is_active else 'paused' }}">
+            {{ conn.sync_status.upper() if conn.is_active else 'PAUSED' }}
+        </span>
+        <div class="conn-actions">
+            <form method="POST" action="{{ url_for('user.sync_fetch_now', connection_id=conn.id) }}" style="display:inline;">
+                <button type="submit" class="btn-conn" title="Sync Now">🔄 Sync</button>
+            </form>
+            <form method="POST" action="{{ url_for('user.sync_toggle', connection_id=conn.id) }}" style="display:inline;">
+                <button type="submit" class="btn-conn">{{ '▶ Resume' if not conn.is_active else '⏸ Pause' }}</button>
+            </form>
+            <form method="POST" action="{{ url_for('user.sync_delete', connection_id=conn.id) }}" style="display:inline;" onsubmit="return confirm('Delete this connection? Trades already imported will remain.');">
+                <button type="submit" class="btn-conn danger">🗑</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="empty-state">
+    <div class="icon">🔄</div>
+    <h4>No Sync Connections</h4>
+    <p>Connect your trading accounts for automatic trade import.<br>Supports Crypto, MT4/MT5, and Indian brokers.</p>
+    {% if can_add %}
+    <a href="{{ url_for('user.sync_setup') }}" class="btn-add-sync">
+        <i class="bi bi-plus-circle"></i> Add Your First Connection
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

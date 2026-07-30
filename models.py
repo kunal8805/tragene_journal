@@ -210,36 +210,75 @@ class Trade(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    
+    # ── Market Type ──
+    market = db.Column(db.String(20), default='forex')  # forex, crypto, indian_stock
+    
+    # ── Core Fields (All Markets) ──
     symbol = db.Column(db.String(20), nullable=False)
-    trade_type = db.Column(db.String(10), nullable=False)
+    trade_type = db.Column(db.String(10), nullable=False)  # buy, sell
     entry_price = db.Column(db.Float, nullable=False)
     exit_price = db.Column(db.Float)
     stop_loss = db.Column(db.Float)
     take_profit = db.Column(db.Float)
-    lot_size = db.Column(db.Float, default=1.0)
+    quantity = db.Column(db.Float, default=1.0)  # Lots / Coins / Shares
     profit_loss = db.Column(db.Float)
     profit_loss_pips = db.Column(db.Float)
+    risk_reward_ratio = db.Column(db.Float)
+    is_win = db.Column(db.Boolean)
+    
+    # ── Dates ──
     entry_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     exit_date = db.Column(db.DateTime)
-    session = db.Column(db.String(20))
+    
+    # ── Forex Specific ──
+    session = db.Column(db.String(20))  # asian, london, newyork
+    leverage = db.Column(db.Integer)  # 1:100, 1:500
+    
+    # ── Crypto Specific ──
+    exchange = db.Column(db.String(50))  # Binance, Coinbase, Bybit (also used by Indian)
+    crypto_segment = db.Column(db.String(20))  # spot, futures, perpetual
+    
+    # ── Indian Market Specific ──
+    segment = db.Column(db.String(30))  # equity, futures, options, intraday, commodity, currency
+    instrument = db.Column(db.String(20))  # stock, index, etf, commodity
+    expiry_date = db.Column(db.Date)  # F&O expiry
+    strike_price = db.Column(db.Float)  # Options strike
+    option_type = db.Column(db.String(2))  # CE, PE
+    brokerage = db.Column(db.Float, default=0)  # ₹
+    taxes = db.Column(db.Float, default=0)  # STT, GST, etc
+    other_charges = db.Column(db.Float, default=0)
+    net_pnl_after_charges = db.Column(db.Float)
+    margin_used = db.Column(db.Float)  # ₹
+    capital_at_risk_pct = db.Column(db.Float)  # %
+    
+    # ── Common ──
+    setup_type = db.Column(db.String(50))  # breakout, trend, scalping, etc
     notes = db.Column(db.Text)
     tags = db.Column(db.String(200))
     screenshot_path = db.Column(db.String(500))
-    risk_reward_ratio = db.Column(db.Float)
-    is_win = db.Column(db.Boolean)
     import_source = db.Column(db.String(20), default='manual')
+    broker = db.Column(db.String(100))
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Screenshots relationship defined in TradeScreenshot class only
+    
     def calculate_pnl(self):
+        """Calculate P&L based on market type"""
         if self.exit_price and self.entry_price:
             symbol_upper = self.symbol.upper() if self.symbol else ''
-            if 'XAU' in symbol_upper or 'GOLD' in symbol_upper:
+            market_type = detect_market(self.symbol)
+            
+            if market_type == 'indian_stock':
+                pip_multiplier, value_per_pip = 1, 1
+            elif market_type == 'crypto':
+                pip_multiplier, value_per_pip = 1, 1
+            elif 'XAU' in symbol_upper or 'GOLD' in symbol_upper:
                 pip_multiplier, value_per_pip = 100, 10
             elif any(x in symbol_upper for x in ['US30', 'NAS100', 'NAS', 'SPX', 'DJI', 'DAX', 'GER30', 'UK100']):
                 pip_multiplier, value_per_pip = 1, 10
-            elif any(x in symbol_upper for x in ['BTC', 'ETH', 'XRP', 'SOL']):
-                pip_multiplier, value_per_pip = 1, 1
             elif 'JPY' in symbol_upper:
                 pip_multiplier, value_per_pip = 100, 10
             else:
@@ -250,9 +289,15 @@ class Trade(db.Model):
             else:
                 self.profit_loss_pips = round((self.entry_price - self.exit_price) * pip_multiplier, 2)
             
-            self.profit_loss = round(self.profit_loss_pips * self.lot_size * value_per_pip, 2)
+            self.profit_loss = round(self.profit_loss_pips * self.quantity * value_per_pip, 2)
             self.is_win = self.profit_loss > 0
             
+            # Net P&L after charges (for Indian market)
+            if market_type == 'indian_stock':
+                total_charges = (self.brokerage or 0) + (self.taxes or 0) + (self.other_charges or 0)
+                self.net_pnl_after_charges = round(self.profit_loss - total_charges, 2)
+            
+            # Risk:Reward
             if self.stop_loss and self.take_profit and self.entry_price:
                 if self.trade_type == 'buy':
                     risk = self.entry_price - self.stop_loss
@@ -262,6 +307,135 @@ class Trade(db.Model):
                     reward = self.entry_price - self.take_profit
                 if risk > 0 and reward > 0:
                     self.risk_reward_ratio = round(reward / risk, 2)
+
+
+class TradeScreenshot(db.Model):
+    """Screenshots attached to trades"""
+    __tablename__ = 'trade_screenshots'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    trade_id = db.Column(db.Integer, db.ForeignKey('trade.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    filename = db.Column(db.String(200), nullable=False)
+    filepath = db.Column(db.String(500), nullable=False)
+    file_size = db.Column(db.Integer, default=0)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    trade = db.relationship('Trade', backref='screenshots')
+
+
+
+
+
+class SyncConnection(db.Model):
+    """User's sync connections to external brokers/exchanges"""
+    __tablename__ = 'sync_connections'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('trading_account.id'), nullable=True)
+    
+    # Market & Platform
+    market = db.Column(db.String(20), nullable=False)  # crypto, forex, indian_stock
+    platform = db.Column(db.String(50), nullable=False)  # binance, mt4, mt5, zerodha, etc
+    method = db.Column(db.String(20), default='api')  # api, csv, investor_password
+    label = db.Column(db.String(100))  # User-given name like "My Binance Spot"
+    
+    # Encrypted credentials
+    api_key_encrypted = db.Column(db.Text)
+    api_secret_encrypted = db.Column(db.Text)
+    server_name = db.Column(db.String(200))  # MT4/MT5 server
+    mt_account_number = db.Column(db.String(50))  # MT4/MT5 login ID
+    investor_password_encrypted = db.Column(db.Text)  # MT4/MT5 investor password
+    passphrase_encrypted = db.Column(db.Text)  # Some exchanges need passphrase
+    
+    # Status & Stats
+    is_active = db.Column(db.Boolean, default=True)
+    sync_status = db.Column(db.String(20), default='active')  # active, error, paused, expired, stopped
+    last_synced_at = db.Column(db.DateTime)
+    last_error = db.Column(db.Text)
+    last_error_at = db.Column(db.DateTime)
+    total_trades_fetched = db.Column(db.Integer, default=0)
+    sync_count = db.Column(db.Integer, default=0)  # How many times synced
+    
+    # Admin controls
+    admin_stopped = db.Column(db.Boolean, default=False)
+    stop_reason = db.Column(db.Text)
+    stopped_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='sync_connections', foreign_keys=[user_id])
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 🔍 MARKET DETECTION HELPER
+# ═══════════════════════════════════════════════════════════
+
+def detect_market(symbol):
+    """Auto-detect market type from symbol"""
+    if not symbol:
+        return 'other'
+    
+    symbol = symbol.upper().strip()
+    
+    # Crypto
+    crypto_symbols = ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'MATIC', 'DOT', 
+                      'AVAX', 'LINK', 'UNI', 'ATOM', 'LTC', 'BCH', 'FIL', 'ICP',
+                      'SAND', 'MANA', 'GALA', 'SHIB', 'PEPE', 'ARB', 'OP', 'APT',
+                      'SUI', 'SEI', 'TIA', 'INJ', 'RUNE', 'FET', 'AGIX', 'OCEAN',
+                      'USDT', 'USDC', 'BUSD', 'DAI']
+    if any(symbol.startswith(c) or symbol.endswith(c) for c in crypto_symbols):
+        return 'crypto'
+    if 'USDT' in symbol or 'USD' in symbol and any(c in symbol for c in crypto_symbols):
+        return 'crypto'
+    
+    # Indian Stocks
+    indian_patterns = ['.NS', '.BO', 'NIFTY', 'BANKNIFTY', 'SENSEX', 'FINNIFTY',
+                       'RELIANCE', 'TCS', 'INFY', 'HDFC', 'ICICI', 'WIPRO', 'ITC',
+                       'SBIN', 'BHARTIARTL', 'KOTAKBANK', 'LT', 'HCLTECH', 'SUNPHARMA',
+                       'TITAN', 'MARUTI', 'AXISBANK', 'BAJFINANCE', 'ADANIENT',
+                       'ADANIPORTS', 'POWERGRID', 'NTPC', 'ONGC', 'COALINDIA', 'IOC',
+                       'BPCL', 'HINDUNILVR', 'ASIANPAINT', 'ULTRACEMCO', 'JSWSTEEL',
+                       'TATASTEEL', 'TATAMOTORS', 'M&M', 'BAJAJ-AUTO', 'EICHERMOT']
+    if any(symbol.startswith(p) or p in symbol for p in indian_patterns):
+        return 'indian_stock'
+    if symbol.endswith('.NS') or symbol.endswith('.BO'):
+        return 'indian_stock'
+    
+    # Forex
+    forex_pairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'GBPJPY', 'AUDUSD', 'USDCAD',
+                   'USDCHF', 'NZDUSD', 'EURGBP', 'EURJPY', 'XAUUSD', 'XAGUSD',
+                   'US30', 'NAS100', 'SPX500', 'DAX', 'GER30', 'UK100', 'USOIL', 'UKOIL',
+                   'EURCHF', 'EURAUD', 'GBPAUD', 'GBPCAD', 'GBPCHF', 'AUDCAD',
+                   'AUDCHF', 'AUDJPY', 'CADJPY', 'CHFJPY', 'NZDJPY', 'EURNZD',
+                   'GBPNZD', 'AUDNZD', 'XAU', 'XAG', 'WTI', 'BRENT']
+    if symbol in forex_pairs:
+        return 'forex'
+    
+    return 'other'
+
+
+def get_market_info(symbol):
+    """Get market display info: icon, color, label, currency"""
+    market = detect_market(symbol)
+    return {
+        'forex': {'icon': '💱', 'color': '#4f8ef7', 'label': 'Forex', 'currency': '$', 'currency_name': 'USD'},
+        'crypto': {'icon': '₿', 'color': '#ff6b6b', 'label': 'Crypto', 'currency': '$', 'currency_name': 'USD'},
+        'indian_stock': {'icon': '📈', 'color': '#ffb300', 'label': 'Indian', 'currency': '₹', 'currency_name': 'INR'},
+        'other': {'icon': '📊', 'color': '#8b5cf6', 'label': 'Other', 'currency': '$', 'currency_name': 'USD'},
+    }.get(market, {'icon': '📊', 'color': '#8b5cf6', 'label': 'Other', 'currency': '$', 'currency_name': 'USD'})
+
+
+def get_currency_for_market(market):
+    """Get currency symbol for a market type"""
+    return '₹' if market == 'indian_stock' else '$'
+
+
+
 
 
 class ImportHistory(db.Model):
@@ -915,3 +1089,93 @@ class PlanPrice(db.Model):
         fee = round(discounted * self.gateway_fee_percent / 100, 2)
         self.total_price = round(discounted + fee, 2)
         return self.total_price
+
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 👥 MODERATOR SYSTEM
+# ═══════════════════════════════════════════════════════════
+
+class PermissionRegistry(db.Model):
+    """Master list of all available permissions in the system"""
+    __tablename__ = 'permission_registry'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    permission_key = db.Column(db.String(50), unique=True, nullable=False)
+    section = db.Column(db.String(50), nullable=False)
+    label = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(200))
+    category = db.Column(db.String(20), default='write')  # read, write, delete, manage
+    is_active = db.Column(db.Boolean, default=True)
+    sort_order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Moderator(db.Model):
+    """Sub-admins with granular permissions"""
+    __tablename__ = 'moderators'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    is_banned = db.Column(db.Boolean, default=False)
+    ban_reason = db.Column(db.Text)
+    banned_until = db.Column(db.DateTime)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    last_login_at = db.Column(db.DateTime)
+    last_login_ip = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    permissions = db.relationship('ModeratorPermission', backref='moderator', lazy=True, cascade='all, delete-orphan')
+    activities = db.relationship('ModeratorActivityLog', backref='moderator', lazy=True)
+    
+    def set_password(self, password):
+        from werkzeug.security import generate_password_hash
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.password_hash, password)
+    
+    def has_permission(self, key):
+        """Check if moderator has a specific permission"""
+        for p in self.permissions:
+            if p.permission_key == key and p.is_granted:
+                return True
+        return False
+    
+    def get_allowed_permissions(self):
+        """Get list of granted permission keys"""
+        return [p.permission_key for p in self.permissions if p.is_granted]
+
+
+class ModeratorPermission(db.Model):
+    """Individual permission grants for moderators"""
+    __tablename__ = 'moderator_permissions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    moderator_id = db.Column(db.Integer, db.ForeignKey('moderators.id'), nullable=False)
+    permission_key = db.Column(db.String(50), nullable=False)
+    is_granted = db.Column(db.Boolean, default=False)
+    granted_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    granted_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class ModeratorActivityLog(db.Model):
+    """Tracks every action performed by moderators"""
+    __tablename__ = 'moderator_activity_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    moderator_id = db.Column(db.Integer, db.ForeignKey('moderators.id'), nullable=False)
+    action_type = db.Column(db.String(30), nullable=False)  # create, update, delete, ban, reply, login
+    target_type = db.Column(db.String(50))  # user, blog, ticket, subscription, ai_tokens
+    target_id = db.Column(db.Integer)
+    description = db.Column(db.Text, nullable=False)
+    old_value = db.Column(db.Text)
+    new_value = db.Column(db.Text)
+    ip_address = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
+from flask_login import login_required, current_user, logout_user
 from functools import wraps
 from extensions import db
 from models import (
@@ -7,7 +7,8 @@ from models import (
     AIReport, AIUsageLog, AIPlanDefaults, AIUserOverride,
     FAQ, SupportTicket, TicketReply,
     Blog, Category, Tag, SEOSettings, Redirect, NewsletterSubscriber, PageMetadata,
-    Subscription, Payment, DiaryEntry  # ← ADDED THESE IMPORTS
+    Subscription, Payment, DiaryEntry, SyncConnection,
+    Moderator, ModeratorPermission
 )
 from ai_service import estimate_tokens, estimate_cost
 from datetime import datetime, date, timedelta
@@ -20,9 +21,31 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_admin:
-            return "Access Denied", 403
-        return f(*args, **kwargs)
+        # Super admin via Flask-Login
+        if current_user.is_authenticated and current_user.is_admin:
+            # Ensure no moderator session exists
+            session.pop('moderator_id', None)
+            session.pop('is_moderator', None)
+            return f(*args, **kwargs)
+        
+        # Moderator via session
+        if session.get('is_moderator'):
+            mod_id = session.get('moderator_id')
+            if mod_id:
+                moderator = Moderator.query.get(mod_id)
+                if moderator and moderator.is_active and not moderator.is_banned:
+                    # Ensure no Flask-Login user
+                    if current_user.is_authenticated:
+                        logout_user()
+                    return f(*args, **kwargs)
+                else:
+                    # Invalid moderator — clear session
+                    session.clear()
+                    flash('Session expired.', 'warning')
+                    return redirect(url_for('auth.login'))
+        
+        flash('Access denied.', 'danger')
+        return redirect(url_for('auth.login'))
     return decorated_function
 
 # ═══════════════════════════════════════════════════════════
@@ -30,7 +53,6 @@ def admin_required(f):
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/dashboard')
-@login_required
 @admin_required
 def dashboard():
     from models import FAQ, SupportTicket, Blog, NewsletterSubscriber, ContactMessage
@@ -143,7 +165,6 @@ def dashboard():
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/users')
-@login_required
 @admin_required
 def users():
     all_users = User.query.order_by(User.created_at.desc()).all()
@@ -155,7 +176,6 @@ def users():
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/api/user-detail/<int:user_id>')
-@login_required
 @admin_required
 def api_user_detail(user_id):
     """Get full user details for modal"""
@@ -222,7 +242,6 @@ def api_user_detail(user_id):
 
 
 @admin_bp.route('/api/user-toggle-ban/<int:user_id>', methods=['POST'])
-@login_required
 @admin_required
 def api_user_toggle_ban(user_id):
     """Ban or unban a user"""
@@ -264,7 +283,6 @@ def api_user_toggle_ban(user_id):
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/subscriptions')
-@login_required
 @admin_required
 def subscriptions():
     from datetime import date
@@ -364,7 +382,6 @@ def subscriptions():
 
 
 @admin_bp.route('/api/subscription-detail/<int:user_id>')
-@login_required
 @admin_required
 def api_subscription_detail(user_id):
     """Get subscription details for modal"""
@@ -418,7 +435,6 @@ def api_subscription_detail(user_id):
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/analytics')
-@login_required
 @admin_required
 def analytics():
     total_users = User.query.count()
@@ -435,7 +451,6 @@ def analytics():
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/settings')
-@login_required
 @admin_required
 def settings():
     """Redirect to SEO settings as the main settings page"""
@@ -447,7 +462,6 @@ def settings():
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/ai-control')
-@login_required
 @admin_required
 def ai_control():
     total_ai_users = db.session.query(func.count(func.distinct(AIUsageLog.user_id))).scalar() or 0
@@ -481,7 +495,6 @@ def ai_control():
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/api/ai-users')
-@login_required
 @admin_required
 def api_ai_users():
     users = User.query.order_by(User.created_at.desc()).all()
@@ -505,7 +518,6 @@ def api_ai_users():
 
 
 @admin_bp.route('/api/ai-users/<int:user_id>/ban', methods=['POST'])
-@login_required
 @admin_required
 def api_ban_user_ai(user_id):
     user = User.query.get_or_404(user_id)
@@ -525,7 +537,6 @@ def api_ban_user_ai(user_id):
 
 
 @admin_bp.route('/api/ai-users/<int:user_id>/rate-limit', methods=['POST'])
-@login_required
 @admin_required
 def api_rate_limit_user(user_id):
     user = User.query.get_or_404(user_id)
@@ -543,7 +554,6 @@ def api_rate_limit_user(user_id):
 
 
 @admin_bp.route('/api/ai-users/<int:user_id>/override-tokens', methods=['POST'])
-@login_required
 @admin_required
 def api_override_tokens(user_id):
     user = User.query.get_or_404(user_id)
@@ -562,7 +572,6 @@ def api_override_tokens(user_id):
 
 
 @admin_bp.route('/api/ai-users/<int:user_id>/reset-tokens', methods=['POST'])
-@login_required
 @admin_required
 def api_reset_tokens(user_id):
     user = User.query.get_or_404(user_id)
@@ -573,7 +582,6 @@ def api_reset_tokens(user_id):
 
 
 @admin_bp.route('/api/ai-users/<int:user_id>/logs')
-@login_required
 @admin_required
 def api_user_ai_logs(user_id):
     user = User.query.get_or_404(user_id)
@@ -582,7 +590,6 @@ def api_user_ai_logs(user_id):
 
 
 @admin_bp.route('/api/ai-users/<int:user_id>/reports')
-@login_required
 @admin_required
 def api_user_ai_reports(user_id):
     user = User.query.get_or_404(user_id)
@@ -591,7 +598,6 @@ def api_user_ai_reports(user_id):
 
 
 @admin_bp.route('/api/ai-plan-defaults', methods=['GET', 'POST'])
-@login_required
 @admin_required
 def api_plan_defaults():
     if request.method == 'GET':
@@ -611,7 +617,6 @@ def api_plan_defaults():
 
 
 @admin_bp.route('/api/ai-kill-switch', methods=['POST'])
-@login_required
 @admin_required
 def api_kill_switch():
     data = request.get_json()
@@ -632,7 +637,6 @@ def api_kill_switch():
 
 
 @admin_bp.route('/api/ai-cost-analytics')
-@login_required
 @admin_required
 def api_ai_cost_analytics():
     daily_costs = []
@@ -653,7 +657,6 @@ def api_ai_cost_analytics():
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/faq')
-@login_required
 @admin_required
 def faq_manage():
     faqs = FAQ.query.order_by(FAQ.category, FAQ.display_order).all()
@@ -661,7 +664,6 @@ def faq_manage():
 
 
 @admin_bp.route('/api/faq/create', methods=['POST'])
-@login_required
 @admin_required
 def api_faq_create():
     data = request.get_json()
@@ -672,7 +674,6 @@ def api_faq_create():
 
 
 @admin_bp.route('/api/faq/<int:faq_id>/update', methods=['POST'])
-@login_required
 @admin_required
 def api_faq_update(faq_id):
     faq = FAQ.query.get_or_404(faq_id)
@@ -687,7 +688,6 @@ def api_faq_update(faq_id):
 
 
 @admin_bp.route('/api/faq/<int:faq_id>/delete', methods=['POST'])
-@login_required
 @admin_required
 def api_faq_delete(faq_id):
     faq = FAQ.query.get_or_404(faq_id)
@@ -701,7 +701,6 @@ def api_faq_delete(faq_id):
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/support')
-@login_required
 @admin_required
 def support_tickets():
     status_filter = request.args.get('status', 'open')
@@ -712,7 +711,6 @@ def support_tickets():
 
 
 @admin_bp.route('/support/<string:ticket_number>')
-@login_required
 @admin_required
 def support_ticket_detail(ticket_number):
     ticket = SupportTicket.query.filter_by(ticket_number=ticket_number).first_or_404()
@@ -720,7 +718,6 @@ def support_ticket_detail(ticket_number):
 
 
 @admin_bp.route('/api/support/<string:ticket_number>/reply', methods=['POST'])
-@login_required
 @admin_required
 def api_admin_ticket_reply(ticket_number):
     ticket = SupportTicket.query.filter_by(ticket_number=ticket_number).first_or_404()
@@ -770,7 +767,6 @@ def api_admin_ticket_reply(ticket_number):
 
 
 @admin_bp.route('/api/support/<string:ticket_number>/status', methods=['POST'])
-@login_required
 @admin_required
 def api_admin_ticket_status(ticket_number):
     ticket = SupportTicket.query.filter_by(ticket_number=ticket_number).first_or_404()
@@ -783,7 +779,6 @@ def api_admin_ticket_status(ticket_number):
 
 
 @admin_bp.route('/api/support/<string:ticket_number>/note', methods=['POST'])
-@login_required
 @admin_required
 def api_admin_ticket_note(ticket_number):
     ticket = SupportTicket.query.filter_by(ticket_number=ticket_number).first_or_404()
@@ -798,14 +793,12 @@ def api_admin_ticket_note(ticket_number):
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/blog')
-@login_required
 @admin_required
 def blog_list():
     blogs = Blog.query.order_by(Blog.created_at.desc()).all()
     return render_template('admin/blog/list.html', blogs=blogs)
 
 @admin_bp.route('/blog/new', methods=['GET', 'POST'])
-@login_required
 @admin_required
 def blog_new():
     if request.method == 'POST':
@@ -833,7 +826,6 @@ def blog_new():
     return render_template('admin/blog/editor.html', blog=None)
 
 @admin_bp.route('/blog/edit/<int:blog_id>', methods=['GET', 'POST'])
-@login_required
 @admin_required
 def blog_edit(blog_id):
     blog = Blog.query.get_or_404(blog_id)
@@ -852,7 +844,6 @@ def blog_edit(blog_id):
     return render_template('admin/blog/editor.html', blog=blog)
 
 @admin_bp.route('/blog/delete/<int:blog_id>', methods=['POST'])
-@login_required
 @admin_required
 def blog_delete(blog_id):
     blog = Blog.query.get_or_404(blog_id)
@@ -862,7 +853,6 @@ def blog_delete(blog_id):
     return redirect(url_for('admin.blog_list'))
 
 @admin_bp.route('/seo/settings', methods=['GET', 'POST'])
-@login_required
 @admin_required
 def seo_settings():
     settings = SEOSettings.query.first()
@@ -887,7 +877,6 @@ def seo_settings():
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/payment-analytics')
-@login_required
 @admin_required
 def payment_analytics():
     """Complete payment analytics dashboard"""
@@ -1012,7 +1001,6 @@ def payment_analytics():
 
 
 @admin_bp.route('/api/payment-transactions')
-@login_required
 @admin_required
 def api_payment_transactions():
     """API endpoint for transaction log with search and filters"""
@@ -1074,7 +1062,6 @@ def api_payment_transactions():
 # ═══════════════════════════════════════════════════════════
 
 @admin_bp.route('/subscription-manager')
-@login_required
 @admin_required
 def subscription_manager():
     """Manage plan pricing and subscriptions"""
@@ -1096,7 +1083,6 @@ def subscription_manager():
 
 
 @admin_bp.route('/api/plans')
-@login_required
 @admin_required
 def api_get_plans():
     """Get all plans as JSON"""
@@ -1122,7 +1108,6 @@ def api_get_plans():
 
 
 @admin_bp.route('/api/plans/save', methods=['POST'])
-@login_required
 @admin_required
 def api_save_plan():
     """Create or update a plan"""
@@ -1170,7 +1155,6 @@ def api_save_plan():
 
 
 @admin_bp.route('/api/plans/<int:plan_id>/toggle', methods=['POST'])
-@login_required
 @admin_required
 def api_toggle_plan(plan_id):
     """Toggle plan active/inactive"""
@@ -1186,7 +1170,6 @@ def api_toggle_plan(plan_id):
 
 
 @admin_bp.route('/api/plans/<int:plan_id>/delete', methods=['POST'])
-@login_required
 @admin_required
 def api_delete_plan(plan_id):
     """Delete a plan"""
@@ -1198,7 +1181,6 @@ def api_delete_plan(plan_id):
 
 
 @admin_bp.route('/api/plans/seed-defaults', methods=['POST'])
-@login_required
 @admin_required
 def api_seed_default_plans():
     """Seed default plans if none exist"""
@@ -1232,3 +1214,89 @@ def api_seed_default_plans():
     
     db.session.commit()
     return jsonify({'success': True, 'message': f'{len(defaults)} default plans created!'})
+
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 🔄 SYNC ADMIN ROUTES
+# ═══════════════════════════════════════════════════════════
+
+@admin_bp.route('/sync')
+@admin_required
+def admin_sync():
+    """Admin sync management panel"""
+    from models import SyncConnection, User
+    from sync_service import get_all_connections_stats
+    
+    stats = get_all_connections_stats()
+    
+    connections = db.session.query(SyncConnection, User).join(
+        User, SyncConnection.user_id == User.id
+    ).order_by(SyncConnection.created_at.desc()).all()
+    
+    return render_template('admin/sync/sync_admin.html',
+        stats=stats,
+        connections=connections
+    )
+
+
+@admin_bp.route('/sync/<int:connection_id>/stop', methods=['POST'])
+@admin_required
+def admin_stop_sync(connection_id):
+    """Admin stops a sync connection"""
+    from sync_service import admin_stop_connection
+    
+    # Get admin_id - works for both super admin and moderator
+    admin_id = current_user.id if current_user.is_authenticated else session.get('moderator_id')
+    
+    reason = request.form.get('reason', 'Stopped by admin')
+    success = admin_stop_connection(connection_id, admin_id, reason)
+    
+    if success:
+        flash('✅ Sync connection stopped.', 'success')
+    else:
+        flash('❌ Connection not found.', 'danger')
+    
+    return redirect(url_for('admin.admin_sync'))
+
+
+@admin_bp.route('/sync/<int:connection_id>/start', methods=['POST'])
+@admin_required
+def admin_start_sync(connection_id):
+    """Admin re-enables a sync connection"""
+    from sync_service import admin_start_connection
+    
+    success = admin_start_connection(connection_id)
+    
+    if success:
+        flash('✅ Sync connection re-enabled.', 'success')
+    else:
+        flash('❌ Connection not found.', 'danger')
+    
+    return redirect(url_for('admin.admin_sync'))
+
+
+@admin_bp.route('/sync/user/<int:user_id>/stop-all', methods=['POST'])
+@admin_required
+def admin_stop_all_user_sync(user_id):
+    """Admin stops all connections for a user"""
+    from sync_service import admin_stop_all_user_connections
+    
+    admin_id = current_user.id if current_user.is_authenticated else session.get('moderator_id')
+    
+    reason = request.form.get('reason', 'Admin stopped all connections')
+    count = admin_stop_all_user_connections(user_id, admin_id, reason)
+    
+    flash(f'✅ Stopped {count} sync connections for user #{user_id}.', 'success')
+    return redirect(url_for('admin.admin_sync'))
+
+
+@admin_bp.route('/sync/user/<int:user_id>/logs')
+@admin_required
+def admin_user_sync_logs(user_id):
+    """Get sync logs for a specific user (JSON)"""
+    from sync_service import get_user_sync_stats
+    
+    stats = get_user_sync_stats(user_id)
+    return jsonify(stats)

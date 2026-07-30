@@ -5,197 +5,269 @@
 {% block extra_css %}
 <style>
     :root {
-        --green: #00e676;
-        --red: #ff5252;
-        --gold: #ffb300;
-        --blue: #4f8ef7;
+        --green: #10b981;
+        --red: #ef4444;
+        --gold: #f59e0b;
+        --blue: #3b82f6;
         --purple: #8b5cf6;
-        --teal: #26a69a;
-    }
-
-    [data-theme="dark"] {
-        --stat-bg: #131a29;
-        --stat-border: #232e42;
-        --hover-bg: rgba(38,166,154,0.08);
-        --table-stripe: rgba(255,255,255,0.02);
-        --badge-bg: rgba(255,255,255,0.08);
+        --teal: #06b6d4;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --gray-900: #0f172a;
     }
 
     [data-theme="light"] {
-        --stat-bg: #ffffff;
-        --stat-border: #e2e8f0;
-        --hover-bg: rgba(38,166,154,0.05);
-        --table-stripe: rgba(0,0,0,0.02);
-        --badge-bg: rgba(0,0,0,0.06);
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8fafc;
+        --bg-card: #ffffff;
+        --border-color: #e2e8f0;
+        --text-primary: #0f172a;
+        --text-secondary: #334155;
+        --text-muted: #64748b;
+        --hover-bg: #f1f5f9;
+        --shadow: 0 1px 3px rgba(0,0,0,0.06);
+        --shadow-hover: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    [data-theme="dark"] {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --bg-card: #1e293b;
+        --border-color: #334155;
+        --text-primary: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --text-muted: #94a3b8;
+        --hover-bg: #1e293b;
+        --shadow: 0 1px 3px rgba(0,0,0,0.3);
+        --shadow-hover: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    /* Reset all text colors */
+    body, .stat-card, .section-card, .info-row, .info-label, .info-value,
+    .stat-label, .stat-value, .stat-subtitle, .section-title,
+    table, table th, table td, .quick-link, .badge-status,
+    .text-muted, .text-center, .stat-icon {
+        color: var(--text-primary) !important;
     }
 
     .stat-card {
-        background: var(--stat-bg);
-        border: 1px solid var(--stat-border);
-        border-radius: 14px;
-        padding: 20px;
-        transition: all 0.3s ease;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 18px 16px;
+        transition: all 0.25s ease;
         height: 100%;
+        box-shadow: var(--shadow);
     }
     .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
         border-color: var(--teal);
     }
     .stat-label {
-        font-size: 0.72rem;
+        font-size: 0.65rem;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--text-muted);
-        font-weight: 700;
-        margin-bottom: 4px;
+        letter-spacing: 0.06em;
+        color: var(--text-muted) !important;
+        font-weight: 600;
+        margin-bottom: 2px;
     }
     .stat-value {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 2rem;
+        font-size: 1.6rem;
         font-weight: 700;
-        color: var(--text-primary);
-        line-height: 1;
+        color: var(--text-primary) !important;
+        line-height: 1.2;
     }
     .stat-subtitle {
-        font-size: 0.72rem;
-        color: var(--text-muted);
+        font-size: 0.7rem;
+        color: var(--text-muted) !important;
         margin-top: 4px;
     }
     .stat-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
-        margin-bottom: 12px;
+        font-size: 1rem;
+        margin-bottom: 8px;
+        color: var(--text-primary) !important;
     }
-    .stat-icon.green { background: rgba(0,230,118,0.15); color: var(--green); }
-    .stat-icon.blue { background: rgba(79,142,247,0.15); color: var(--blue); }
-    .stat-icon.purple { background: rgba(139,92,246,0.15); color: var(--purple); }
-    .stat-icon.gold { background: rgba(255,179,0,0.15); color: var(--gold); }
-    .stat-icon.red { background: rgba(255,82,82,0.15); color: var(--red); }
-    .stat-icon.teal { background: rgba(38,166,154,0.15); color: var(--teal); }
+    .stat-icon.green { background: rgba(16,185,129,0.12); color: var(--green) !important; }
+    .stat-icon.blue { background: rgba(59,130,246,0.12); color: var(--blue) !important; }
+    .stat-icon.purple { background: rgba(139,92,246,0.12); color: var(--purple) !important; }
+    .stat-icon.gold { background: rgba(245,158,11,0.12); color: var(--gold) !important; }
+    .stat-icon.red { background: rgba(239,68,68,0.12); color: var(--red) !important; }
+    .stat-icon.teal { background: rgba(6,182,212,0.12); color: var(--teal) !important; }
 
     .section-card {
-        background: var(--stat-bg);
-        border: 1px solid var(--stat-border);
-        border-radius: 14px;
-        padding: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px 18px;
         height: 100%;
+        box-shadow: var(--shadow);
     }
     .section-title {
-        font-family: 'Space Grotesk', sans-serif;
-        font-weight: 700;
-        font-size: 0.9rem;
-        color: var(--text-primary);
-        margin-bottom: 16px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--text-primary) !important;
+        margin-bottom: 14px;
         display: flex;
         align-items: center;
         gap: 8px;
     }
     .section-title i {
-        color: var(--teal);
-        font-size: 1rem;
+        color: var(--teal) !important;
+        font-size: 0.95rem;
     }
 
     .info-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid var(--stat-border);
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-color);
     }
     .info-row:last-child {
         border-bottom: none;
     }
     .info-label {
-        font-size: 0.8rem;
-        color: var(--text-muted);
+        font-size: 0.78rem;
+        color: var(--text-muted) !important;
+        font-weight: 500;
     }
     .info-value {
         font-weight: 600;
-        font-size: 0.85rem;
-        color: var(--text-primary);
+        font-size: 0.82rem;
+        color: var(--text-primary) !important;
     }
 
     .badge-status {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.5px;
+        padding: 3px 12px;
+        border-radius: 16px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        color: var(--text-primary) !important;
     }
-    .badge-status.green { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
-    .badge-status.red { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
-    .badge-status.gold { background: rgba(255,179,0,0.15); color: var(--gold); border: 1px solid rgba(255,179,0,0.3); }
-    .badge-status.blue { background: rgba(79,142,247,0.15); color: var(--blue); border: 1px solid rgba(79,142,247,0.3); }
-    .badge-status.purple { background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+    .badge-status.green { background: rgba(16,185,129,0.12); color: var(--green) !important; border: 1px solid rgba(16,185,129,0.2); }
+    .badge-status.red { background: rgba(239,68,68,0.12); color: var(--red) !important; border: 1px solid rgba(239,68,68,0.2); }
+    .badge-status.gold { background: rgba(245,158,11,0.12); color: var(--gold) !important; border: 1px solid rgba(245,158,11,0.2); }
+    .badge-status.blue { background: rgba(59,130,246,0.12); color: var(--blue) !important; border: 1px solid rgba(59,130,246,0.2); }
+    .badge-status.purple { background: rgba(139,92,246,0.12); color: var(--purple) !important; border: 1px solid rgba(139,92,246,0.2); }
 
     .progress-mini {
-        height: 6px;
-        border-radius: 3px;
-        background: var(--stat-border);
+        height: 4px;
+        border-radius: 2px;
+        background: var(--border-color);
         overflow: hidden;
         margin-top: 6px;
     }
     .progress-fill {
         height: 100%;
-        border-radius: 3px;
+        border-radius: 2px;
         transition: width 0.5s ease;
     }
 
     .quick-link {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         padding: 10px 14px;
         border-radius: 10px;
         background: var(--hover-bg);
-        color: var(--text-primary);
+        color: var(--text-primary) !important;
         text-decoration: none;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         font-weight: 500;
         transition: all 0.2s;
         border: 1px solid transparent;
     }
     .quick-link:hover {
         border-color: var(--teal);
-        color: var(--teal);
+        color: var(--teal) !important;
+        background: var(--bg-card);
+        transform: translateX(3px);
     }
     .quick-link i {
-        color: var(--teal);
+        color: var(--teal) !important;
+        font-size: 1rem;
     }
 
-    table {
+    /* Tables */
+    .table {
         color: var(--text-primary) !important;
+        margin-bottom: 0;
     }
-    table th {
+    .table th {
         color: var(--text-muted) !important;
         font-weight: 600;
-        font-size: 0.72rem;
+        font-size: 0.65rem;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-color: var(--stat-border) !important;
+        letter-spacing: 0.04em;
+        border-color: var(--border-color) !important;
+        padding: 8px 6px !important;
     }
-    table td {
-        border-color: var(--stat-border) !important;
-        font-size: 0.82rem;
+    .table td {
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+        font-size: 0.8rem;
         vertical-align: middle;
+        padding: 8px 6px !important;
     }
-    table tbody tr:hover {
+    .table tbody tr:hover {
         background: var(--hover-bg);
+    }
+    .table tbody tr {
+        transition: background 0.15s ease;
+    }
+
+    .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    .plan-box {
+        background: var(--hover-bg);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    .plan-box:hover {
+        background: var(--border-color);
+        transform: scale(1.02);
+    }
+    .plan-box .stat-label {
+        font-size: 0.6rem;
+        margin-bottom: 0;
+    }
+    .plan-box .stat-value {
+        font-size: 1.3rem;
+        font-weight: 700;
     }
 
     @media (max-width: 768px) {
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
         }
         .stat-card {
+            padding: 12px;
+        }
+        .section-card {
             padding: 14px;
+        }
+        .col-6 {
+            padding: 0 6px;
         }
     }
 </style>
@@ -203,20 +275,20 @@
 
 {% block content %}
 
-<!-- ===== TOP STATS ROW ===== -->
+<!-- Stats Row -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-lg-2">
         <div class="stat-card">
             <div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
-            <div class="stat-label">Total Users</div>
+            <div class="stat-label">Users</div>
             <div class="stat-value">{{ total_users }}</div>
-            <div class="stat-subtitle">{{ new_users_today }} new today</div>
+            <div class="stat-subtitle">+{{ new_users_today }} today</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="stat-card">
             <div class="stat-icon teal"><i class="bi bi-graph-up"></i></div>
-            <div class="stat-label">Total Trades</div>
+            <div class="stat-label">Trades</div>
             <div class="stat-value">{{ total_trades }}</div>
             <div class="stat-subtitle">{{ trades_today }} today</div>
         </div>
@@ -225,8 +297,8 @@
         <div class="stat-card">
             <div class="stat-icon green"><i class="bi bi-credit-card-2-front"></i></div>
             <div class="stat-label">Revenue</div>
-            <div class="stat-value" style="font-size: 1.4rem;">₹{{ revenue }}</div>
-            <div class="stat-subtitle">{{ active_subs }} active subs</div>
+            <div class="stat-value" style="font-size: 1.3rem;">₹{{ revenue }}</div>
+            <div class="stat-subtitle">{{ active_subs }} active</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
@@ -234,13 +306,13 @@
             <div class="stat-icon purple"><i class="bi bi-robot"></i></div>
             <div class="stat-label">AI Reports</div>
             <div class="stat-value">{{ total_ai_reports }}</div>
-            <div class="stat-subtitle">₹{{ '%.0f'|format(total_ai_cost) }} cost</div>
+            <div class="stat-subtitle">₹{{ '%.0f'|format(total_ai_cost) }}</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="stat-card">
             <div class="stat-icon gold"><i class="bi bi-ticket-detailed"></i></div>
-            <div class="stat-label">Open Tickets</div>
+            <div class="stat-label">Tickets</div>
             <div class="stat-value">{{ open_tickets }}</div>
             <div class="stat-subtitle">{{ total_tickets }} total</div>
         </div>
@@ -248,38 +320,38 @@
     <div class="col-6 col-md-4 col-lg-2">
         <div class="stat-card">
             <div class="stat-icon red"><i class="bi bi-file-earmark-text"></i></div>
-            <div class="stat-label">Blog Posts</div>
+            <div class="stat-label">Blogs</div>
             <div class="stat-value">{{ total_blogs }}</div>
-            <div class="stat-subtitle">{{ published_blogs }} published</div>
+            <div class="stat-subtitle">{{ published_blogs }} live</div>
         </div>
     </div>
 </div>
 
-<!-- ===== MAIN CONTENT ROW ===== -->
+<!-- Main Content -->
 <div class="row g-3">
     <!-- Left Column -->
     <div class="col-lg-8">
         
-        <!-- Subscription Breakdown -->
+        <!-- Subscription Distribution -->
         <div class="section-card mb-3">
             <div class="section-title">
-                <i class="bi bi-pie-chart-fill"></i> Subscription Distribution
+                <i class="bi bi-pie-chart-fill"></i> Plan Distribution
             </div>
-            <div class="row g-3">
+            <div class="row g-2">
                 <div class="col-6 col-md-3">
-                    <div class="text-center p-3 rounded" style="background: var(--hover-bg);">
+                    <div class="plan-box">
                         <div class="stat-label">Free</div>
-                        <div class="stat-value" style="font-size: 1.5rem;">{{ free_users }}</div>
+                        <div class="stat-value" style="color: var(--gray-400);">{{ free_users }}</div>
                         <div class="progress-mini">
-                            <div class="progress-fill" style="width: {{ (free_users / total_users * 100) if total_users > 0 else 0 }}%; background: #64748b;"></div>
+                            <div class="progress-fill" style="width: {{ (free_users / total_users * 100) if total_users > 0 else 0 }}%; background: var(--gray-400);"></div>
                         </div>
                         <div class="stat-subtitle">{{ '%.0f'|format(free_users / total_users * 100) if total_users > 0 else 0 }}%</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="text-center p-3 rounded" style="background: var(--hover-bg);">
+                    <div class="plan-box">
                         <div class="stat-label">Basic</div>
-                        <div class="stat-value" style="font-size: 1.5rem;">{{ basic_users }}</div>
+                        <div class="stat-value" style="color: var(--blue);">{{ basic_users }}</div>
                         <div class="progress-mini">
                             <div class="progress-fill" style="width: {{ (basic_users / total_users * 100) if total_users > 0 else 0 }}%; background: var(--blue);"></div>
                         </div>
@@ -287,9 +359,9 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="text-center p-3 rounded" style="background: var(--hover-bg);">
+                    <div class="plan-box">
                         <div class="stat-label">Pro</div>
-                        <div class="stat-value" style="font-size: 1.5rem;">{{ pro_users }}</div>
+                        <div class="stat-value" style="color: var(--teal);">{{ pro_users }}</div>
                         <div class="progress-mini">
                             <div class="progress-fill" style="width: {{ (pro_users / total_users * 100) if total_users > 0 else 0 }}%; background: var(--teal);"></div>
                         </div>
@@ -297,9 +369,9 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="text-center p-3 rounded" style="background: var(--hover-bg);">
+                    <div class="plan-box">
                         <div class="stat-label">Elite</div>
-                        <div class="stat-value" style="font-size: 1.5rem;">{{ elite_users }}</div>
+                        <div class="stat-value" style="color: var(--purple);">{{ elite_users }}</div>
                         <div class="progress-mini">
                             <div class="progress-fill" style="width: {{ (elite_users / total_users * 100) if total_users > 0 else 0 }}%; background: var(--purple);"></div>
                         </div>
@@ -309,17 +381,16 @@
             </div>
         </div>
 
-        <!-- Recent Users Table -->
+        <!-- Recent Users -->
         <div class="section-card mb-3">
             <div class="section-title">
                 <i class="bi bi-person-plus"></i> Recent Users
             </div>
             <div class="table-responsive">
-                <table class="table table-sm mb-0">
+                <table class="table table-sm">
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Email</th>
                             <th>Plan</th>
                             <th>Trades</th>
                             <th>Joined</th>
@@ -328,20 +399,17 @@
                     <tbody>
                         {% for user in recent_users %}
                         <tr>
-                            <td><strong>{{ user.username }}</strong></td>
-                            <td style="color: var(--text-muted);">{{ user.email }}</td>
+                            <td><strong>{{ user.username }}</strong><br><span style="font-size: 0.7rem; color: var(--text-muted);">{{ user.email }}</span></td>
                             <td>
-                                <span class="badge-status {{ 'purple' if user.subscription_tier == 'elite' else 'teal' if user.subscription_tier == 'pro' else 'blue' if user.subscription_tier == 'basic' else 'gold' }}">
+                                <span class="badge-status {{ 'purple' if user.subscription_tier == 'elite' else 'teal' if user.subscription_tier == 'pro' else 'blue' if user.subscription_tier == 'basic' else '' }}">
                                     {{ user.subscription_tier.upper() }}
                                 </span>
                             </td>
                             <td>{{ user.trade_count or 0 }}</td>
-                            <td style="color: var(--text-muted);">{{ user.created_at.strftime('%d %b %Y') if user.created_at else 'N/A' }}</td>
+                            <td style="font-size: 0.75rem; color: var(--text-muted);">{{ user.created_at.strftime('%d %b %Y') if user.created_at else 'N/A' }}</td>
                         </tr>
                         {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-3">No users yet</td>
-                        </tr>
+                        <tr><td colspan="4" class="text-center text-muted py-3">No users yet</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -354,7 +422,7 @@
                 <i class="bi bi-arrow-left-right"></i> Recent Trades
             </div>
             <div class="table-responsive">
-                <table class="table table-sm mb-0">
+                <table class="table table-sm">
                     <thead>
                         <tr>
                             <th>User</th>
@@ -374,17 +442,13 @@
                                     {{ trade.trade_type.upper() }}
                                 </span>
                             </td>
-                            <td>
-                                <span style="color: {{ '#00e676' if trade.profit_loss and trade.profit_loss > 0 else '#ff5252' if trade.profit_loss and trade.profit_loss < 0 else 'var(--text-muted)' }}; font-weight: 600;">
-                                    {{ '+' if trade.profit_loss and trade.profit_loss > 0 else '' }}${{ '%.2f'|format(trade.profit_loss) if trade.profit_loss else '0.00' }}
-                                </span>
+                            <td style="font-weight: 600; color: {{ '#10b981' if trade.profit_loss and trade.profit_loss > 0 else '#ef4444' if trade.profit_loss and trade.profit_loss < 0 else 'var(--text-muted)' }};">
+                                {{ '+' if trade.profit_loss and trade.profit_loss > 0 else '' }}${{ '%.2f'|format(trade.profit_loss) if trade.profit_loss else '0.00' }}
                             </td>
-                            <td style="color: var(--text-muted);">{{ trade.entry_date.strftime('%d %b %Y') if trade.entry_date else 'N/A' }}</td>
+                            <td style="font-size: 0.75rem; color: var(--text-muted);">{{ trade.entry_date.strftime('%d %b %Y') if trade.entry_date else 'N/A' }}</td>
                         </tr>
                         {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-3">No trades yet</td>
-                        </tr>
+                        <tr><td colspan="5" class="text-center text-muted py-3">No trades yet</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -398,7 +462,7 @@
         <!-- Quick Summary -->
         <div class="section-card mb-3">
             <div class="section-title">
-                <i class="bi bi-lightning-charge"></i> Quick Summary
+                <i class="bi bi-lightning-charge"></i> Summary
             </div>
             <div class="info-row">
                 <span class="info-label">Total Accounts</span>
@@ -409,29 +473,23 @@
                 <span class="info-value" style="color: var(--teal);">{{ active_subs }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Open Support Tickets</span>
-                <span class="info-value">
-                    {% if open_tickets > 0 %}
-                        <span style="color: var(--gold);">{{ open_tickets }}</span>
-                    {% else %}
-                        <span style="color: var(--green);">0 ✓</span>
-                    {% endif %}
-                </span>
+                <span class="info-label">Open Tickets</span>
+                <span class="info-value" style="color: {{ '#f59e0b' if open_tickets > 0 else '#10b981' }};">{{ open_tickets }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Total AI Reports</span>
+                <span class="info-label">AI Reports</span>
                 <span class="info-value">{{ total_ai_reports }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">AI Cost This Month</span>
+                <span class="info-label">AI Cost</span>
                 <span class="info-value" style="color: var(--gold);">₹{{ '%.2f'|format(total_ai_cost) }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Total FAQs</span>
+                <span class="info-label">FAQs</span>
                 <span class="info-value">{{ total_faqs }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Newsletter Subs</span>
+                <span class="info-label">Newsletter</span>
                 <span class="info-value">{{ newsletter_count }}</span>
             </div>
             <div class="info-row">
@@ -440,10 +498,10 @@
             </div>
         </div>
 
-        <!-- Ticket Overview -->
+        <!-- Ticket Status -->
         <div class="section-card mb-3">
             <div class="section-title">
-                <i class="bi bi-ticket-detailed"></i> Ticket Overview
+                <i class="bi bi-ticket-detailed"></i> Ticket Status
             </div>
             <div class="info-row">
                 <span class="info-label">Open</span>
@@ -463,7 +521,7 @@
             </div>
         </div>
 
-        <!-- Quick Links -->
+        <!-- Quick Actions -->
         <div class="section-card">
             <div class="section-title">
                 <i class="bi bi-link-45deg"></i> Quick Actions
@@ -473,13 +531,13 @@
                     <i class="bi bi-people"></i> Manage Users
                 </a>
                 <a href="{{ url_for('admin.subscriptions') }}" class="quick-link">
-                    <i class="bi bi-credit-card"></i> View Subscriptions
+                    <i class="bi bi-credit-card"></i> Subscriptions
                 </a>
                 <a href="{{ url_for('admin.support_tickets') }}" class="quick-link">
                     <i class="bi bi-ticket-detailed"></i> Support Tickets
                 </a>
                 <a href="{{ url_for('admin.ai_control') }}" class="quick-link">
-                    <i class="bi bi-robot"></i> AI Control Center
+                    <i class="bi bi-robot"></i> AI Control
                 </a>
                 <a href="{{ url_for('admin.blog_list') }}" class="quick-link">
                     <i class="bi bi-file-earmark-text"></i> Blog CMS

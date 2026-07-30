@@ -195,7 +195,7 @@ def risk_analytics():
                 'entry_date': t.entry_date.isoformat() if t.entry_date else None,
                 'session': t.session,
                 'notes': t.notes,
-                'lot_size': t.lot_size
+                'lot_size': t.quantity
             },
             'risk_pct': risk_pct,
             'rr_ratio': rr_ratio,
@@ -946,7 +946,7 @@ def api_all_trades_risk():
             'entry_date': t.entry_date.isoformat() if t.entry_date else None,
             'stop_loss': t.stop_loss,
             'take_profit': t.take_profit,
-            'lot_size': t.lot_size,
+            'lot_size': t.quantity,
             'session': t.session,
             'notes': t.notes,
             'risk_pct': risk_pct,

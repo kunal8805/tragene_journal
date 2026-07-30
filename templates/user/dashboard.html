@@ -5,74 +5,82 @@
 
 {% block extra_css %}
 <style>
-    /* Dashboard specific styles with proper dark/light mode support */
     .stat-card {
         transition: all 0.3s ease;
-        border: 1px solid var(--border-color);
+        border: 1px solid rgba(38,166,154,0.12);
+        background: rgba(15,23,42,0.5);
+        backdrop-filter: blur(10px);
     }
     .stat-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        border-color: rgba(38,166,154,0.3);
     }
     
     .stat-value {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 1.8rem;
+        font-size: clamp(1.1rem, 2.5vw, 1.6rem);
         font-weight: 700;
-        margin: 8px 0;
+        margin: 6px 0;
+        word-break: break-word;
+        line-height: 1.2;
     }
     
     .stat-label {
-        font-size: 0.78rem;
-        color: var(--text-muted);
+        font-size: 0.62rem;
+        color: #64748b;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
         font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     .stat-subtitle {
-        font-size: 0.72rem;
-        color: var(--text-muted);
+        font-size: 0.62rem;
+        color: #64748b;
         margin-top: 2px;
-    }
-    
-    .mini-chart-container {
-        position: relative;
-        height: 60px;
-        margin-top: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .quick-action-btn {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 12px 16px;
+        padding: 10px 14px;
         border-radius: 12px;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.78rem;
         transition: all 0.2s;
         text-decoration: none;
+        font-family: 'Space Grotesk', sans-serif;
     }
-    
-    .quick-action-btn:hover {
-        transform: translateX(4px);
-    }
+    .quick-action-btn:hover { transform: translateX(4px); }
     
     .insight-card {
         padding: 14px;
         border-radius: 12px;
-        margin-bottom: 8px;
-        border: 1px solid var(--border-color);
+        border: 1px solid rgba(255,255,255,0.05);
+        background: rgba(15,23,42,0.4);
+        backdrop-filter: blur(5px);
+        transition: all 0.2s;
+    }
+    .insight-card:hover {
+        border-color: rgba(38,166,154,0.2);
+        background: rgba(15,23,42,0.6);
     }
     
     .progress-mini {
-        height: 6px;
+        height: 5px;
         border-radius: 3px;
-        background: var(--border-color);
+        background: rgba(255,255,255,0.05);
         overflow: hidden;
         margin-top: 6px;
     }
-    
     .progress-fill {
         height: 100%;
         border-radius: 3px;
@@ -80,194 +88,199 @@
     }
     
     .activity-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
         display: inline-block;
         margin: 2px;
-    }
-    
-    .activity-dot.active {
-        background: var(--accent);
-    }
-    
-    .activity-dot.inactive {
-        background: var(--border-color);
     }
     
     .section-title {
         font-family: 'Space Grotesk', sans-serif;
         font-weight: 700;
-        font-size: 1rem;
-        color: var(--text-primary);
-        margin-bottom: 16px;
+        font-size: 0.85rem;
+        color: #e0f0ed;
+        margin-bottom: 14px;
         display: flex;
         align-items: center;
         gap: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
-    
-    .section-title i {
-        color: var(--accent);
-    }
-    
-    .mood-indicator {
-        font-size: 2rem;
-        text-align: center;
-    }
+    .section-title i { color: var(--accent); }
     
     .daily-summary-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 8px 0;
-        border-bottom: 1px solid var(--border-soft);
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        gap: 10px;
     }
-    
-    .daily-summary-item:last-child {
-        border-bottom: none;
-    }
+    .daily-summary-item:last-child { border-bottom: none; }
+    .daily-summary-item .text-muted { flex-shrink: 0; font-size: 0.72rem; color: #64748b; }
+    .daily-summary-item strong { text-align: right; font-size: 0.8rem; word-break: break-word; color: #e0f0ed; }
     
     .tag-badge {
         display: inline-block;
         padding: 3px 10px;
         border-radius: 12px;
-        font-size: 0.7rem;
+        font-size: 0.62rem;
         font-weight: 600;
         margin: 2px;
+        white-space: nowrap;
     }
+    .tag-badge.green { background: rgba(0,230,118,0.1); color: #00e676; border: 1px solid rgba(0,230,118,0.2); }
+    .tag-badge.red { background: rgba(255,82,82,0.1); color: #ff5252; border: 1px solid rgba(255,82,82,0.2); }
+    .tag-badge.blue { background: rgba(79,142,247,0.1); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.2); }
+    .tag-badge.purple { background: rgba(139,92,246,0.1); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+    .tag-badge.gold { background: rgba(255,179,0,0.1); color: #ffb300; border: 1px solid rgba(255,179,0,0.2); }
     
-    .tag-badge.green {
-        background: rgba(0,230,118,0.15);
-        color: #00e676;
-        border: 1px solid rgba(0,230,118,0.3);
+    .market-badge-sm {
+        display: inline-flex; align-items: center; gap: 3px;
+        padding: 2px 8px; border-radius: 10px;
+        font-size: 0.58rem; font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
     }
-    
-    .tag-badge.red {
-        background: rgba(255,82,82,0.15);
-        color: #ff5252;
-        border: 1px solid rgba(255,82,82,0.3);
-    }
-    
-    .tag-badge.blue {
-        background: rgba(79,142,247,0.15);
-        color: #4f8ef7;
-        border: 1px solid rgba(79,142,247,0.3);
-    }
-    
-    .tag-badge.purple {
-        background: rgba(139,92,246,0.15);
-        color: #8b5cf6;
-        border: 1px solid rgba(139,92,246,0.3);
-    }
-    
-    /* Responsive */
+    .market-badge-sm.forex { background: rgba(79,142,247,0.1); color: #4f8ef7; }
+    .market-badge-sm.crypto { background: rgba(255,107,107,0.1); color: #ff6b6b; }
+    .market-badge-sm.indian_stock { background: rgba(255,179,0,0.1); color: #ffb300; }
+
     @media (max-width: 768px) {
-        .stat-value {
-            font-size: 1.4rem;
-        }
-        .section-title {
-            font-size: 0.9rem;
-        }
+        .stat-value { font-size: clamp(1rem, 3vw, 1.3rem); }
+        .section-title { font-size: 0.78rem; }
+        .daily-summary-item strong { font-size: 0.72rem; }
+    }
+    @media (max-width: 400px) {
+        .stat-value { font-size: 0.95rem; }
+        .stat-label { font-size: 0.55rem; }
+        .stat-subtitle { font-size: 0.55rem; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- Quick Stats Row -->
-<div class="row g-3 mb-4">
+<!-- ═══════════════════════════════════════ -->
+<!-- QUICK STATS ROW -->
+<!-- ═══════════════════════════════════════ -->
+<div class="row g-2 g-md-3 mb-4">
     <div class="col-6 col-md-3">
-        <div class="card stat-card p-3 text-center h-100">
+        <div class="card stat-card p-2 p-md-3 text-center h-100">
             <div class="stat-label">Total Trades</div>
             <div class="stat-value">{{ analytics.total_trades }}</div>
             <div class="stat-subtitle">
-                <span class="text-success">{{ analytics.total_wins }}W</span> / 
-                <span class="text-danger">{{ analytics.total_losses }}L</span>
+                <span style="color:#00e676;">{{ analytics.total_wins }}W</span> / 
+                <span style="color:#ff5252;">{{ analytics.total_losses }}L</span>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card stat-card p-3 text-center h-100">
+        <div class="card stat-card p-2 p-md-3 text-center h-100">
             <div class="stat-label">Win Rate</div>
-            <div class="stat-value {% if analytics.win_rate >= 50 %}text-success{% else %}text-danger{% endif %}">
+            <div class="stat-value {{ 'text-success' if analytics.win_rate >= 50 else 'text-danger' }}">
                 {{ analytics.win_rate }}%
             </div>
             <div class="progress-mini">
-                <div class="progress-fill {% if analytics.win_rate >= 50 %}bg-success{% else %}bg-danger{% endif %}" 
+                <div class="progress-fill {{ 'bg-success' if analytics.win_rate >= 50 else 'bg-danger' }}" 
                      style="width: {{ analytics.win_rate }}%"></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card stat-card p-3 text-center h-100">
+        <div class="card stat-card p-2 p-md-3 text-center h-100">
             <div class="stat-label">Net P&L</div>
-            <div class="stat-value {% if analytics.net_pnl > 0 %}text-success{% elif analytics.net_pnl < 0 %}text-danger{% endif %}">
+            <div class="stat-value {{ 'text-success' if analytics.net_pnl > 0 else 'text-danger' if analytics.net_pnl < 0 }}">
                 {{ '+' if analytics.net_pnl > 0 else '' }}${{ '%.2f'|format(analytics.net_pnl) }}
             </div>
-            <div class="stat-subtitle">
-                {{ '%.2f'|format(analytics.avg_pnl_per_trade) }} avg/trade
-            </div>
+            <div class="stat-subtitle">{{ '%.2f'|format(analytics.avg_pnl_per_trade) }} avg/trade</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card stat-card p-3 text-center h-100">
+        <div class="card stat-card p-2 p-md-3 text-center h-100">
             <div class="stat-label">Profit Factor</div>
-            <div class="stat-value {% if analytics.profit_factor >= 1.5 %}text-success{% elif analytics.profit_factor >= 1 %}text-warning{% else %}text-danger{% endif %}">
+            <div class="stat-value {{ 'text-success' if analytics.profit_factor >= 1.5 else 'text-warning' if analytics.profit_factor >= 1 else 'text-danger' }}">
                 {% if analytics.profit_factor == 999999 %}∞{% else %}{{ analytics.profit_factor }}{% endif %}
             </div>
-            <div class="stat-subtitle">
-                +${{ '%.0f'|format(analytics.gross_profit) }} / -${{ '%.0f'|format(analytics.gross_loss) }}
-            </div>
+            <div class="stat-subtitle">+${{ '%.0f'|format(analytics.gross_profit) }} / -${{ '%.0f'|format(analytics.gross_loss) }}</div>
         </div>
     </div>
 </div>
 
-<!-- Trading Activity & Account Info -->
-<div class="row g-3 mb-4">
-    <div class="col-md-8">
-        <div class="card p-3 h-100">
-            <div class="section-title">
-                <i class="bi bi-graph-up"></i> Trading Activity
+<!-- ═══════════════════════════════════════ -->
+<!-- MARKET BREAKDOWN -->
+<!-- ═══════════════════════════════════════ -->
+{% if market_breakdown %}
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-12">
+        <div class="card p-2 p-md-3">
+            <div class="section-title"><i class="bi bi-pie-chart"></i> Market Breakdown</div>
+            <div class="row g-2">
+                {% for mkt in market_breakdown %}
+                <div class="col-6 col-md-3">
+                    <div class="insight-card" style="border-left: 3px solid {{ mkt.color }};">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:1.3rem;">{{ mkt.icon }}</span>
+                            <span class="stat-label" style="color:{{ mkt.color }};">{{ mkt.label }}</span>
+                        </div>
+                        <div style="font-size:1.2rem;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#e0f0ed;">{{ mkt.count }}</div>
+                        <div class="stat-subtitle">{{ mkt.wins }}W · {{ mkt.win_rate }}% WR</div>
+                        <div style="font-size:0.78rem;font-weight:700;font-family:'Space Grotesk',sans-serif;color:{{ '#00e676' if mkt.pnl > 0 else '#ff5252' if mkt.pnl < 0 else '#ffb300' }};">
+                            {{ '+' if mkt.pnl > 0 else '' }}{{ mkt.currency }}{{ '%.2f'|format(mkt.pnl|abs) }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-            <div class="row g-3">
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TRADING ACTIVITY & ACCOUNT INFO -->
+<!-- ═══════════════════════════════════════ -->
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-md-8">
+        <div class="card p-2 p-md-3 h-100">
+            <div class="section-title"><i class="bi bi-graph-up"></i> Trading Activity</div>
+            <div class="row g-2">
                 <div class="col-6 col-md-3">
                     <div class="text-center p-2">
                         <div class="stat-label">Active Days</div>
-                        <div class="stat-value" style="font-size: 1.4rem;">{{ analytics.trading_days }}</div>
+                        <div class="stat-value" style="font-size: clamp(1rem, 2vw, 1.3rem);">{{ analytics.trading_days }}</div>
                         <div class="stat-subtitle">out of {{ analytics.total_days }} days</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="text-center p-2">
                         <div class="stat-label">Avg Trades/Day</div>
-                        <div class="stat-value" style="font-size: 1.4rem;">{{ analytics.avg_trades_per_day }}</div>
+                        <div class="stat-value" style="font-size: clamp(1rem, 2vw, 1.3rem);">{{ analytics.avg_trades_per_day }}</div>
                         <div class="stat-subtitle">on active days</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="text-center p-2">
                         <div class="stat-label">Best Streak</div>
-                        <div class="stat-value text-success" style="font-size: 1.4rem;">{{ analytics.max_win_streak }}W</div>
+                        <div class="stat-value text-success" style="font-size: clamp(1rem, 2vw, 1.3rem);">{{ analytics.max_win_streak }}W</div>
                         <div class="stat-subtitle">consecutive wins</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="text-center p-2">
                         <div class="stat-label">Worst Streak</div>
-                        <div class="stat-value text-danger" style="font-size: 1.4rem;">{{ analytics.max_loss_streak }}L</div>
+                        <div class="stat-value text-danger" style="font-size: clamp(1rem, 2vw, 1.3rem);">{{ analytics.max_loss_streak }}L</div>
                         <div class="stat-subtitle">consecutive losses</div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Activity Calendar (Last 30 days) -->
             <div class="mt-3">
                 <div class="stat-label mb-2">Last 30 Days Activity</div>
-                <div style="display: flex; flex-wrap: wrap; gap: 3px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 2px;">
                     {% for day in analytics.daily_activity %}
-                    <div class="activity-dot {{ 'active' if day.has_trades else 'inactive' }}" 
+                    <div class="activity-dot" 
                          title="{{ day.date }}: {{ day.trade_count }} trades, ${{ '%.2f'|format(day.pnl) }}"
-                         style="background: {% if day.has_trades %}{% if day.pnl > 0 %}#00e676{% elif day.pnl < 0 %}#ff5252{% else %}#ffb300{% endif %}{% else %}var(--border-color){% endif %};">
+                         style="background: {% if day.has_trades %}{% if day.pnl > 0 %}#00e676{% elif day.pnl < 0 %}#ff5252{% else %}#ffb300{% endif %}{% else %}rgba(255,255,255,0.05){% endif %};">
                     </div>
                     {% endfor %}
                 </div>
@@ -276,104 +289,40 @@
     </div>
     
     <div class="col-md-4">
-        <div class="card p-3 h-100">
-            <div class="section-title">
-                <i class="bi bi-folder2"></i> Account Info
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Account</span>
-                <strong>{{ account.name if account else 'Default' }}</strong>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Broker</span>
-                <strong>{{ account.broker or 'N/A' }}</strong>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Type</span>
-                <span class="tag-badge {{ 'green' if account and account.account_type == 'live' else 'blue' }}">
-                    {{ account.account_type.upper() if account else 'LIVE' }}
-                </span>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Currency</span>
-                <strong>{{ account.currency if account else 'USD' }}</strong>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Subscription</span>
-                <span class="tag-badge purple">{{ current_user.subscription_tier.upper() }}</span>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Total P&L</span>
-                <strong class="{% if analytics.net_pnl > 0 %}text-success{% elif analytics.net_pnl < 0 %}text-danger{% endif %}">
-                    {{ '+' if analytics.net_pnl > 0 else '' }}${{ '%.2f'|format(analytics.net_pnl) }}
-                </strong>
-            </div>
+        <div class="card p-2 p-md-3 h-100">
+            <div class="section-title"><i class="bi bi-folder2"></i> Account Info</div>
+            <div class="daily-summary-item"><span class="text-muted">Account</span><strong>{{ account.name if account else 'Default' }}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Broker</span><strong>{{ account.broker or 'N/A' }}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Type</span><span class="tag-badge {{ 'green' if account and account.account_type == 'live' else 'blue' }}">{{ account.account_type.upper() if account else 'LIVE' }}</span></div>
+            <div class="daily-summary-item"><span class="text-muted">Currency</span><strong>{{ account.currency if account else 'USD' }}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Subscription</span><span class="tag-badge purple">{{ current_user.subscription_tier.upper() }}</span></div>
+            <div class="daily-summary-item"><span class="text-muted">Markets Traded</span><strong>{{ market_breakdown|length if market_breakdown else 0 }}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Total P&L</span><strong class="{{ 'text-success' if analytics.net_pnl > 0 else 'text-danger' if analytics.net_pnl < 0 }}">{{ '+' if analytics.net_pnl > 0 else '' }}${{ '%.2f'|format(analytics.net_pnl) }}</strong></div>
         </div>
     </div>
 </div>
 
-<!-- Performance Details & Recent Activity -->
-<div class="row g-3 mb-4">
+<!-- ═══════════════════════════════════════ -->
+<!-- PERFORMANCE & RECENT ACTIVITY -->
+<!-- ═══════════════════════════════════════ -->
+<div class="row g-2 g-md-3 mb-4">
     <div class="col-md-6">
-        <div class="card p-3 h-100">
-            <div class="section-title">
-                <i class="bi bi-trophy"></i> Performance Breakdown
-            </div>
-            
-            <div class="daily-summary-item">
-                <span class="text-muted">Best Trade</span>
-                <strong class="text-success">
-                    {% if analytics.best_trade %}
-                        {{ analytics.best_trade.symbol }} +${{ '%.2f'|format(analytics.best_trade.profit_loss) }}
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </strong>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Worst Trade</span>
-                <strong class="text-danger">
-                    {% if analytics.worst_trade %}
-                        {{ analytics.worst_trade.symbol }} -${{ '%.2f'|format(analytics.worst_trade.profit_loss|abs) }}
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </strong>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Best Symbol</span>
-                <strong class="text-success">{{ analytics.best_symbol }}</strong>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Most Traded</span>
-                <strong>{{ analytics.most_traded_symbol }}</strong>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Avg Risk:Reward</span>
-                <strong>1:{{ analytics.avg_rr }}</strong>
-            </div>
-            <div class="daily-summary-item">
-                <span class="text-muted">Max Drawdown</span>
-                <strong class="text-danger">-${{ '%.2f'|format(analytics.max_drawdown) }}</strong>
-            </div>
-            
-            <!-- Win/Loss Ratio Bar -->
+        <div class="card p-2 p-md-3 h-100">
+            <div class="section-title"><i class="bi bi-trophy"></i> Performance</div>
+            <div class="daily-summary-item"><span class="text-muted">Best Trade</span><strong class="text-success">{% if analytics.best_trade %}{{ analytics.best_trade.symbol }} +${{ '%.2f'|format(analytics.best_trade.profit_loss) }}{% else %}N/A{% endif %}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Worst Trade</span><strong class="text-danger">{% if analytics.worst_trade %}{{ analytics.worst_trade.symbol }} -${{ '%.2f'|format(analytics.worst_trade.profit_loss|abs) }}{% else %}N/A{% endif %}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Best Symbol</span><strong class="text-success">{{ analytics.best_symbol }}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Most Traded</span><strong>{{ analytics.most_traded_symbol }}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Avg R:R</span><strong>1:{{ analytics.avg_rr }}</strong></div>
+            <div class="daily-summary-item"><span class="text-muted">Max Drawdown</span><strong class="text-danger">-${{ '%.2f'|format(analytics.max_drawdown) }}</strong></div>
             <div class="mt-3">
                 <div class="stat-label mb-2">Win/Loss Distribution</div>
-                <div style="display: flex; height: 24px; border-radius: 12px; overflow: hidden;">
+                <div style="display: flex; height: 22px; border-radius: 11px; overflow: hidden;">
                     {% if analytics.total_trades > 0 %}
-                    <div style="width: {{ analytics.win_rate }}%; background: linear-gradient(90deg, #00c853, #00e676); 
-                                display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #000;">
-                        {{ analytics.total_wins }}W
-                    </div>
-                    <div style="width: {{ 100 - analytics.win_rate }}%; background: linear-gradient(90deg, #ff5252, #ff1744); 
-                                display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #fff;">
-                        {{ analytics.total_losses }}L
-                    </div>
+                    <div style="width:{{ analytics.win_rate }}%;background:linear-gradient(90deg,#00c853,#00e676);display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:#000;">{{ analytics.total_wins }}W</div>
+                    <div style="width:{{ 100 - analytics.win_rate }}%;background:linear-gradient(90deg,#ff5252,#ff1744);display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:#fff;">{{ analytics.total_losses }}L</div>
                     {% else %}
-                    <div style="width: 100%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--text-muted);">
-                        No trades
-                    </div>
+                    <div style="width:100%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#64748b;">No trades</div>
                     {% endif %}
                 </div>
             </div>
@@ -381,57 +330,36 @@
     </div>
     
     <div class="col-md-6">
-        <div class="card p-3 h-100">
-            <div class="section-title">
-                <i class="bi bi-clock-history"></i> Recent Activity
-            </div>
-            
+        <div class="card p-2 p-md-3 h-100">
+            <div class="section-title"><i class="bi bi-clock-history"></i> Recent Trades</div>
             {% if analytics.recent_trades %}
                 {% for trade in analytics.recent_trades[:5] %}
+                {% set mkt = get_market_info(trade.symbol) %}
                 <div class="daily-summary-item">
                     <div>
+                        <span class="market-badge-sm {{ trade.market or detect_market(trade.symbol) }}">{{ mkt.icon }}</span>
                         <strong>{{ trade.symbol }}</strong>
-                        <span class="text-muted ms-2">{{ trade.entry_date.strftime('%d %b %Y') }}</span>
+                        <span class="text-muted ms-1" style="font-size:0.65rem;">{{ trade.entry_date.strftime('%d %b') }}</span>
                     </div>
                     <div class="text-end">
-                        <span class="{% if trade.is_win %}text-success{% else %}text-danger{% endif %} fw-bold">
-                            {{ '+' if trade.is_win else '-' }}${{ '%.2f'|format(trade.profit_loss|abs) }}
+                        <span class="{{ 'text-success' if trade.is_win else 'text-danger' }} fw-bold" style="font-size:0.75rem;">
+                            {{ '+' if trade.is_win else '-' }}{{ mkt.currency }}{{ '%.2f'|format(trade.profit_loss|abs) }}
                         </span>
-                        <br>
-                        <small class="text-muted">{{ trade.trade_type.upper() }}</small>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
                 <div class="text-center py-4 text-muted">
-                    <i class="bi bi-inbox display-4 d-block mb-2"></i>
-                    <p>No trades yet.<br>Start your trading journey!</p>
+                    <i class="bi bi-inbox display-4 d-block mb-2" style="opacity:0.15;"></i>
+                    <p style="font-size:0.8rem;">No trades yet.</p>
                 </div>
             {% endif %}
-            
-            <!-- Diary & Notes Summary -->
             {% if analytics.has_diary or analytics.has_notes %}
-            <div class="mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
-                <div class="stat-label mb-2">📝 Content Summary</div>
+            <div class="mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.04);">
+                <div class="stat-label mb-2">📝 Content</div>
                 <div class="row g-2">
-                    <div class="col-6">
-                        <div class="insight-card">
-                            <div class="stat-label">Diary Entries</div>
-                            <div class="stat-value" style="font-size: 1.4rem;">{{ analytics.diary_count }}</div>
-                            {% if analytics.last_diary %}
-                            <div class="stat-subtitle">Last: {{ analytics.last_diary.strftime('%d %b') }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="insight-card">
-                            <div class="stat-label">Day Notes</div>
-                            <div class="stat-value" style="font-size: 1.4rem;">{{ analytics.notes_count }}</div>
-                            {% if analytics.last_note %}
-                            <div class="stat-subtitle">Last: {{ analytics.last_note.strftime('%d %b') }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
+                    <div class="col-6"><div class="insight-card"><div class="stat-label">Diary</div><div class="stat-value" style="font-size:1.1rem;">{{ analytics.diary_count }}</div>{% if analytics.last_diary %}<div class="stat-subtitle">Last: {{ analytics.last_diary.strftime('%d %b') }}</div>{% endif %}</div></div>
+                    <div class="col-6"><div class="insight-card"><div class="stat-label">Notes</div><div class="stat-value" style="font-size:1.1rem;">{{ analytics.notes_count }}</div>{% if analytics.last_note %}<div class="stat-subtitle">Last: {{ analytics.last_note.strftime('%d %b') }}</div>{% endif %}</div></div>
                 </div>
             </div>
             {% endif %}
@@ -439,160 +367,94 @@
     </div>
 </div>
 
-<!-- Symbol Performance & Session Analysis -->
-<div class="row g-3 mb-4">
+<!-- ═══════════════════════════════════════ -->
+<!-- TOP SYMBOLS & SESSIONS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="row g-2 g-md-3 mb-4">
     <div class="col-md-6">
-        <div class="card p-3 h-100">
-            <div class="section-title">
-                <i class="bi bi-pie-chart"></i> Top Symbols
-            </div>
+        <div class="card p-2 p-md-3 h-100">
+            <div class="section-title"><i class="bi bi-star"></i> Top Symbols</div>
             {% if analytics.top_symbols %}
                 {% for sym in analytics.top_symbols[:5] %}
+                {% set smkt = get_market_info(sym.symbol) %}
                 <div class="daily-summary-item">
-                    <div>
-                        <strong>{{ sym.symbol }}</strong>
-                        <small class="text-muted ms-2">{{ sym.trade_count }} trades</small>
-                    </div>
-                    <div class="text-end">
-                        <span class="fw-bold {% if sym.pnl > 0 %}text-success{% elif sym.pnl < 0 %}text-danger{% endif %}">
-                            {{ '+' if sym.pnl > 0 else '' }}${{ '%.2f'|format(sym.pnl) }}
-                        </span>
-                        <br>
-                        <small class="text-muted">{{ sym.win_rate }}% win</small>
-                    </div>
+                    <div><span class="market-badge-sm {{ detect_market(sym.symbol) }}">{{ smkt.icon }}</span> <strong>{{ sym.symbol }}</strong> <small class="text-muted ms-1">{{ sym.trade_count }} trades</small></div>
+                    <div class="text-end"><span class="fw-bold {{ 'text-success' if sym.pnl > 0 else 'text-danger' if sym.pnl < 0 }}" style="font-size:0.75rem;">{{ '+' if sym.pnl > 0 else '' }}{{ smkt.currency }}{{ '%.2f'|format(sym.pnl) }}</span><br><small class="text-muted">{{ sym.win_rate }}% WR</small></div>
                 </div>
                 {% endfor %}
-            {% else %}
-                <div class="text-center py-3 text-muted">
-                    <p>No symbol data available</p>
-                </div>
-            {% endif %}
+            {% else %}<div class="text-center py-3 text-muted"><p style="font-size:0.8rem;">No data</p></div>{% endif %}
         </div>
     </div>
-    
     <div class="col-md-6">
-        <div class="card p-3 h-100">
-            <div class="section-title">
-                <i class="bi bi-sun"></i> Session Analysis
-            </div>
+        <div class="card p-2 p-md-3 h-100">
+            <div class="section-title"><i class="bi bi-sun"></i> Sessions</div>
             {% if analytics.session_breakdown %}
                 {% for session in analytics.session_breakdown %}
                 <div class="daily-summary-item">
-                    <div>
-                        <strong>{{ session.name.title() }}</strong>
-                        <small class="text-muted ms-2">{{ session.trade_count }} trades</small>
-                    </div>
-                    <div class="text-end">
-                        <span class="fw-bold {% if session.pnl > 0 %}text-success{% elif session.pnl < 0 %}text-danger{% endif %}">
-                            {{ '+' if session.pnl > 0 else '' }}${{ '%.2f'|format(session.pnl) }}
-                        </span>
-                    </div>
+                    <div><strong>{{ session.name.title() }}</strong> <small class="text-muted ms-1">{{ session.trade_count }} trades</small></div>
+                    <div class="text-end"><span class="fw-bold {{ 'text-success' if session.pnl > 0 else 'text-danger' if session.pnl < 0 }}" style="font-size:0.75rem;">{{ '+' if session.pnl > 0 else '' }}${{ '%.2f'|format(session.pnl) }}</span></div>
                 </div>
                 {% endfor %}
-            {% else %}
-                <div class="text-center py-3 text-muted">
-                    <p>No session data available</p>
-                </div>
-            {% endif %}
+            {% else %}<div class="text-center py-3 text-muted"><p style="font-size:0.8rem;">No data</p></div>{% endif %}
         </div>
     </div>
 </div>
 
-<!-- Monthly Overview -->
-<div class="row g-3 mb-4">
+<!-- ═══════════════════════════════════════ -->
+<!-- MONTHLY OVERVIEW -->
+<!-- ═══════════════════════════════════════ -->
+<div class="row g-2 g-md-3 mb-4">
     <div class="col-12">
-        <div class="card p-3">
-            <div class="section-title">
-                <i class="bi bi-calendar-month"></i> Monthly Performance
-            </div>
+        <div class="card p-2 p-md-3">
+            <div class="section-title"><i class="bi bi-calendar-month"></i> Monthly Performance</div>
             {% if analytics.monthly_breakdown %}
             <div class="table-responsive">
-                <table class="table table-sm" style="color: var(--text-primary);">
+                <table class="table table-sm" style="color:#e0f0ed;font-size:0.76rem;">
                     <thead>
-                        <tr style="border-color: var(--border-color);">
-                            <th style="border-color: var(--border-color);">Month</th>
-                            <th style="border-color: var(--border-color);" class="text-center">Trades</th>
-                            <th style="border-color: var(--border-color);" class="text-center">Wins</th>
-                            <th style="border-color: var(--border-color);" class="text-center">Losses</th>
-                            <th style="border-color: var(--border-color);" class="text-center">Win Rate</th>
-                            <th style="border-color: var(--border-color);" class="text-end">P&L</th>
+                        <tr style="border-color:rgba(255,255,255,0.05);">
+                            <th style="border-color:rgba(255,255,255,0.05);color:#64748b;">Month</th>
+                            <th style="border-color:rgba(255,255,255,0.05);color:#64748b;" class="text-center">Trades</th>
+                            <th style="border-color:rgba(255,255,255,0.05);color:#64748b;" class="text-center">W</th>
+                            <th style="border-color:rgba(255,255,255,0.05);color:#64748b;" class="text-center">L</th>
+                            <th style="border-color:rgba(255,255,255,0.05);color:#64748b;" class="text-center">WR</th>
+                            <th style="border-color:rgba(255,255,255,0.05);color:#64748b;" class="text-end">P&L</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for month in analytics.monthly_breakdown[:6] %}
-                        <tr style="border-color: var(--border-color);">
-                            <td style="border-color: var(--border-color);"><strong>{{ month.month }}</strong></td>
-                            <td style="border-color: var(--border-color);" class="text-center">{{ month.trade_count }}</td>
-                            <td style="border-color: var(--border-color);" class="text-center text-success">{{ month.wins }}</td>
-                            <td style="border-color: var(--border-color);" class="text-center text-danger">{{ month.losses }}</td>
-                            <td style="border-color: var(--border-color);" class="text-center">{{ month.win_rate }}%</td>
-                            <td style="border-color: var(--border-color);" class="text-end">
-                                <strong class="{% if month.pnl > 0 %}text-success{% elif month.pnl < 0 %}text-danger{% endif %}">
-                                    {{ '+' if month.pnl > 0 else '' }}${{ '%.2f'|format(month.pnl) }}
-                                </strong>
-                            </td>
+                        <tr style="border-color:rgba(255,255,255,0.03);">
+                            <td style="border-color:rgba(255,255,255,0.03);"><strong>{{ month.month }}</strong></td>
+                            <td style="border-color:rgba(255,255,255,0.03);" class="text-center">{{ month.trade_count }}</td>
+                            <td style="border-color:rgba(255,255,255,0.03);" class="text-center text-success">{{ month.wins }}</td>
+                            <td style="border-color:rgba(255,255,255,0.03);" class="text-center text-danger">{{ month.losses }}</td>
+                            <td style="border-color:rgba(255,255,255,0.03);" class="text-center">{{ month.win_rate }}%</td>
+                            <td style="border-color:rgba(255,255,255,0.03);" class="text-end"><strong class="{{ 'text-success' if month.pnl > 0 else 'text-danger' if month.pnl < 0 }}">{{ '+' if month.pnl > 0 else '' }}${{ '%.2f'|format(month.pnl) }}</strong></td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            {% else %}
-            <div class="text-center py-3 text-muted">
-                <p>No monthly data yet</p>
-            </div>
-            {% endif %}
+            {% else %}<div class="text-center py-3 text-muted"><p style="font-size:0.8rem;">No monthly data yet</p></div>{% endif %}
         </div>
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="row g-3">
+<!-- ═══════════════════════════════════════ -->
+<!-- QUICK ACTIONS -->
+<!-- ═══════════════════════════════════════ -->
+<div class="row g-2 g-md-3">
     <div class="col-12">
-        <div class="card p-3">
-            <div class="section-title">
-                <i class="bi bi-lightning-charge"></i> Quick Actions
-            </div>
+        <div class="card p-2 p-md-3">
+            <div class="section-title"><i class="bi bi-lightning-charge"></i> Quick Actions</div>
             <div class="row g-2">
-                <div class="col-6 col-md-3">
-                    <a href="{{ url_for('user.add_trade') }}" class="quick-action-btn" style="background: var(--accent); color: #fff;">
-                        <i class="bi bi-plus-circle"></i> Add Trade
-                    </a>
-                </div>
-                <div class="col-6 col-md-3">
-                    <a href="{{ url_for('user.journal') }}" class="quick-action-btn" style="background: rgba(79,142,247,0.15); color: #4f8ef7;">
-                        <i class="bi bi-journal-text"></i> Journal
-                    </a>
-                </div>
-                <div class="col-6 col-md-3">
-                    <a href="{{ url_for('user.analytics') }}" class="quick-action-btn" style="background: rgba(0,230,118,0.15); color: #00e676;">
-                        <i class="bi bi-graph-up"></i> Analytics
-                    </a>
-                </div>
-                <div class="col-6 col-md-3">
-                    <a href="{{ url_for('user.diary') }}" class="quick-action-btn" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
-                        <i class="bi bi-book"></i> Diary
-                    </a>
-                </div>
-                <div class="col-6 col-md-3">
-                    <a href="{{ url_for('user.insights') }}" class="quick-action-btn" style="background: rgba(255,179,0,0.15); color: #ffb300;">
-                        <i class="bi bi-lightbulb"></i> Insights
-                    </a>
-                </div>
-                <div class="col-6 col-md-3">
-                    <a href="{{ url_for('user.calendar') }}" class="quick-action-btn" style="background: rgba(255,82,82,0.15); color: #ff5252;">
-                        <i class="bi bi-calendar3"></i> Calendar
-                    </a>
-                </div>
-                <div class="col-6 col-md-3">
-                    <a href="{{ url_for('ai.ai_reports') }}" class="quick-action-btn" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
-                        <i class="bi bi-robot"></i> AI Reports
-                    </a>
-                </div>
-                <div class="col-6 col-md-3">
-                    <a href="{{ url_for('user.settings') }}" class="quick-action-btn" style="background: rgba(158,158,158,0.15); color: var(--text-secondary);">
-                        <i class="bi bi-gear"></i> Settings
-                    </a>
-                </div>
+                <div class="col-6 col-md-3"><a href="{{ url_for('user.add_trade') }}" class="quick-action-btn" style="background:var(--accent);color:#000;"><i class="bi bi-plus-circle"></i> Add Trade</a></div>
+                <div class="col-6 col-md-3"><a href="{{ url_for('user.journal') }}" class="quick-action-btn" style="background:rgba(79,142,247,0.1);color:#4f8ef7;"><i class="bi bi-journal-text"></i> Journal</a></div>
+                <div class="col-6 col-md-3"><a href="{{ url_for('user.analytics') }}" class="quick-action-btn" style="background:rgba(0,230,118,0.1);color:#00e676;"><i class="bi bi-graph-up"></i> Analytics</a></div>
+                <div class="col-6 col-md-3"><a href="{{ url_for('user.diary') }}" class="quick-action-btn" style="background:rgba(139,92,246,0.1);color:#8b5cf6;"><i class="bi bi-book"></i> Diary</a></div>
+                <div class="col-6 col-md-3"><a href="{{ url_for('user.insights') }}" class="quick-action-btn" style="background:rgba(255,179,0,0.1);color:#ffb300;"><i class="bi bi-lightbulb"></i> Insights</a></div>
+                <div class="col-6 col-md-3"><a href="{{ url_for('user.calendar') }}" class="quick-action-btn" style="background:rgba(255,82,82,0.1);color:#ff5252;"><i class="bi bi-calendar3"></i> Calendar</a></div>
+                <div class="col-6 col-md-3"><a href="{{ url_for('ai.ai_reports') }}" class="quick-action-btn" style="background:rgba(139,92,246,0.1);color:#8b5cf6;"><i class="bi bi-robot"></i> AI Reports</a></div>
+                <div class="col-6 col-md-3"><a href="{{ url_for('user.settings') }}" class="quick-action-btn" style="background:rgba(255,255,255,0.03);color:#94a3b8;"><i class="bi bi-gear"></i> Settings</a></div>
             </div>
         </div>
     </div>
@@ -602,17 +464,9 @@
 
 {% block extra_js %}
 <script>
-    // Any dashboard-specific JavaScript can go here
     document.addEventListener('DOMContentLoaded', function() {
-        // Refresh data periodically (every 60 seconds)
         setInterval(function() {
-            fetch(window.location.href)
-                .then(response => response.text())
-                .then(html => {
-                    // Could implement partial refresh here
-                    console.log('Dashboard refreshed');
-                })
-                .catch(err => console.log('Refresh error:', err));
+            fetch(window.location.href).then(r=>r.text()).catch(()=>{});
         }, 60000);
     });
 </script>

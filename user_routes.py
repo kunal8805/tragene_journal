@@ -1,16 +1,16 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, Response
 from flask_login import login_required, current_user
 from extensions import db
-from models import Trade, ImportHistory, DayNote, DiaryEntry, DiaryImage, TradingAccount, User, FAQ, SupportTicket, TicketReply
+from models import Trade, ImportHistory, DayNote, DiaryEntry, DiaryImage, TradingAccount, User, FAQ, SupportTicket, TicketReply, TradeScreenshot, AIUsageLog, detect_market, get_market_info, get_currency_for_market, SyncConnection
 from datetime import datetime, date, timedelta
 import csv
 import io
 import os
 from werkzeug.utils import secure_filename
 from sqlalchemy import func
+from sync_service import can_create_sync, encrypt, decrypt, sync_connection, test_connection
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
-
 # ═══════════════════════════════════════════════════════════
 # 📸 UNIVERSAL IMAGE COMPRESSION
 # ═══════════════════════════════════════════════════════════
@@ -421,49 +421,83 @@ def add_trade():
         return redirect(url_for('user.settings'))
     
     if request.method == 'POST':
+        market = request.form.get('market', 'forex')
+        symbol = request.form.get('symbol', '').upper()
+        trade_type = request.form.get('trade_type', 'buy')
+        entry_price = float(request.form.get('entry_price', 0))
+        exit_price = float(request.form.get('exit_price')) if request.form.get('exit_price') else None
+        stop_loss = float(request.form.get('stop_loss')) if request.form.get('stop_loss') else None
+        take_profit = float(request.form.get('take_profit')) if request.form.get('take_profit') else None
+        quantity = float(request.form.get('quantity', 1.0))
+        entry_date = datetime.strptime(request.form.get('entry_date', datetime.utcnow().strftime('%Y-%m-%dT%H:%M')), '%Y-%m-%dT%H:%M')
+        exit_date = datetime.strptime(request.form.get('exit_date'), '%Y-%m-%dT%H:%M') if request.form.get('exit_date') else None
+        notes = request.form.get('notes', '')
+        tags = request.form.get('tags', '')
+        setup_type = request.form.get('setup_type', '')
+        broker = request.form.get('broker', '')
+        
+        # Market-specific fields
+        session = request.form.get('session', '')
+        leverage = int(request.form.get('leverage')) if request.form.get('leverage') else None
+        exchange = request.form.get('exchange', '')
+        crypto_segment = request.form.get('crypto_segment', '')
+        segment = request.form.get('segment', '')
+        instrument = request.form.get('instrument', '')
+        expiry_date = datetime.strptime(request.form.get('expiry_date'), '%Y-%m-%d').date() if request.form.get('expiry_date') else None
+        strike_price = float(request.form.get('strike_price')) if request.form.get('strike_price') else None
+        option_type = request.form.get('option_type', '')
+        brokerage = float(request.form.get('brokerage', 0))
+        taxes = float(request.form.get('taxes', 0))
+        other_charges = float(request.form.get('other_charges', 0))
+        margin_used = float(request.form.get('margin_used')) if request.form.get('margin_used') else None
+        
         trade = Trade(
             user_id=current_user.id,
             account_id=account_id,
-            symbol=request.form.get('symbol','').upper(),
-            trade_type=request.form.get('trade_type','buy'),
-            entry_price=float(request.form.get('entry_price',0)),
-            exit_price=float(request.form.get('exit_price')) if request.form.get('exit_price') else None,
-            stop_loss=float(request.form.get('stop_loss')) if request.form.get('stop_loss') else None,
-            take_profit=float(request.form.get('take_profit')) if request.form.get('take_profit') else None,
-            lot_size=float(request.form.get('lot_size',1.0)),
-            entry_date=datetime.strptime(request.form.get('entry_date',datetime.utcnow().strftime('%Y-%m-%dT%H:%M')),'%Y-%m-%dT%H:%M'),
-            exit_date=datetime.strptime(request.form.get('exit_date'),'%Y-%m-%dT%H:%M') if request.form.get('exit_date') else None,
-            session=request.form.get('session',''),
-            notes=request.form.get('notes',''),
-            tags=request.form.get('tags',''),
+            market=market,
+            symbol=symbol,
+            trade_type=trade_type,
+            entry_price=entry_price,
+            exit_price=exit_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            quantity=quantity,
+            entry_date=entry_date,
+            exit_date=exit_date,
+            session=session,
+            leverage=leverage,
+            exchange=exchange,
+            crypto_segment=crypto_segment,
+            segment=segment,
+            instrument=instrument,
+            expiry_date=expiry_date,
+            strike_price=strike_price,
+            option_type=option_type,
+            brokerage=brokerage,
+            taxes=taxes,
+            other_charges=other_charges,
+            margin_used=margin_used,
+            setup_type=setup_type,
+            notes=notes,
+            tags=tags,
+            broker=broker,
             import_source='manual'
         )
         trade.calculate_pnl()
         db.session.add(trade)
         db.session.add(ImportHistory(
-            user_id=current_user.id, 
+            user_id=current_user.id,
             account_id=account_id,
-            import_type='manual', 
+            import_type='manual',
             trades_imported=1
         ))
         db.session.commit()
         flash('Trade added!', 'success')
         return redirect(url_for('user.journal'))
+    
     return render_template('user/add_trade.html')
 
 # ─── Trade Detail ───
-@user_bp.route('/trade/<int:trade_id>')
-@login_required
-def trade_detail(trade_id):
-    account_id = get_active_account_id()
-    trade = Trade.query.filter_by(
-        id=trade_id, 
-        user_id=current_user.id,
-        account_id=account_id
-    ).first_or_404()
-    return render_template('user/trade_detail.html', trade=trade)
-
-# ─── Edit Trade ───
 @user_bp.route('/trade/<int:trade_id>/edit', methods=['GET','POST'])
 @login_required
 def edit_trade(trade_id):
@@ -475,24 +509,42 @@ def edit_trade(trade_id):
     ).first_or_404()
     
     if request.method == 'POST':
-        trade.symbol = request.form.get('symbol',trade.symbol).upper()
-        trade.trade_type = request.form.get('trade_type',trade.trade_type)
-        trade.entry_price = float(request.form.get('entry_price',trade.entry_price))
+        trade.market = request.form.get('market', trade.market)
+        trade.symbol = request.form.get('symbol', trade.symbol).upper()
+        trade.trade_type = request.form.get('trade_type', trade.trade_type)
+        trade.entry_price = float(request.form.get('entry_price', trade.entry_price))
         trade.exit_price = float(request.form.get('exit_price')) if request.form.get('exit_price') else None
         trade.stop_loss = float(request.form.get('stop_loss')) if request.form.get('stop_loss') else None
         trade.take_profit = float(request.form.get('take_profit')) if request.form.get('take_profit') else None
-        trade.lot_size = float(request.form.get('lot_size',trade.lot_size))
-        trade.session = request.form.get('session',trade.session)
-        trade.notes = request.form.get('notes',trade.notes)
-        trade.tags = request.form.get('tags',trade.tags)
+        trade.quantity = float(request.form.get('quantity', trade.quantity))
+        trade.session = request.form.get('session', trade.session)
+        trade.leverage = int(request.form.get('leverage')) if request.form.get('leverage') else None
+        trade.exchange = request.form.get('exchange', trade.exchange)
+        trade.crypto_segment = request.form.get('crypto_segment', trade.crypto_segment)
+        trade.segment = request.form.get('segment', trade.segment)
+        trade.instrument = request.form.get('instrument', trade.instrument)
+        trade.expiry_date = datetime.strptime(request.form.get('expiry_date'), '%Y-%m-%d').date() if request.form.get('expiry_date') else None
+        trade.strike_price = float(request.form.get('strike_price')) if request.form.get('strike_price') else None
+        trade.option_type = request.form.get('option_type', trade.option_type)
+        trade.brokerage = float(request.form.get('brokerage', 0))
+        trade.taxes = float(request.form.get('taxes', 0))
+        trade.other_charges = float(request.form.get('other_charges', 0))
+        trade.margin_used = float(request.form.get('margin_used')) if request.form.get('margin_used') else None
+        trade.setup_type = request.form.get('setup_type', trade.setup_type)
+        trade.broker = request.form.get('broker', trade.broker)
+        trade.notes = request.form.get('notes', trade.notes)
+        trade.tags = request.form.get('tags', trade.tags)
+        
         if request.form.get('entry_date'):
-            trade.entry_date = datetime.strptime(request.form.get('entry_date'),'%Y-%m-%dT%H:%M')
+            trade.entry_date = datetime.strptime(request.form.get('entry_date'), '%Y-%m-%dT%H:%M')
         if request.form.get('exit_date'):
-            trade.exit_date = datetime.strptime(request.form.get('exit_date'),'%Y-%m-%dT%H:%M')
+            trade.exit_date = datetime.strptime(request.form.get('exit_date'), '%Y-%m-%dT%H:%M')
+        
         trade.calculate_pnl()
         db.session.commit()
-        flash('Trade updated!','success')
+        flash('Trade updated!', 'success')
         return redirect(url_for('user.trade_detail', trade_id=trade.id))
+    
     return render_template('user/edit_trade.html', trade=trade)
 
 # ─── Delete Trade ───
@@ -509,6 +561,170 @@ def delete_trade(trade_id):
     db.session.commit()
     flash('Trade deleted.','info')
     return redirect(url_for('user.journal'))
+
+
+
+# ─── Update Trade Notes (Inline) ───
+
+@user_bp.route('/trade/<int:trade_id>/update-notes', methods=['POST'])
+@login_required
+def update_trade_notes(trade_id):
+    """Update trade notes inline from detail page"""
+    account_id = get_active_account_id()
+    trade = Trade.query.filter_by(
+        id=trade_id,
+        user_id=current_user.id,
+        account_id=account_id
+    ).first_or_404()
+    
+    data = request.get_json()
+    trade.notes = data.get('notes', '').strip()
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Notes updated!'})
+
+
+# ─── Trade Screenshots ───
+
+def _get_user_image_limit(user):
+    """Free: 2 per trade. Paid: 3 per trade."""
+    if user.subscription_tier in ['free', 'basic']:
+        return 2
+    return 3
+
+
+def _count_user_images_this_month(user):
+    """Count images uploaded this month"""
+    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return TradeScreenshot.query.filter(
+        TradeScreenshot.user_id == user.id,
+        TradeScreenshot.uploaded_at >= month_start
+    ).count()
+
+
+@user_bp.route('/trade/<int:trade_id>/upload-screenshot', methods=['POST'])
+@login_required
+def upload_trade_screenshot(trade_id):
+    """Upload screenshot for a trade"""
+    account_id = get_active_account_id()
+    trade = Trade.query.filter_by(
+        id=trade_id, 
+        user_id=current_user.id,
+        account_id=account_id
+    ).first_or_404()
+    
+    # Check limits
+    existing_count = TradeScreenshot.query.filter_by(trade_id=trade.id).count()
+    per_trade_limit = _get_user_image_limit(current_user)
+    
+    if existing_count >= per_trade_limit:
+        if current_user.subscription_tier in ['free', 'basic']:
+            return jsonify({
+                'success': False, 
+                'message': f'Free plan allows {per_trade_limit} screenshots per trade. Upgrade for more!'
+            })
+        else:
+            monthly_count = _count_user_images_this_month(current_user)
+            if monthly_count >= 500:
+                return jsonify({
+                    'success': False,
+                    'message': 'Monthly upload limit (500) reached. Resets next month.'
+                })
+    
+    if 'screenshot' not in request.files:
+        return jsonify({'success': False, 'message': 'No file selected.'})
+    
+    file = request.files['screenshot']
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'message': 'No file selected.'})
+    
+    # Security: validate extension
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in allowed_extensions:
+        return jsonify({'success': False, 'message': 'Invalid file type. Allowed: PNG, JPG, GIF, WEBP.'})
+    
+    # Security: validate it's actually an image
+    from PIL import Image
+    import io
+    try:
+        file_content = file.read()
+        img = Image.open(io.BytesIO(file_content))
+        img.verify()
+        file.seek(0)
+        img = Image.open(io.BytesIO(file_content))
+    except Exception:
+        return jsonify({'success': False, 'message': 'Invalid image file.'})
+    
+    try:
+        # Compress and save
+        upload_dir = os.path.join('static', 'uploads', 'trades', str(current_user.id))
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+        safe_filename = secure_filename(f"trade_{trade.id}_{timestamp}.jpg")
+        filepath = os.path.join(upload_dir, safe_filename)
+        
+        # Convert to RGB and compress
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        
+        max_size = 1920
+        if img.width > max_size or img.height > max_size:
+            img.thumbnail((max_size, max_size), Image.LANCZOS)
+        
+        img.save(filepath, 'JPEG', quality=75, optimize=True)
+        
+        file_size = os.path.getsize(filepath)
+        
+        screenshot = TradeScreenshot(
+            trade_id=trade.id,
+            user_id=current_user.id,
+            filename=safe_filename,
+            filepath=filepath.replace('\\', '/'),
+            file_size=file_size
+        )
+        db.session.add(screenshot)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Screenshot uploaded!',
+            'screenshot': {
+                'id': screenshot.id,
+                'filename': screenshot.filename,
+                'filepath': '/' + screenshot.filepath,
+                'file_size': file_size
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Screenshot upload error: {e}")
+        return jsonify({'success': False, 'message': 'Upload failed. Try again.'})
+
+
+@user_bp.route('/trade/screenshot/<int:screenshot_id>/delete', methods=['POST'])
+@login_required
+def delete_trade_screenshot(screenshot_id):
+    """Delete a trade screenshot"""
+    screenshot = TradeScreenshot.query.filter_by(
+        id=screenshot_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    try:
+        if os.path.exists(screenshot.filepath):
+            os.remove(screenshot.filepath)
+        
+        db.session.delete(screenshot)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Screenshot deleted.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
 
 # ─── CSV Import ───
 @user_bp.route('/import/csv', methods=['GET','POST'])
@@ -653,11 +869,11 @@ def import_csv():
                                 continue
                     
                     # Lot size
-                    lot_size = 1.0
+                    quantity = 1.0
                     for key in row.keys():
                         if key and ('lot' in key.lower() or 'volume' in key.lower() or 'size' in key.lower()):
                             try:
-                                lot_size = float(str(row[key]).strip().replace(',',''))
+                                quantity = float(str(row[key]).strip().replace(',',''))
                                 break
                             except:
                                 continue
@@ -687,7 +903,7 @@ def import_csv():
                         account_id=account_id,
                         symbol=symbol, trade_type=trade_type,
                         entry_price=entry_price, exit_price=exit_price, stop_loss=stop_loss,
-                        take_profit=take_profit, lot_size=lot_size, entry_date=entry_date,
+                        take_profit=take_profit, quantity=quantity, entry_date=entry_date,
                         notes=notes, import_source='csv'
                     )
                     trade.calculate_pnl()
@@ -1006,25 +1222,13 @@ def settings():
 @user_bp.route('/subscription')
 @login_required
 def subscription():
-    from payment_routes import get_pricing_for_user
-    
     max_accounts = current_user.get_max_accounts()
     current_count = current_user.get_account_count()
     
-    pricing, country = get_pricing_for_user()
-    
     return render_template('user/subscription.html',
         max_accounts=max_accounts,
-        current_count=current_count,
-        pricing=pricing,
-        country=country,
-        symbol=pricing['symbol'],
-        currency=pricing['currency'],
-        pro_monthly=pricing['pro']['monthly'],
-        elite_monthly=pricing['elite']['monthly'],
-        gateway_name=pricing['gateway_name']
+        current_count=current_count
     )
-
 # ═══════════════════════════════════════════════════════════
 # 💡 INSIGHTS
 # ═══════════════════════════════════════════════════════════
@@ -1945,3 +2149,398 @@ def payment_history():
         failed_payments=failed_payments,
         pending_payments=pending_payments
     )
+
+
+
+
+@user_bp.route('/api/trade/<int:trade_id>/analyse', methods=['POST'])
+@login_required
+def api_analyse_trade(trade_id):
+    """Get AI analysis for a specific trade"""
+    account_id = get_active_account_id()
+    trade = Trade.query.filter_by(
+        id=trade_id,
+        user_id=current_user.id,
+        account_id=account_id
+    ).first_or_404()
+    
+    can_use, message = current_user.can_use_ai()
+    if not can_use:
+        return jsonify({'success': False, 'message': message})
+    
+    # Build trade context
+    trade_context = f"""Analyze this single trade for {current_user.username}:
+
+TRADE DETAILS:
+- Symbol: {trade.symbol}
+- Type: {trade.trade_type.upper()}
+- Entry: {trade.entry_price} | Exit: {trade.exit_price or 'Still Open'}
+- Stop Loss: {trade.stop_loss or 'Not Set'} | Take Profit: {trade.take_profit or 'Not Set'}
+- Quantity: {trade.quantity}
+- P&L: ${trade.profit_loss:.2f} | Result: {'WIN' if trade.is_win else 'LOSS' if trade.profit_loss is not None else 'OPEN'}
+- R:R Ratio: {trade.risk_reward_ratio if trade.risk_reward_ratio else 'N/A'}
+- Date: {trade.entry_date.strftime('%d %b %Y, %H:%M')}
+- Session: {trade.session or 'N/A'}
+- Tags: {trade.tags or 'None'}
+- Notes: {trade.notes or 'No notes'}
+
+Give a SHORT analysis (4-6 lines):
+1. Quick assessment of this trade
+2. What was done well (if anything)
+3. What could be improved (SL/TP discipline, entry timing, R:R)
+4. One specific tip for next similar trade
+
+Be direct and cite the actual numbers from this trade. No generic advice."""
+
+    from ai_service import call_ai_api, clean_ai_response, SYSTEM_PROMPT
+    
+    result = call_ai_api(
+        prompt=trade_context,
+        max_tokens=250,
+        chat_history=None
+    )
+    
+    if not result['success']:
+        return jsonify({'success': False, 'message': 'AI unavailable. Try again.'})
+    
+    response = clean_ai_response(result['response'])
+    
+    # Log usage
+    db.session.add(AIUsageLog(
+        user_id=current_user.id,
+        analysis_type='trade_analysis',
+        model_used=result['model_used'],
+        prompt_tokens=result['prompt_tokens'],
+        completion_tokens=result['completion_tokens'],
+        total_tokens=result['total_tokens'],
+        api_cost=result['cost'],
+        status='success'
+    ))
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'analysis': response,
+        'tokens_used': result['total_tokens']
+    })
+
+
+@user_bp.route('/api/trade/<int:trade_id>/chat', methods=['POST'])
+@login_required
+def api_trade_chat(trade_id):
+    """Chat with AI about a specific trade"""
+    account_id = get_active_account_id()
+    trade = Trade.query.filter_by(
+        id=trade_id,
+        user_id=current_user.id,
+        account_id=account_id
+    ).first_or_404()
+    
+    data = request.get_json()
+    question = data.get('question', '').strip()
+    chat_history = data.get('history', [])  # Array of {role, content}
+    
+    if not question:
+        return jsonify({'success': False, 'message': 'Ask a question.'})
+    
+    can_use, message = current_user.can_use_ai()
+    if not can_use:
+        return jsonify({'success': False, 'message': message})
+    
+    # Build chat context with ONLY this trade
+    trade_context = f"""User is asking about this specific trade:
+- {trade.symbol} {trade.trade_type.upper()} | Entry: {trade.entry_price} | Exit: {trade.exit_price or 'Open'}
+- P&L: ${trade.profit_loss:.2f} | {'WIN' if trade.is_win else 'LOSS'}
+- SL: {trade.stop_loss or 'None'} | TP: {trade.take_profit or 'None'}
+- R:R: {trade.risk_reward_ratio or 'N/A'}
+- Date: {trade.entry_date.strftime('%d %b %Y')}
+- Notes: {trade.notes or 'None'}
+
+User question: {question}
+
+Rules:
+- Only discuss this specific trade
+- Keep answer 2-4 lines
+- Cite the trade's actual numbers
+- If asked about other trades, say you can only see this one"""
+
+    from ai_service import call_ai_api, clean_ai_response
+    
+    # Build messages for API
+    messages = [{"role": "system", "content": "You are a trading coach analyzing ONE specific trade. Only reference this trade's data."}]
+    
+    # Add chat history (last 6 messages)
+    for msg in chat_history[-6:]:
+        messages.append({"role": msg['role'], "content": msg['content'][:300]})
+    
+    messages.append({"role": "user", "content": trade_context})
+    
+    result = call_ai_api(
+        prompt=messages[-1]['content'],
+        max_tokens=200,
+        chat_history=None
+    )
+    
+    if not result['success']:
+        return jsonify({'success': False, 'message': 'AI unavailable.'})
+    
+    response = clean_ai_response(result['response'])
+    
+    db.session.add(AIUsageLog(
+        user_id=current_user.id,
+        analysis_type='trade_chat',
+        model_used=result['model_used'],
+        prompt_tokens=result['prompt_tokens'],
+        completion_tokens=result['completion_tokens'],
+        total_tokens=result['total_tokens'],
+        api_cost=result['cost'],
+        status='success'
+    ))
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'response': response,
+        'tokens_used': result['total_tokens']
+    })
+
+
+
+
+@user_bp.route('/trade/<int:trade_id>')
+@login_required
+def trade_detail(trade_id):
+    account_id = get_active_account_id()
+    trade = Trade.query.filter_by(
+        id=trade_id, 
+        user_id=current_user.id,
+        account_id=account_id
+    ).first_or_404()
+    return render_template('user/trade_detail.html', trade=trade)
+
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 🔄 SYNC CENTER ROUTES
+# ═══════════════════════════════════════════════════════════
+
+@user_bp.route('/sync')
+@login_required
+def sync_center():
+    """Main sync center page"""
+    connections = SyncConnection.query.filter_by(
+        user_id=current_user.id
+    ).order_by(SyncConnection.created_at.desc()).all()
+    
+    # Get subscription limits
+    max_sync = {'free': 1, 'pro': 5, 'elite': 10, 'enterprise': 999}.get(
+        current_user.subscription_tier, 1
+    )
+    current_count = len([c for c in connections if c.is_active])
+    
+    return render_template('user/sync/sync_center.html',
+        connections=connections,
+        max_sync=max_sync,
+        current_count=current_count,
+        can_add=current_count < max_sync
+    )
+
+
+@user_bp.route('/sync/setup')
+@login_required
+def sync_setup():
+    """Setup new sync connection"""
+    market = request.args.get('market', 'crypto')
+    
+    # Check if user can access this market
+    can_access = True
+    access_message = ''
+    if current_user.subscription_tier == 'free' and market == 'forex':
+        can_access = False
+        access_message = '🔒 Forex/MT4/MT5 sync requires Pro or Elite plan.'
+    
+    return render_template('user/sync/sync_setup.html', 
+        market=market,
+        can_access=can_access,
+        access_message=access_message,
+        user_tier=current_user.subscription_tier
+    )
+
+
+
+@user_bp.route('/sync/connect', methods=['POST'])
+@login_required
+def sync_connect():
+    """Create a new sync connection"""
+    market = request.form.get('market', 'crypto')
+    platform = request.form.get('platform', '')
+    label = request.form.get('label', '').strip()
+    method = request.form.get('method', 'api')
+    
+    # Check permissions
+    can_create, error_msg = can_create_sync(current_user, market)
+    if not can_create:
+        flash(error_msg, 'danger')
+        return redirect(url_for('user.sync_center'))
+    
+    # Create connection based on market
+    connection = SyncConnection(
+        user_id=current_user.id,
+        account_id=get_active_account_id(),
+        market=market,
+        platform=platform,
+        method=method,
+        label=label or f"{platform.upper()} - {market.title()}"
+    )
+    
+    # Handle credentials based on market
+    if market == 'crypto':
+        api_key = request.form.get('api_key', '').strip()
+        api_secret = request.form.get('api_secret', '').strip()
+        passphrase = request.form.get('passphrase', '').strip()
+        custom_exchange = request.form.get('custom_exchange', '').strip().lower()
+        
+        if not api_key or not api_secret:
+            flash('API Key and Secret are required.', 'danger')
+            return redirect(url_for('user.sync_setup', market=market))
+        
+        # Handle "other" exchange selection
+        if platform == 'other':
+            if custom_exchange:
+                platform = custom_exchange
+        
+        # Test connection first
+        from sync_service import test_connection
+        success, message = test_connection(
+            market='crypto',
+            platform=platform,
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase if passphrase else None
+        )
+        
+        # If auto-detect found a different exchange, update platform
+        if success and message.startswith('✅ Auto-detected'):
+            import re
+            match = re.search(r'Auto-detected exchange: (\w+)', message)
+            if match:
+                platform = match.group(1)
+                connection.platform = platform
+        
+        if not success:
+            flash(message, 'danger')
+            return redirect(url_for('user.sync_setup', market=market))
+        
+        # Encrypt and save
+        connection.api_key_encrypted = encrypt(api_key)
+        connection.api_secret_encrypted = encrypt(api_secret)
+        if passphrase:
+            connection.passphrase_encrypted = encrypt(passphrase)
+        
+        connection.sync_status = 'active'
+    
+    elif platform in ['mt4', 'mt5']:
+        server = request.form.get('server_name', '').strip()
+        login = request.form.get('mt_account_number', '').strip()
+        password = request.form.get('investor_password', '').strip()
+        
+        if not server or not login or not password:
+            flash('Server, Account Number, and Investor Password are required.', 'danger')
+            return redirect(url_for('user.sync_setup', market=market))
+        
+        connection.server_name = server
+        connection.mt_account_number = login
+        connection.investor_password_encrypted = encrypt(password)
+        connection.sync_status = 'pending'
+        
+        flash(f'✅ {platform.upper()} credentials saved! Admin will verify and activate sync shortly.', 'success')
+        db.session.add(connection)
+        db.session.commit()
+        return redirect(url_for('user.sync_center'))
+    
+    elif market == 'indian_stock':
+        connection.method = 'csv'
+        connection.sync_status = 'active'
+        flash(f'✅ {platform.upper()} connected! Upload your tradebook CSV to import trades.', 'success')
+    
+    db.session.add(connection)
+    db.session.commit()
+    
+    flash(f'✅ {platform.upper()} connected successfully!', 'success')
+    return redirect(url_for('user.sync_center'))
+
+
+@user_bp.route('/sync/<int:connection_id>/fetch', methods=['POST'])
+@login_required
+def sync_fetch_now(connection_id):
+    """Manually trigger sync for a connection"""
+    connection = SyncConnection.query.filter_by(
+        id=connection_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    from sync_service import sync_connection
+    result = sync_connection(connection.id)
+    
+    if result['success']:
+        flash(f'✅ Sync complete! {result["trades_added"]} new trades imported.', 'success')
+    else:
+        flash(f'❌ Sync failed: {result["error"]}', 'danger')
+    
+    return redirect(url_for('user.sync_center'))
+
+
+@user_bp.route('/sync/<int:connection_id>/toggle', methods=['POST'])
+@login_required
+def sync_toggle(connection_id):
+    """Pause/Resume a sync connection"""
+    connection = SyncConnection.query.filter_by(
+        id=connection_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    connection.is_active = not connection.is_active
+    connection.sync_status = 'active' if connection.is_active else 'paused'
+    connection.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    status = 'resumed' if connection.is_active else 'paused'
+    flash(f'✅ Sync {status}.', 'success')
+    return redirect(url_for('user.sync_center'))
+
+
+@user_bp.route('/sync/<int:connection_id>/delete', methods=['POST'])
+@login_required
+def sync_delete(connection_id):
+    """Delete a sync connection"""
+    connection = SyncConnection.query.filter_by(
+        id=connection_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    # Clear encrypted credentials
+    connection.api_key_encrypted = None
+    connection.api_secret_encrypted = None
+    connection.investor_password_encrypted = None
+    connection.passphrase_encrypted = None
+    connection.is_active = False
+    
+    db.session.delete(connection)
+    db.session.commit()
+    
+    flash('🗑 Sync connection deleted.', 'info')
+    return redirect(url_for('user.sync_center'))
+
+
+@user_bp.route('/sync/<int:connection_id>/logs')
+@login_required
+def sync_logs(connection_id):
+    """View sync logs for a connection"""
+    connection = SyncConnection.query.filter_by(
+        id=connection_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    return render_template('user/sync/sync_logs.html', connection=connection)
+

@@ -17,7 +17,7 @@ from models import (
     User, Trade, DiaryEntry, Checklist, ChecklistCompletion,
     AIReport, AIUsageLog, AIPlanDefaults, AIUserOverride,
     TradingRule, TradeRuleCheck, CoachInsight, TradingGoal,
-    AIChatSession, AIChatMessage, DayNote
+    AIChatSession, AIChatMessage, DayNote, AIPageAnalysis
 )
 
 # ═══════════════════════════════════════════════════════════
@@ -850,7 +850,7 @@ def generate_report(user, account_id=None):
     create_coach_insights(user, report, sections)  # 🔥 FIX: Create coach insights (Bug 1)
     
     db.session.add(AIUsageLog(user_id=user.id, report_id=report.id, analysis_type='report_generation', model_used=result['model_used'], prompt_tokens=result['prompt_tokens'], completion_tokens=result['completion_tokens'], total_tokens=result['total_tokens'], api_cost=result['cost'], api_latency_ms=result['latency_ms'], status='success'))
-    user.last_analyzed_date = period_end
+    user.last_analyzed_date = datetime.utcnow().date()
     db.session.commit()
     return {'success': True, 'message': 'Report generated!', 'report': {'id': report.id, 'date': report.report_date.isoformat(), 'summary': report.user_summary, 'strengths': report.strengths, 'warnings': report.warnings, 'action_items': report.action_items, 'score': report.performance_score, 'trades_analyzed': report.trades_analyzed, 'tokens_used': report.total_tokens, 'cost': report.api_cost}}
 
@@ -1064,8 +1064,15 @@ def get_user_reports(user_id, account_id=None, limit=10):
 
 def get_unanalyzed_count(user):
     account_id = _get_account_id(user)
-    if not user.last_analyzed_date: return Trade.query.filter_by(user_id=user.id, account_id=account_id).count()
-    return Trade.query.filter(Trade.user_id == user.id, Trade.account_id == account_id, db.func.date(Trade.entry_date) >= user.last_analyzed_date).count()
+    if not account_id:
+        return 0
+    if not user.last_analyzed_date:
+        return Trade.query.filter_by(user_id=user.id, account_id=account_id).count()
+    return Trade.query.filter(
+        Trade.user_id == user.id,
+        Trade.account_id == account_id,
+        db.func.date(Trade.entry_date) >= user.last_analyzed_date
+    ).count()
 
 
 def seed_plan_defaults():
@@ -1145,7 +1152,6 @@ def analyse_page(user, page_key, account_id, extra_params=None):
     Returns:
         {'success': bool, 'analysis_id': int, 'tokens_used': int, 'cost': float, ...}
     """
-    from models import AIPageAnalysis
     
     if page_key not in PAGE_ANALYZERS:
         return {'success': False, 'message': f'Unknown page: {page_key}'}
@@ -1772,27 +1778,58 @@ def auto_write_diary(user, account_id):
     if trade_count == 0:
         story_size = "ZERO_TRADES"
         mood_hint = "neutral"
-        max_tokens = 200
+        max_tokens = 400
         if recent_pnl < 0:
             mood_hint = "cautious"
         elif recent_pnl > 0:
             mood_hint = "confident"
+        
+        # Build richer recent context for no-trade days
+        recent_symbols = list(set(t.symbol for t in recent_trades))
+        recent_best = max(recent_trades, key=lambda t: t.profit_loss or 0, default=None)
+        recent_worst = min(recent_trades, key=lambda t: t.profit_loss or 0, default=None)
+        recent_sl_count = len([t for t in recent_trades if t.stop_loss])
+        recent_total = len(recent_trades)
+        recent_sl_pct = round((recent_sl_count/recent_total)*100) if recent_total > 0 else 0
+        
+        recent_context_extra = f"""
+RECENT TRADING CONTEXT (last 3 days - use these specific details!):
+- Symbols traded: {', '.join(recent_symbols) if recent_symbols else 'None'}
+- Best trade: {recent_best.symbol + ' +$' + str(recent_best.profit_loss) if recent_best else 'N/A'}
+- Worst trade: {recent_worst.symbol + ' $' + str(recent_worst.profit_loss) if recent_worst else 'N/A'}
+- Stop-loss usage: {recent_sl_count}/{recent_total} trades had SL set ({recent_sl_pct}%)
+- Overall P&L: {'+' if recent_pnl >= 0 else ''}${recent_pnl:,.2f}
+- Wins: {recent_wins} | Losses: {recent_losses}"""
+        
+        # Detailed trade lines for recent trades
+        recent_trade_lines = "\n".join(
+            f"- {t.entry_date.strftime('%d %b')}: {t.symbol} {t.trade_type.upper()} | "
+            f"P&L: {'+' if t.profit_loss and t.profit_loss > 0 else ''}{t.profit_loss or 0:.2f} | "
+            f"SL: {'✓' if t.stop_loss else '✗'} | TP: {'✓' if t.take_profit else '✗'}"
+            for t in recent_trades[:5]
+        )
+        recent_context_extra += f"\nRECENT TRADES (last 3 days):\n{recent_trade_lines}"
+        
     elif trade_count == 1:
         story_size = "SINGLE_TRADE"
         mood_hint = "confident" if total_pnl >= 0 else "frustrated"
         max_tokens = 350
+        recent_context_extra = ""
     elif trade_count <= 3:
         story_size = "FEW_TRADES"
         mood_hint = "confident" if total_pnl >= 0 else "cautious"
         max_tokens = 400
+        recent_context_extra = ""
     elif trade_count <= 6:
         story_size = "BUSY_DAY"
         mood_hint = "excited" if total_pnl >= 0 else "frustrated"
         max_tokens = 500
+        recent_context_extra = ""
     else:
         story_size = "OVERTRADING"
         mood_hint = "excited" if total_pnl >= 0 else "frustrated"
         max_tokens = 500
+        recent_context_extra = ""
     
     prompt = f"""Write a short, honest trading diary entry for {user.username} for today ({today.strftime('%d %B %Y')}).
 
@@ -1809,6 +1846,7 @@ NOTES:
 {notes_lines}
 {existing_text}
 {date_ctx}
+{recent_context_extra}
 
 ═══════════════════════════════════════
 WRITING RULES — FOLLOW EXACTLY:
@@ -1818,11 +1856,15 @@ STORY SIZE: {story_size}
 SUGGESTED MOOD: {mood_hint}
 
 IF ZERO_TRADES (no trades today):
-→ 5-7 lines MAX
-→ Mention no trades were taken
-→ Reference recent P&L context: if recent days were profitable say "I'm being selective and protecting profits" — if losing say "Sat out to avoid revenge trading after recent losses"
-→ End with 1 simple intention for tomorrow
-→ Keep it calm, not dramatic
+→ 8-12 lines MAX
+→ Start by mentioning no trades were taken today
+→ Reference SPECIFIC recent trades from the RECENT TRADING CONTEXT above — cite exact symbols, dollar amounts, and dates
+→ If recent days were profitable: mention protecting those gains, reference the best trade by symbol and amount
+→ If recent days were losing: acknowledge the losses honestly, mention the worst trade specifically
+→ If SL usage was low: mention needing to improve stop-loss discipline with a specific number ("only {recent_sl_count}/{recent_total} trades had SL")
+→ Name 1-2 specific skills or patterns to work on based on the recent data (e.g. "need to stop moving my SL on {symbol}" or "should size down on {symbol} after that ${amount} loss")
+→ End with 1-2 forward-looking intentions tied to real trades
+→ DO NOT be generic — every paragraph must mention a real symbol, dollar amount, or stat from the RECENT TRADING CONTEXT
 
 IF SINGLE_TRADE (1 trade):
 → 6-10 lines MAX
