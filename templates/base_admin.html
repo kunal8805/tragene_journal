@@ -629,14 +629,18 @@
         {% endif %}
         
         {% if current_user.is_admin or can_access('subscriptions.edit') %}
-        <a href="{{ url_for('admin.subscription_manager') }}" class="nav-link {% if request.endpoint == 'admin.subscription_manager' %}active{% endif %}">
-            <i class="bi bi-sliders"></i> Subscription Manager
-        </a>
+        <a href="{{ url_for('admin.subscription_manager') }}">🛡️ Purchase Control</a>
         {% endif %}
         
         {% if current_user.is_admin or can_access('subscriptions.payment') %}
         <a href="{{ url_for('admin.payment_analytics') }}" class="nav-link {% if request.endpoint == 'admin.payment_analytics' %}active{% endif %}">
             <i class="bi bi-cash-stack"></i> Payment Analytics
+        </a>
+        {% endif %}
+        
+        {% if current_user.is_admin or can_access('coupons') %}
+        <a href="{{ url_for('coupon.admin_coupons') }}" class="nav-link {% if request.endpoint and 'coupon.admin' in request.endpoint %}active{% endif %}">
+            <i class="bi bi-ticket-perforated"></i> Coupons
         </a>
         {% endif %}
         

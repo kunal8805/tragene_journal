@@ -1724,10 +1724,10 @@ def auto_write_diary(user, account_id):
     recent_wins = len([t for t in recent_trades if t.is_win])
     recent_losses = len([t for t in recent_trades if not t.is_win and t.profit_loss is not None])
     
-    if not today_trades and not today_notes:
+    if not today_trades and not today_notes and not recent_trades:
         return {
             'success': False, 
-            'message': 'No trading activity or notes found for today. Log some trades first!'
+            'message': 'No trading activity found. Log some trades first so I can write your diary!'
         }
     
     # Estimate tokens
@@ -1861,8 +1861,8 @@ IF ZERO_TRADES (no trades today):
 → Reference SPECIFIC recent trades from the RECENT TRADING CONTEXT above — cite exact symbols, dollar amounts, and dates
 → If recent days were profitable: mention protecting those gains, reference the best trade by symbol and amount
 → If recent days were losing: acknowledge the losses honestly, mention the worst trade specifically
-→ If SL usage was low: mention needing to improve stop-loss discipline with a specific number ("only {recent_sl_count}/{recent_total} trades had SL")
-→ Name 1-2 specific skills or patterns to work on based on the recent data (e.g. "need to stop moving my SL on {symbol}" or "should size down on {symbol} after that ${amount} loss")
+→ If SL usage was low: mention needing to improve stop-loss discipline with a specific number (e.g. "only X/Y trades had SL")
+→ Name 1-2 specific skills or patterns to work on based on the recent data (e.g. mention a specific symbol or dollar loss amount from the RECENT TRADING CONTEXT above)
 → End with 1-2 forward-looking intentions tied to real trades
 → DO NOT be generic — every paragraph must mention a real symbol, dollar amount, or stat from the RECENT TRADING CONTEXT
 

@@ -76,7 +76,7 @@
         background: var(--bg-card); border: 1px solid var(--border-color);
         border-radius: 14px; overflow: hidden;
     }
-    table { color: var(--text-primary) !important; margin-bottom: 0; }
+    table { color: var(--text-primary) !important; margin-bottom: 0; background: transparent !important; }
     table thead th {
         background: var(--sidebar-hover); color: var(--text-muted) !important;
         font-weight: 700; font-size: 0.68rem; text-transform: uppercase;
@@ -86,8 +86,9 @@
     table tbody td {
         border-color: var(--border-color) !important; font-size: 0.8rem;
         vertical-align: middle; padding: 11px 12px; color: var(--text-primary);
+        background: transparent !important;
     }
-    table tbody tr { transition: background 0.15s; }
+    table tbody tr { transition: background 0.15s; background: var(--bg-card); }
     table tbody tr:hover { background: var(--sidebar-hover); }
 
     .badge-tier {

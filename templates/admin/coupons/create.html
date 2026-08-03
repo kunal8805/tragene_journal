@@ -1,0 +1,576 @@
+{% extends "base_admin.html" %}
+{% block title %}Create Coupon - Admin{% endblock %}
+{% block page_title %}🎟️ Create New Coupon{% endblock %}
+
+{% block extra_css %}
+<style>
+    .create-container {
+        max-width: 750px;
+    }
+    
+    .form-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    
+    .form-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+        background: linear-gradient(135deg, rgba(139,92,246,0.05) 0%, rgba(79,142,247,0.05) 100%);
+    }
+    
+    .form-header h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        margin: 0;
+        color: var(--text-primary);
+    }
+    
+    .form-header p {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin: 4px 0 0;
+    }
+    
+    .form-body {
+        padding: 24px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    
+    .form-group label .required {
+        color: #ff5252;
+    }
+    
+    .form-group label .optional {
+        color: var(--text-muted);
+        font-weight: 400;
+        font-size: 0.7rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.82rem;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.2s;
+        outline: none;
+    }
+    
+    .form-control:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(38,166,154,0.1);
+    }
+    
+    .form-control.code-input {
+        font-family: 'JetBrains Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+    
+    textarea.form-control {
+        min-height: 80px;
+        resize: vertical;
+    }
+    
+    select.form-control {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+    }
+    
+    .input-hint {
+        font-size: 0.68rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    .row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    
+    .row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 16px;
+    }
+    
+    /* Radio Group */
+    .radio-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .radio-option {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .radio-option input {
+        display: none;
+    }
+    
+    .radio-option label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 12px;
+        background: var(--bg-input);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+    
+    .radio-option label i {
+        font-size: 1.3rem;
+    }
+    
+    .radio-option input:checked + label {
+        border-color: var(--accent);
+        background: rgba(38,166,154,0.08);
+        color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(38,166,154,0.08);
+    }
+    
+    .radio-option input:checked + label i {
+        color: var(--accent);
+    }
+    
+    /* Specific Users Section */
+    .specific-section {
+        display: none;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 12px;
+    }
+    
+    .specific-section.show {
+        display: block;
+    }
+    
+    .user-search-input {
+        width: 100%;
+        padding: 9px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        outline: none;
+    }
+    
+    .user-search-input:focus {
+        border-color: var(--accent);
+    }
+    
+    .user-search-results {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 6px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-card);
+        display: none;
+    }
+    
+    .user-search-results.show {
+        display: block;
+    }
+    
+    .user-result-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 0.78rem;
+        border-bottom: 1px solid var(--border-color);
+        transition: background 0.15s;
+    }
+    
+    .user-result-item:last-child {
+        border-bottom: none;
+    }
+    
+    .user-result-item:hover {
+        background: var(--sidebar-hover);
+    }
+    
+    .selected-users {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+    }
+    
+    .selected-user-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        background: rgba(0,200,83,0.1);
+        border: 1px solid rgba(0,200,83,0.25);
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #00c853;
+    }
+    
+    .selected-user-tag .remove-user {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: rgba(255,82,82,0.2);
+        color: #ff5252;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        border: none;
+        transition: all 0.15s;
+    }
+    
+    .selected-user-tag .remove-user:hover {
+        background: rgba(255,82,82,0.4);
+    }
+    
+    /* Influencer Section */
+    .influencer-section {
+        display: none;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 12px;
+    }
+    
+    .influencer-section.show {
+        display: block;
+    }
+    
+    /* Buttons */
+    .btn-submit {
+        width: 100%;
+        padding: 12px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        font-family: 'Space Grotesk', sans-serif;
+        transition: all 0.2s;
+    }
+    
+    .btn-submit:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+    }
+    
+    .btn-cancel {
+        display: block;
+        text-align: center;
+        margin-top: 10px;
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .btn-cancel:hover {
+        color: var(--text-primary);
+    }
+    
+    @media (max-width: 576px) {
+        .row-2, .row-3 {
+            grid-template-columns: 1fr;
+        }
+        .radio-group {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="create-container">
+
+    <div class="form-card">
+        <div class="form-header">
+            <h5>🎟️ Create New Coupon</h5>
+            <p>Launch a code with customized targets and rates.</p>
+        </div>
+        
+        <div class="form-body">
+            <form method="POST" action="{{ url_for('coupon.admin_create_coupon') }}" id="couponForm">
+                
+                <!-- Coupon Code -->
+                <div class="form-group">
+                    <label>Coupon Code <span class="required">*</span></label>
+                    <input type="text" name="code" class="form-control code-input" 
+                           placeholder="e.g. TRAGE20" maxlength="20" required
+                           oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                    <div class="input-hint">3-20 characters, uppercase letters and numbers only</div>
+                </div>
+                
+                <!-- Description -->
+                <div class="form-group">
+                    <label>Description <span class="optional">(optional)</span></label>
+                    <textarea name="description" class="form-control" 
+                              placeholder="Describe the promotion or event..."></textarea>
+                </div>
+                
+                <!-- Discount Type & Value -->
+                <div class="row-2">
+                    <div class="form-group">
+                        <label>Discount Type <span class="required">*</span></label>
+                        <select name="discount_type" class="form-control" id="discountType" onchange="updateDiscountLabel()">
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed">Fixed Amount (₹)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Discount Value <span class="required">*</span></label>
+                        <input type="number" name="discount_value" class="form-control" 
+                               placeholder="e.g. 20" min="1" step="0.01" required id="discountValue">
+                        <div class="input-hint" id="discountHint">Enter percentage (1-100)</div>
+                    </div>
+                </div>
+                
+                <!-- Coupon Type -->
+                <div class="form-group">
+                    <label>Coupon Type <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" name="coupon_type" value="universal" id="typeUniversal" checked onchange="toggleTypeSections()">
+                            <label for="typeUniversal">
+                                <i class="bi bi-globe2"></i>
+                                Universal
+                                <small style="font-size:0.65rem;color:var(--text-muted);font-weight:400;">All Users</small>
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="coupon_type" value="specific" id="typeSpecific" onchange="toggleTypeSections()">
+                            <label for="typeSpecific">
+                                <i class="bi bi-person-check"></i>
+                                Specific
+                                <small style="font-size:0.65rem;color:var(--text-muted);font-weight:400;">Selected Users</small>
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="coupon_type" value="influencer" id="typeInfluencer" onchange="toggleTypeSections()">
+                            <label for="typeInfluencer">
+                                <i class="bi bi-megaphone"></i>
+                                Influencer
+                                <small style="font-size:0.65rem;color:var(--text-muted);font-weight:400;">Hidden from users</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Specific Users Section -->
+                <div class="specific-section" id="specificSection">
+                    <label style="font-weight:600;font-size:0.78rem;margin-bottom:8px;display:block;">
+                        👤 Select Users <span class="optional">(search by email, username, or phone)</span>
+                    </label>
+                    <input type="text" class="user-search-input" id="userSearch" 
+                           placeholder="Search users..." oninput="searchUsers()">
+                    <div class="user-search-results" id="userSearchResults"></div>
+                    <div class="selected-users" id="selectedUsers"></div>
+                    <input type="hidden" name="user_emails" id="userEmailsInput">
+                </div>
+                
+                <!-- Influencer Section -->
+                <div class="influencer-section" id="influencerSection">
+                    <div class="form-group">
+                        <label>Influencer Name <span class="optional">(optional)</span></label>
+                        <input type="text" name="influencer_name" class="form-control" 
+                               placeholder="e.g. TradingGuru">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes <span class="optional">(optional)</span></label>
+                        <textarea name="influencer_notes" class="form-control" 
+                                  placeholder="Internal notes about this influencer campaign..." 
+                                  style="min-height:60px;"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Limits -->
+                <div class="row-3">
+                    <div class="form-group">
+                        <label>Max Uses <span class="optional">(optional)</span></label>
+                        <input type="number" name="max_uses" class="form-control" 
+                               placeholder="e.g. 12" min="1">
+                        <div class="input-hint">Leave empty for unlimited</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Min Order (₹) <span class="optional">(optional)</span></label>
+                        <input type="number" name="min_order" class="form-control" 
+                               placeholder="e.g. 399" min="0" step="0.01" value="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Expiration Date <span class="optional">(optional)</span></label>
+                        <input type="datetime-local" name="expires_at" class="form-control">
+                        <div class="input-hint">Leave empty for no expiry</div>
+                    </div>
+                </div>
+                
+                <!-- Submit -->
+                <button type="submit" class="btn-submit">
+                    <i class="bi bi-plus-lg"></i> Create Campaign
+                </button>
+                <a href="{{ url_for('coupon.admin_coupons') }}" class="btn-cancel">Cancel</a>
+                
+            </form>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ═══════════════════════════════════════════════════════
+    // DISCOUNT TYPE LABEL
+    // ═══════════════════════════════════════════════════════
+    
+    function updateDiscountLabel() {
+        const type = document.getElementById('discountType').value;
+        const hint = document.getElementById('discountHint');
+        if (type === 'percentage') {
+            hint.textContent = 'Enter percentage (1-100)';
+        } else {
+            hint.textContent = 'Enter fixed amount in ₹';
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════
+    // COUPON TYPE SECTIONS
+    // ═══════════════════════════════════════════════════════
+    
+    function toggleTypeSections() {
+        const type = document.querySelector('input[name="coupon_type"]:checked').value;
+        document.getElementById('specificSection').classList.toggle('show', type === 'specific');
+        document.getElementById('influencerSection').classList.toggle('show', type === 'influencer');
+    }
+    
+    // ═══════════════════════════════════════════════════════
+    // USER SEARCH
+    // ═══════════════════════════════════════════════════════
+    
+    let selectedUsers = [];
+    let searchTimeout;
+    
+    function searchUsers() {
+        clearTimeout(searchTimeout);
+        const query = document.getElementById('userSearch').value.trim();
+        const resultsDiv = document.getElementById('userSearchResults');
+        
+        if (query.length < 2) {
+            resultsDiv.classList.remove('show');
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            fetch(`/coupon/api/search-users?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.users && data.users.length > 0) {
+                        resultsDiv.innerHTML = data.users.map(u => `
+                            <div class="user-result-item" onclick="addUser(${u.id}, '${u.email.replace(/'/g, "\\'")}', '${(u.phone || '').replace(/'/g, "\\'")}')">
+                                <div>
+                                    <div style="font-weight:600;">${u.email}</div>
+                                    <div style="font-size:0.68rem;color:var(--text-muted);">
+                                        ${u.full_name || u.username} ${u.phone ? '· ' + u.phone : ''}
+                                    </div>
+                                </div>
+                                <i class="bi bi-plus-circle" style="color:var(--accent);"></i>
+                            </div>
+                        `).join('');
+                        resultsDiv.classList.add('show');
+                    } else {
+                        resultsDiv.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:0.75rem;">No users found</div>';
+                        resultsDiv.classList.add('show');
+                    }
+                });
+        }, 300);
+    }
+    
+    function addUser(id, email, phone) {
+        if (selectedUsers.find(u => u.id === id)) return;
+        
+        selectedUsers.push({ id, email, phone });
+        renderSelectedUsers();
+        document.getElementById('userSearch').value = '';
+        document.getElementById('userSearchResults').classList.remove('show');
+    }
+    
+    function removeUser(id) {
+        selectedUsers = selectedUsers.filter(u => u.id !== id);
+        renderSelectedUsers();
+    }
+    
+    function renderSelectedUsers() {
+        const container = document.getElementById('selectedUsers');
+        container.innerHTML = selectedUsers.map(u => `
+            <span class="selected-user-tag">
+                ${u.email} ${u.phone ? '(' + u.phone + ')' : ''}
+                <button type="button" class="remove-user" onclick="removeUser(${u.id})">✕</button>
+            </span>
+        `).join('');
+        document.getElementById('userEmailsInput').value = selectedUsers.map(u => u.email).join(', ');
+    }
+    
+    // Close search results on click outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#userSearch') && !e.target.closest('#userSearchResults')) {
+            document.getElementById('userSearchResults').classList.remove('show');
+        }
+    });
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateDiscountLabel();
+        toggleTypeSections();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,915 @@
+{% extends "base_admin.html" %}
+{% block title %}Influencer: {{ coupon.influencer_name or coupon.code }} - Admin{% endblock %}
+{% block page_title %}📢 Influencer Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container {
+        max-width: 1400px;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--accent); }
+
+    /* Influencer Header Card */
+    .inf-header-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .inf-header-card::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .inf-avatar-lg {
+        width: 70px;
+        height: 70px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 8px 32px rgba(139,92,246,0.3);
+    }
+
+    .inf-header-info {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .inf-header-info h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .inf-header-info .inf-code-badge {
+        display: inline-block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--accent);
+        padding: 4px 12px;
+        background: rgba(38,166,154,0.1);
+        border-radius: 8px;
+        margin-top: 6px;
+        letter-spacing: 1px;
+    }
+
+    .inf-header-info .inf-notes {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 6px;
+        font-style: italic;
+    }
+
+    .inf-header-stats {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .inf-stat-item {
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .inf-stat-item .val {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .inf-stat-item .lbl {
+        font-size: 0.68rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 4px;
+    }
+
+    .inf-stat-item.highlight .val {
+        color: #8b5cf6;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .mini-stat {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s;
+    }
+
+    .mini-stat:hover {
+        border-color: rgba(139,92,246,0.4);
+    }
+
+    .mini-stat .ms-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .ms-icon.purple { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    .ms-icon.green { background: rgba(0,200,83,0.15); color: #00c853; }
+    .ms-icon.gold { background: rgba(255,179,0,0.15); color: #ffb300; }
+    .ms-icon.blue { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+    .ms-icon.red { background: rgba(255,82,82,0.15); color: #ff5252; }
+
+    .mini-stat .ms-val {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .mini-stat .ms-lbl {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-bar .filter-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+
+    .filter-search {
+        flex: 1;
+        min-width: 180px;
+        padding: 8px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.78rem;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .filter-search:focus {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+    }
+
+    .filter-select {
+        padding: 8px 32px 8px 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.78rem;
+        cursor: pointer;
+        outline: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        transition: all 0.2s;
+    }
+
+    .filter-select:focus {
+        border-color: #8b5cf6;
+    }
+
+    .btn-reset {
+        padding: 8px 16px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+
+    .btn-reset:hover {
+        border-color: #8b5cf6;
+        color: #8b5cf6;
+    }
+
+    /* Charts Row */
+    .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .chart-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+    }
+
+    .chart-card h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .chart-container {
+        position: relative;
+        width: 100%;
+    }
+
+    /* Users Table */
+    .users-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .users-card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .users-card-header h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .result-count {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .users-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--border-color);
+        background: var(--bg-body);
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        transition: color 0.2s;
+    }
+
+    .users-table th:hover { color: #8b5cf6; }
+    .users-table th .sort-arrow { font-size: 0.6rem; margin-left: 4px; opacity: 0.3; }
+    .users-table th.sorted .sort-arrow { opacity: 1; color: #8b5cf6; }
+
+    .users-table td {
+        padding: 12px 16px;
+        font-size: 0.8rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .users-table tr:hover td {
+        background: rgba(139,92,246,0.03);
+    }
+
+    .user-avatar-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--bg-body);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.75rem;
+        color: var(--accent);
+        flex-shrink: 0;
+    }
+
+    .user-info-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .plan-badge-sm {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .plan-badge-sm.pro { background: rgba(79,142,247,0.12); color: #4f8ef7; }
+    .plan-badge-sm.elite { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    .plan-badge-sm.basic { background: rgba(0,200,83,0.12); color: #00c853; }
+
+    .amount-positive { color: #00c853; font-weight: 600; }
+    .amount-discount { color: #ffb300; font-weight: 600; }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-state .empty-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 0.84rem;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 14px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .pagination button {
+        padding: 6px 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 0.72rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .pagination button:hover:not(:disabled) {
+        border-color: #8b5cf6;
+        color: #8b5cf6;
+    }
+
+    .pagination button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .pagination button.active {
+        background: #8b5cf6;
+        color: #fff;
+        border-color: #8b5cf6;
+    }
+
+    .pagination .page-info {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        padding: 0 8px;
+    }
+
+    @media (max-width: 992px) {
+        .charts-row {
+            grid-template-columns: 1fr;
+        }
+        .inf-header-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .inf-header-stats {
+            width: 100%;
+            justify-content: space-around;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .filter-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-container">
+
+    <a href="{{ url_for('coupon.admin_coupon_analytics') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Analytics
+    </a>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- INFLUENCER HEADER -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="inf-header-card">
+        <div class="inf-avatar-lg">
+            {{ (coupon.influencer_name or '?')[:1].upper() }}
+        </div>
+        <div class="inf-header-info">
+            <h3>{{ coupon.influencer_name or 'Unknown Influencer' }}</h3>
+            <span class="inf-code-badge">{{ coupon.code }}</span>
+            {% if coupon.influencer_notes %}
+            <div class="inf-notes">📝 {{ coupon.influencer_notes }}</div>
+            {% endif %}
+        </div>
+        <div class="inf-header-stats">
+            <div class="inf-stat-item highlight">
+                <div class="val">{{ total_uses }}</div>
+                <div class="lbl">Total Uses</div>
+            </div>
+            <div class="inf-stat-item">
+                <div class="val">{{ unique_users }}</div>
+                <div class="lbl">Unique Users</div>
+            </div>
+            <div class="inf-stat-item">
+                <div class="val">₹{{ '%.0f'|format(total_discount) }}</div>
+                <div class="lbl">Discount Given</div>
+            </div>
+            <div class="inf-stat-item">
+                <div class="val">₹{{ '%.0f'|format(total_revenue) }}</div>
+                <div class="lbl">Revenue</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- MINI STATS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="stats-grid">
+        <div class="mini-stat">
+            <div class="ms-icon purple"><i class="bi bi-people"></i></div>
+            <div>
+                <div class="ms-val">{{ unique_users }}</div>
+                <div class="ms-lbl">Unique Users</div>
+            </div>
+        </div>
+        <div class="mini-stat">
+            <div class="ms-icon green"><i class="bi bi-check-circle"></i></div>
+            <div>
+                <div class="ms-val">₹{{ '%.0f'|format(total_revenue) }}</div>
+                <div class="ms-lbl">Total Revenue</div>
+            </div>
+        </div>
+        <div class="mini-stat">
+            <div class="ms-icon gold"><i class="bi bi-tag"></i></div>
+            <div>
+                <div class="ms-val">₹{{ '%.0f'|format(total_discount) }}</div>
+                <div class="ms-lbl">Total Discount</div>
+            </div>
+        </div>
+        <div class="mini-stat">
+            <div class="ms-icon blue"><i class="bi bi-graph-up"></i></div>
+            <div>
+                <div class="ms-val">{{ '%.1f'|format((total_uses / unique_users) if unique_users > 0 else 0) }}</div>
+                <div class="ms-lbl">Avg Uses/User</div>
+            </div>
+        </div>
+        <div class="mini-stat">
+            <div class="ms-icon red"><i class="bi bi-cash-stack"></i></div>
+            <div>
+                <div class="ms-val">₹{{ '%.0f'|format(total_discount / total_uses) if total_uses > 0 else 0 }}</div>
+                <div class="ms-lbl">Avg Discount/Use</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- CHARTS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <h6><i class="bi bi-bar-chart"></i> Usage Over Time</h6>
+            <div class="chart-container">
+                <canvas id="usageTimelineChart" height="280"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h6><i class="bi bi-pie-chart"></i> Plans Purchased</h6>
+            <div class="chart-container">
+                <canvas id="planDistributionChart" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- FILTER BAR -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="filter-bar" id="filterBar">
+        <span class="filter-label">🔍 Filter Users</span>
+        
+        <input type="text" class="filter-search" id="userSearch" 
+               placeholder="Search by email, username..." 
+               oninput="applyUserFilters()">
+        
+        <select class="filter-select" id="planFilter" onchange="applyUserFilters()">
+            <option value="all">All Plans</option>
+            <option value="pro">Pro</option>
+            <option value="elite">Elite</option>
+            <option value="basic">Basic</option>
+        </select>
+
+        <select class="filter-select" id="dateFilter" onchange="applyUserFilters()">
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+        </select>
+
+        <button class="btn-reset" onclick="resetUserFilters()">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+        </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- USERS TABLE -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="users-card">
+        <div class="users-card-header">
+            <h6>👥 Users Who Used This Coupon</h6>
+            <span class="result-count" id="userResultCount"></span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="users-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortUsers('user')">User <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortUsers('plan')">Plan <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortUsers('order')">Order Amount <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortUsers('discount')">Discount <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortUsers('final')">Final Paid <span class="sort-arrow">↕</span></th>
+                        <th onclick="sortUsers('date')">Date <span class="sort-arrow">↕</span></th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                </tbody>
+            </table>
+        </div>
+        <div id="usersEmpty" class="empty-state" style="display:none;">
+            <div class="empty-icon">🔍</div>
+            <p>No users match your filters.</p>
+        </div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // ═══════════════════════════════════════════════════════
+    // DATA
+    // ═══════════════════════════════════════════════════════
+    
+    const allUsages = [
+        {% for usage in usages %}
+        {
+            id: {{ usage.id }},
+            userId: {{ usage.user_id }},
+            userEmail: "{{ usage.user.email }}",
+            userName: "{{ usage.user.username }}",
+            userFullName: "{{ usage.user.full_name or '' }}",
+            plan: "{{ usage.plan_purchased or 'N/A' }}",
+            orderAmount: {{ usage.order_amount }},
+            discount: {{ usage.discount_applied }},
+            finalAmount: {{ usage.final_amount }},
+            date: "{{ usage.used_at.strftime('%Y-%m-%d') }}",
+            dateFormatted: "{{ usage.used_at.strftime('%d %b %Y, %H:%M') }}",
+            ip: "{{ usage.ip_address or '' }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // ═══════════════════════════════════════════════════════
+    // CHARTS
+    // ═══════════════════════════════════════════════════════
+
+    // Usage Timeline (Daily)
+    const dailyUsage = {};
+    allUsages.forEach(u => {
+        dailyUsage[u.date] = (dailyUsage[u.date] || 0) + 1;
+    });
+    
+    const sortedDates = Object.keys(dailyUsage).sort();
+    
+    const timelineCtx = document.getElementById('usageTimelineChart').getContext('2d');
+    new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: sortedDates.map(d => {
+                const date = new Date(d);
+                return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+            }),
+            datasets: [{
+                label: 'Uses',
+                data: sortedDates.map(d => dailyUsage[d]),
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139,92,246,0.1)',
+                borderWidth: 2,
+                pointBackgroundColor: '#8b5cf6',
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 45 }
+                },
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#64748b', stepSize: 1 },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Plan Distribution
+    const planCounts = {};
+    allUsages.forEach(u => {
+        const plan = u.plan.replace('_monthly', '').replace('_yearly', '').replace('_quarterly', '').toUpperCase();
+        planCounts[plan] = (planCounts[plan] || 0) + 1;
+    });
+
+    const planCtx = document.getElementById('planDistributionChart').getContext('2d');
+    new Chart(planCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(planCounts),
+            datasets: [{
+                data: Object.values(planCounts),
+                backgroundColor: ['rgba(139,92,246,0.7)', 'rgba(79,142,247,0.7)', 'rgba(0,200,83,0.7)', 'rgba(255,179,0,0.7)'],
+                borderColor: ['#8b5cf6', '#4f8ef7', '#00c853', '#ffb300'],
+                borderWidth: 2,
+                hoverBorderWidth: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#94a3b8', padding: 16, usePointStyle: true }
+                }
+            }
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════
+    // USERS TABLE WITH FILTERS & PAGINATION
+    // ═══════════════════════════════════════════════════════
+
+    const ITEMS_PER_PAGE = 10;
+    let userCurrentPage = 1;
+    let userSortField = 'date';
+    let userSortDir = 'desc';
+    let userFilteredData = [...allUsages];
+
+    function applyUserFilters() {
+        const search = document.getElementById('userSearch').value.toLowerCase();
+        const planFilter = document.getElementById('planFilter').value;
+        const dateFilter = document.getElementById('dateFilter').value;
+
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        userFilteredData = allUsages.filter(u => {
+            if (search && !u.userEmail.toLowerCase().includes(search) && 
+                !u.userName.toLowerCase().includes(search) && 
+                !u.userFullName.toLowerCase().includes(search)) return false;
+
+            if (planFilter !== 'all' && !u.plan.toLowerCase().includes(planFilter)) return false;
+
+            if (dateFilter === 'today' && u.date !== today) return false;
+            if (dateFilter === 'week' && u.date < weekAgo) return false;
+            if (dateFilter === 'month' && u.date < monthAgo) return false;
+
+            return true;
+        });
+
+        userCurrentPage = 1;
+        sortAndRenderUsers();
+    }
+
+    function sortUsers(field) {
+        if (userSortField === field) {
+            userSortDir = userSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            userSortField = field;
+            userSortDir = 'desc';
+        }
+        sortAndRenderUsers();
+    }
+
+    function sortAndRenderUsers() {
+        userFilteredData.sort((a, b) => {
+            let valA, valB;
+            switch(userSortField) {
+                case 'user': valA = a.userEmail; valB = b.userEmail; break;
+                case 'plan': valA = a.plan; valB = b.plan; break;
+                case 'order': valA = a.orderAmount; valB = b.orderAmount; break;
+                case 'discount': valA = a.discount; valB = b.discount; break;
+                case 'final': valA = a.finalAmount; valB = b.finalAmount; break;
+                case 'date': valA = a.date; valB = b.date; break;
+                default: return 0;
+            }
+
+            if (typeof valA === 'string') {
+                return userSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            return userSortDir === 'asc' ? valA - valB : valB - valA;
+        });
+
+        renderUsersTable();
+        updateUserSortIndicators();
+    }
+
+    function renderUsersTable() {
+        const tbody = document.getElementById('usersTableBody');
+        const empty = document.getElementById('usersEmpty');
+        const count = document.getElementById('userResultCount');
+        const pagination = document.getElementById('pagination');
+
+        if (userFilteredData.length === 0) {
+            tbody.innerHTML = '';
+            empty.style.display = 'block';
+            pagination.innerHTML = '';
+            count.textContent = '0 users';
+            return;
+        }
+
+        empty.style.display = 'none';
+        count.textContent = `${userFilteredData.length} user(s)`;
+
+        const totalPages = Math.ceil(userFilteredData.length / ITEMS_PER_PAGE);
+        const start = (userCurrentPage - 1) * ITEMS_PER_PAGE;
+        const pageData = userFilteredData.slice(start, start + ITEMS_PER_PAGE);
+
+        tbody.innerHTML = pageData.map(u => `
+            <tr>
+                <td>
+                    <div class="user-info-cell">
+                        <div class="user-avatar-sm">${(u.userName || 'U')[0].toUpperCase()}</div>
+                        <div>
+                            <div style="font-weight:600;">${u.userEmail}</div>
+                            <div style="font-size:0.68rem;color:var(--text-muted);">@${u.userName}${u.userFullName ? ' · ' + u.userFullName : ''}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="plan-badge-sm ${u.plan.toLowerCase().includes('pro') ? 'pro' : u.plan.toLowerCase().includes('elite') ? 'elite' : 'basic'}">
+                        ${u.plan.replace('_monthly','').replace('_yearly','').replace('_quarterly','')}
+                    </span>
+                </td>
+                <td class="amount-positive">₹${u.orderAmount.toFixed(2)}</td>
+                <td class="amount-discount">-₹${u.discount.toFixed(2)}</td>
+                <td style="font-weight:600;">₹${u.finalAmount.toFixed(2)}</td>
+                <td style="font-size:0.72rem;">${u.dateFormatted}</td>
+            </tr>
+        `).join('');
+
+        // Pagination
+        let pagHTML = '';
+        pagHTML += `<button onclick="goToPage(${userCurrentPage - 1})" ${userCurrentPage === 1 ? 'disabled' : ''}>← Prev</button>`;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= userCurrentPage - 1 && i <= userCurrentPage + 1)) {
+                pagHTML += `<button onclick="goToPage(${i})" class="${i === userCurrentPage ? 'active' : ''}">${i}</button>`;
+            } else if (i === userCurrentPage - 2 || i === userCurrentPage + 2) {
+                pagHTML += `<span class="page-info">...</span>`;
+            }
+        }
+        
+        pagHTML += `<button onclick="goToPage(${userCurrentPage + 1})" ${userCurrentPage === totalPages ? 'disabled' : ''}>Next →</button>`;
+        pagHTML += `<span class="page-info">Page ${userCurrentPage} of ${totalPages}</span>`;
+        pagination.innerHTML = pagHTML;
+    }
+
+    function goToPage(page) {
+        const totalPages = Math.ceil(userFilteredData.length / ITEMS_PER_PAGE);
+        if (page < 1 || page > totalPages) return;
+        userCurrentPage = page;
+        renderUsersTable();
+    }
+
+    function updateUserSortIndicators() {
+        document.querySelectorAll('.users-table th').forEach(th => {
+            th.classList.remove('sorted');
+            const field = th.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];
+            if (field === userSortField) th.classList.add('sorted');
+        });
+    }
+
+    function resetUserFilters() {
+        document.getElementById('userSearch').value = '';
+        document.getElementById('planFilter').value = 'all';
+        document.getElementById('dateFilter').value = 'all';
+        userSortField = 'date';
+        userSortDir = 'desc';
+        applyUserFilters();
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        applyUserFilters();
+    });
+</script>
+{% endblock %}

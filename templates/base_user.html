@@ -563,6 +563,7 @@
     <a href="{{ url_for('user.diary') }}" class="nav-link {% if request.endpoint == 'user.diary' %}active{% endif %}"><i class="bi bi-book"></i> Trading Diary</a>
     <a href="{{ url_for('tools.index') }}" class="nav-link {% if 'tools' in request.endpoint %}active{% endif %}"><i class="bi bi-tools"></i> Tools</a>
     <a href="{{ url_for('user.payment_history') }}" class="nav-link {% if request.endpoint == 'user.payment_history' %}active{% endif %}"><i class="bi bi-receipt"></i> Payment History</a>
+    <a href="{{ url_for('coupon.my_coupons') }}" class="nav-link {% if request.endpoint and 'coupon.my_coupons' in request.endpoint %}active{% endif %}"><i class="bi bi-ticket-perforated"></i> My Coupons</a>
     <a href="{{ url_for('user.support') }}" class="nav-link {% if request.endpoint == 'user.support' %}active{% endif %}"><i class="bi bi-headset"></i> Help & Support</a>
     <a href="{{ url_for('user.settings') }}" class="nav-link {% if request.endpoint == 'user.settings' %}active{% endif %}"><i class="bi bi-gear"></i> Settings</a>
     <a href="{{ url_for('user.subscription') }}" class="nav-link {% if request.endpoint == 'user.subscription' %}active{% endif %}"><i class="bi bi-credit-card"></i> Subscription</a>
@@ -577,7 +578,13 @@
     <div class="top-bar">
         <h5>{% block page_title %}Dashboard{% endblock %}</h5>
         {% if analyse_page_key is defined %}
-        <a href="{{ url_for('user.analyse_page', page_key=analyse_page_key, sub_id=analyse_sub_id or '') }}" class="btn-analyse-page" id="btnAnalysePage" title="TRAGENE AI analysis" onclick="return startAnalyseLoading(this)"><span class="sparkle">✨</span> Analyse</a>
+        <a href="{{ url_for('user.analyse_page', page_key=analyse_page_key, sub_id=analyse_sub_id or '') }}" class="btn-analyse-page" id="btnAnalysePage" title="TRAGENE AI analysis" onclick="return startAnalyseLoading(this)">
+    <span class="sparkle">✨</span> 
+    <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.1;">
+        <span style="font-weight:700;font-size:0.7rem;">Analyse</span>
+        <span style="font-weight:400;font-size:0.52rem;opacity:0.75;">this page</span>
+    </span>
+</a>
         {% endif %}
         <div style="flex:1;"></div>
         <div class="token-display" id="tokenDisplay" onclick="window.location.href='{{ url_for('ai.ai_reports') }}'" title="AI Tokens"><span class="token-dot good" id="tokenDot"></span><span id="tokenText">🪙 ...</span></div>
@@ -587,15 +594,7 @@
             <ul class="dropdown-menu dropdown-menu-end" id="accountDropdownList"><li><div class="text-center py-3"><div class="spinner-border spinner-border-sm" style="color:var(--accent);"></div></div></li></ul>
         </div>
         <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><i class="bi bi-moon-stars" id="themeIcon"></i></button>
-        <div class="dropdown user-dropdown">
-            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-person-circle"></i> {{ current_user.username }}</button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="{{ url_for('user.settings') }}"><i class="bi bi-gear"></i> Settings</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('user.payment_history') }}"><i class="bi bi-receipt"></i> Payment History</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-            </ul>
-        </div>
+        
     </div>
 
     {% if current_user.is_authenticated and not current_user.email_verified %}
@@ -671,13 +670,27 @@
     function switchAccount(id) { fetch('/user/switch-account/' + id, { method: 'POST' }).then(r => { if (r.ok) location.reload(); }); }
     
     function loadTokens() {
-        fetch('/ai/token-info').then(r => r.json()).then(d => {
-            const dot = document.getElementById('tokenDot'), text = document.getElementById('tokenText');
+    fetch('/ai/token-info').then(r => r.json()).then(d => {
+        const dot = document.getElementById('tokenDot'), text = document.getElementById('tokenText');
+        
+        if (d.is_banned) {
+            dot.className = 'token-dot low';
+            text.textContent = '🚫 Banned';
+            return;
+        }
+        
+        if (d.is_paid) {
+            // Paid users - show unlimited
+            dot.className = 'token-dot good';
+            text.textContent = '🪙 Unlimited AI';
+        } else {
+            // Free users - show remaining
             const pct = d.limit > 0 ? (d.used / d.limit) * 100 : 0;
             dot.className = 'token-dot ' + (pct > 80 ? 'low' : pct > 50 ? 'warn' : 'good');
-            text.textContent = d.is_banned ? '🚫 Banned' : '🪙 ' + d.remaining.toLocaleString();
-        });
-    }
+            text.textContent = '🪙 ' + d.remaining.toLocaleString() + ' left';
+        }
+    });
+}
     
     function showUpgradeAlert(f) {
         if (confirm('🔒 ' + f + ' is an Elite plan feature.\n\nUpgrade to Elite (₹799/mo) to unlock:\n• AI Coach\n• Goals & Planner\n• Strategy Builder\n• Unlimited AI tokens\n\nGo to Subscription page?')) {

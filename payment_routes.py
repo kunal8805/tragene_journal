@@ -8,7 +8,7 @@ Security: Blocks unverified users from purchasing
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from extensions import db
-from models import User, Subscription, Payment, PlanPrice
+from models import User, Subscription, Payment, PlanPrice, Coupon, CouponUsage, CouponUser
 from datetime import datetime, timedelta
 import json
 import os
@@ -132,6 +132,14 @@ def create_order():
     data = request.get_json()
     plan_tier = data.get('plan_tier')
     plan_type = data.get('plan_type')
+    coupon_code = data.get('coupon_code', '').strip().upper()
+    coupon_id = data.get('coupon_id')
+    
+    # 🆕 Check if purchases are blocked (maintenance mode)
+    from models import check_purchase_blocked
+    is_blocked, block_msg = check_purchase_blocked(current_user, plan_tier)
+    if is_blocked:
+        return jsonify({'success': False, 'message': block_msg or 'Purchases are temporarily unavailable. Please try again later.'})
     
     pricing = get_pricing()
     
@@ -155,11 +163,18 @@ def create_order():
                 old_payment.payment_completed_at = datetime.utcnow()
                 db.session.commit()
                 _activate_subscription(old_payment.user_id, old_payment.plan_tier, old_payment.plan_type)
+                # Record coupon if any
+                if old_payment.coupon_id:
+                    _finalize_coupon_usage(old_payment)
                 return jsonify({
                     'success': True,
                     'message': 'Payment already completed!',
                     'redirect': url_for('payment.success', order_id=old_payment.cashfree_order_id)
                 })
+        
+        # Rollback any coupon usage on cancelled pending payments
+        if old_payment.coupon_id:
+            _rollback_coupon_usage(old_payment)
         
         old_payment.status = 'CANCELLED'
         old_payment.error_message = 'User initiated new payment.'
@@ -180,10 +195,52 @@ def create_order():
         gateway_fee = round(base_price * GATEWAY_FEE_PERCENT / 100, 2)
         total_price = round(base_price + gateway_fee, 2)
     
+    # ═══════════════════════════════════════════════════════
+    # 🎟️ COUPON VALIDATION (No usage recording yet!)
+    # ═══════════════════════════════════════════════════════
+    coupon_discount = 0
+    applied_coupon = None
+    original_total = total_price
+    
+    if coupon_code and coupon_id:
+        try:
+            applied_coupon = Coupon.query.get(int(coupon_id))
+            
+            if applied_coupon and applied_coupon.code.upper() == coupon_code.upper():
+                # Validate coupon
+                can_use, message = applied_coupon.can_be_used_by(current_user)
+                
+                if not can_use:
+                    return jsonify({'success': False, 'message': f'Coupon error: {message}'})
+                
+                # Check minimum order
+                if total_price < applied_coupon.min_order_amount:
+                    return jsonify({
+                        'success': False,
+                        'message': f'Minimum order of ₹{applied_coupon.min_order_amount} required for this coupon.'
+                    })
+                
+                # Calculate discount (but DON'T record usage yet!)
+                coupon_discount = applied_coupon.calculate_discount(total_price)
+                total_price = round(total_price - coupon_discount, 2)
+                
+                if total_price < 0:
+                    total_price = 0
+                    coupon_discount = original_total
+                
+                print(f"🎟️ Coupon validated: {applied_coupon.code} | Discount: ₹{coupon_discount} | Final: ₹{total_price}")
+            else:
+                return jsonify({'success': False, 'message': 'Invalid coupon.'})
+                
+        except Exception as e:
+            print(f"❌ Coupon validation error: {e}")
+            return jsonify({'success': False, 'message': 'Error validating coupon. Please try again.'})
+    
     total_paise = int(total_price * 100)
     
     order_id = f"TRADEJ_{current_user.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
     
+    # 🆕 Store coupon info in payment record (for later use after payment success)
     payment = Payment(
         user_id=current_user.id,
         cashfree_order_id=order_id,
@@ -193,7 +250,10 @@ def create_order():
         currency='INR',
         plan_tier=plan_tier,
         plan_type=plan_type,
-        status='PENDING'
+        status='PENDING',
+        coupon_id=applied_coupon.id if applied_coupon else None,
+        coupon_code=coupon_code if applied_coupon else None,
+        coupon_discount=coupon_discount if applied_coupon else 0
     )
     db.session.add(payment)
     db.session.commit()
@@ -203,13 +263,25 @@ def create_order():
     if result and result.get('payment_session_id'):
         payment.cashfree_session_id = result['payment_session_id']
         db.session.commit()
-        return jsonify({
+        
+        response_data = {
             'success': True,
             'payment_session_id': result['payment_session_id'],
             'order_id': order_id,
             'gateway': 'cashfree'
-        })
+        }
+        
+        # Include coupon info in response
+        if applied_coupon and coupon_discount > 0:
+            response_data['coupon_applied'] = True
+            response_data['coupon_code'] = applied_coupon.code
+            response_data['discount_amount'] = coupon_discount
+            response_data['original_amount'] = original_total
+            response_data['final_amount'] = total_price
+        
+        return jsonify(response_data)
     
+    # Payment creation failed - no coupon to rollback since we didn't record it
     payment.status = 'FAILED'
     payment.error_message = 'Failed to create payment session.'
     db.session.commit()
@@ -254,21 +326,37 @@ def webhook():
     if payment_status == 'SUCCESS':
         payment.status = 'SUCCESS'
         payment.payment_completed_at = datetime.utcnow()
+        db.session.commit()
+        
+        # 🆕 NOW record coupon usage - payment is confirmed!
+        if payment.coupon_id:
+            _finalize_coupon_usage(payment)
+        
         _activate_subscription(payment.user_id, payment.plan_tier, payment.plan_type)
         print(f"✅ Payment SUCCESS via webhook: {order_id}")
+        
     elif payment_status == 'FAILED':
         payment.status = 'FAILED'
         payment.error_message = 'Payment failed at gateway.'
+        # 🆕 Rollback coupon if payment failed
+        if payment.coupon_id:
+            _rollback_coupon_usage(payment)
+        db.session.commit()
         print(f"❌ Payment FAILED via webhook: {order_id}")
+        
     elif payment_status == 'USER_DROPPED':
         payment.status = 'CANCELLED'
         payment.error_message = 'User abandoned payment.'
+        # 🆕 Rollback coupon if user cancelled
+        if payment.coupon_id:
+            _rollback_coupon_usage(payment)
+        db.session.commit()
         print(f"🚫 Payment abandoned via webhook: {order_id}")
     else:
         payment.status = payment_status or 'UNKNOWN'
+        db.session.commit()
         print(f"❓ Payment status: {payment_status}")
     
-    db.session.commit()
     return jsonify({'status': 'ok'})
 
 
@@ -310,6 +398,11 @@ def success():
                     if 'cf_payment_id' in status_data:
                         payment.cashfree_payment_id = status_data['cf_payment_id']
                     db.session.commit()
+                    
+                    # 🆕 Record coupon usage on verified payment
+                    if payment.coupon_id:
+                        _finalize_coupon_usage(payment)
+                    
                     _activate_subscription(payment.user_id, payment.plan_tier, payment.plan_type)
                     status_verified = True
                     print(f"✅ Payment verified on success page: {order_id}")
@@ -323,6 +416,9 @@ def success():
                 else:
                     payment.status = 'FAILED'
                     payment.error_message = f'Payment status: {order_status}'
+                    # Rollback coupon
+                    if payment.coupon_id:
+                        _rollback_coupon_usage(payment)
                     db.session.commit()
                     flash(f'Payment was not completed. Status: {order_status}. Please try again.', 'danger')
                     return redirect(url_for('user.subscription'))
@@ -331,6 +427,11 @@ def success():
             payment.status = 'SUCCESS'
             payment.payment_completed_at = datetime.utcnow()
             db.session.commit()
+            
+            # 🆕 Record coupon usage for mock payments too
+            if payment.coupon_id:
+                _finalize_coupon_usage(payment)
+            
             _activate_subscription(payment.user_id, payment.plan_tier, payment.plan_type)
             status_verified = True
             print(f"✅ Mock payment verified: {order_id}")
@@ -382,12 +483,20 @@ def check_payment_status(order_id):
                 if 'cf_payment_id' in status_data:
                     payment.cashfree_payment_id = status_data['cf_payment_id']
                 db.session.commit()
+                
+                # 🆕 Record coupon on status check success
+                if payment.coupon_id:
+                    _finalize_coupon_usage(payment)
+                
                 _activate_subscription(payment.user_id, payment.plan_tier, payment.plan_type)
                 return jsonify({'status': 'SUCCESS'})
             
             elif order_status != 'ACTIVE':
                 payment.status = 'FAILED'
                 payment.error_message = f'Payment status: {order_status}'
+                # Rollback coupon on failure
+                if payment.coupon_id:
+                    _rollback_coupon_usage(payment)
                 db.session.commit()
                 return jsonify({'status': 'FAILED', 'message': f'Payment {order_status.lower()}'})
     
@@ -423,6 +532,11 @@ def verify_payment(order_id):
                 if 'cf_payment_id' in status_data:
                     payment.cashfree_payment_id = status_data['cf_payment_id']
                 db.session.commit()
+                
+                # 🆕 Record coupon
+                if payment.coupon_id:
+                    _finalize_coupon_usage(payment)
+                
                 _activate_subscription(payment.user_id, payment.plan_tier, payment.plan_type)
                 return jsonify({'success': True, 'message': 'Payment verified and activated!'})
             
@@ -432,6 +546,8 @@ def verify_payment(order_id):
             else:
                 payment.status = 'FAILED'
                 payment.error_message = f'Payment status: {order_status}'
+                if payment.coupon_id:
+                    _rollback_coupon_usage(payment)
                 db.session.commit()
                 return jsonify({'success': False, 'message': f'Payment {order_status.lower()}'})
     
@@ -439,7 +555,97 @@ def verify_payment(order_id):
 
 
 # ═══════════════════════════════════════════════════════════
-# 🔧 HELPERS
+# 🎟️ COUPON HELPERS
+# ═══════════════════════════════════════════════════════════
+
+def _finalize_coupon_usage(payment):
+    """Record coupon usage AFTER successful payment"""
+    if not payment.coupon_id:
+        return
+    
+    try:
+        coupon = Coupon.query.get(payment.coupon_id)
+        if not coupon:
+            print(f"⚠️ Coupon not found: {payment.coupon_id}")
+            return
+        
+        # Check if usage already recorded
+        existing = CouponUsage.query.filter_by(payment_id=payment.id).first()
+        if existing:
+            print(f"⚠️ Coupon usage already recorded for payment {payment.id}")
+            return
+        
+        # Create usage record
+        usage = CouponUsage(
+            coupon_id=coupon.id,
+            user_id=payment.user_id,
+            payment_id=payment.id,
+            order_amount=payment.base_amount / 100 if payment.base_amount else 0,
+            discount_applied=payment.coupon_discount or 0,
+            final_amount=payment.total_amount / 100 if payment.total_amount else 0,
+            plan_purchased=f"{payment.plan_tier}_{payment.plan_type}" if payment.plan_tier else None,
+            ip_address=request.headers.get('X-Forwarded-For', request.remote_addr) if request else None
+        )
+        db.session.add(usage)
+        
+        # Update coupon usage count
+        coupon.used_count = (coupon.used_count or 0) + 1
+        
+        # Mark specific coupon as used for this user
+        if coupon.coupon_type == 'specific':
+            cu = CouponUser.query.filter_by(
+                coupon_id=coupon.id,
+                user_id=payment.user_id
+            ).first()
+            if cu:
+                cu.is_used = True
+        
+        db.session.commit()
+        print(f"✅ Coupon '{coupon.code}' usage finalized for payment {payment.id}")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Failed to finalize coupon usage: {e}")
+
+
+def _rollback_coupon_usage(payment):
+    """Rollback coupon usage when payment fails/cancels"""
+    if not payment.coupon_id:
+        return
+    
+    try:
+        coupon = Coupon.query.get(payment.coupon_id)
+        if not coupon:
+            return
+        
+        # Remove usage record if it exists
+        usage = CouponUsage.query.filter_by(payment_id=payment.id).first()
+        if usage:
+            db.session.delete(usage)
+        
+        # Decrement usage count
+        if coupon.used_count and coupon.used_count > 0:
+            coupon.used_count -= 1
+        
+        # Unmark specific coupon
+        if coupon.coupon_type == 'specific':
+            cu = CouponUser.query.filter_by(
+                coupon_id=coupon.id,
+                user_id=payment.user_id
+            ).first()
+            if cu:
+                cu.is_used = False
+        
+        db.session.commit()
+        print(f"🔄 Coupon '{coupon.code}' usage rolled back for payment {payment.id}")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Failed to rollback coupon usage: {e}")
+
+
+# ═══════════════════════════════════════════════════════════
+# 🔧 CASHFREE HELPERS
 # ═══════════════════════════════════════════════════════════
 
 def _create_cashfree_order(order_id, amount_paise, user):

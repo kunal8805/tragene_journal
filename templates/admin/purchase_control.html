@@ -1,0 +1,394 @@
+{% extends "base_admin.html" %}
+{% block title %}Purchase Control - Admin{% endblock %}
+{% block page_title %}🛡️ Purchase Control Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    .control-container { max-width: 1200px; }
+
+    .stats-row {
+        display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .stat-card {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 130px;
+        text-align: center;
+    }
+    .stat-card .stat-val { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+    .stat-card .stat-lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .stat-card.active .stat-val { color: #ff5252; }
+    .stat-card.total .stat-val { color: var(--accent); }
+
+    .btn-create-block {
+        padding: 10px 20px; background: #ff5252; color: #fff; border: none;
+        border-radius: 10px; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+        transition: all 0.2s; margin-bottom: 20px;
+    }
+    .btn-create-block:hover { background: #ff1744; transform: translateY(-1px); }
+
+    .block-card {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 14px; padding: 18px; margin-bottom: 12px;
+        transition: all 0.2s;
+    }
+    .block-card:hover { border-color: rgba(255,82,82,0.3); }
+    .block-card.inactive { opacity: 0.5; }
+    .block-card.expired { border-color: rgba(255,179,0,0.3); background: rgba(255,179,0,0.02); }
+
+    .block-header {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 10px; margin-bottom: 10px;
+    }
+    .block-type-badge {
+        padding: 4px 12px; border-radius: 20px; font-size: 0.68rem;
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .block-type-badge.all { background: rgba(255,82,82,0.15); color: #ff5252; }
+    .block-type-badge.tier { background: rgba(255,179,0,0.15); color: #ffb300; }
+    .block-type-badge.users { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+
+    .block-reason { font-size: 0.82rem; color: var(--text-primary); font-weight: 600; }
+    .block-details { font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; }
+    .block-timing {
+        font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;
+        display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .time-badge {
+        padding: 3px 10px; border-radius: 8px; font-size: 0.68rem; font-weight: 600;
+    }
+    .time-badge.active { background: rgba(0,200,83,0.1); color: #00c853; }
+    .time-badge.expired { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .time-badge.permanent { background: rgba(255,82,82,0.1); color: #ff5252; }
+
+    .block-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .btn-block-action {
+        padding: 5px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+        border: 1px solid var(--border-color); background: transparent;
+        color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+    }
+    .btn-block-action:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-block-action.delete:hover { border-color: #ff5252; color: #ff5252; background: rgba(255,82,82,0.1); }
+    .btn-block-action.extend:hover { border-color: #4f8ef7; color: #4f8ef7; }
+
+    /* Modal */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.7); z-index: 1050;
+        align-items: center; justify-content: center; padding: 20px;
+        backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 18px; width: 100%; max-width: 550px; max-height: 85vh; overflow-y: auto;
+    }
+    .modal-header {
+        padding: 16px 20px; border-bottom: 1px solid var(--border-color);
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h5 { margin: 0; font-weight: 700; font-size: 0.9rem; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; }
+    .modal-body { padding: 20px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+        display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 4px;
+    }
+    .form-group select, .form-group input, .form-group textarea {
+        width: 100%; padding: 9px 12px; background: var(--bg-input);
+        border: 1px solid var(--border-color); border-radius: 8px;
+        color: var(--text-primary); font-size: 0.82rem;
+    }
+    .form-group select:focus, .form-group input:focus, .form-group textarea:focus {
+        border-color: #ff5252; outline: none;
+    }
+    .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .radio-option {
+        flex: 1; min-width: 80px;
+    }
+    .radio-option input { display: none; }
+    .radio-option label {
+        display: block; text-align: center; padding: 10px;
+        background: var(--bg-input); border: 2px solid var(--border-color);
+        border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 600;
+        color: var(--text-secondary); transition: all 0.2s;
+    }
+    .radio-option input:checked + label {
+        border-color: #ff5252; background: rgba(255,82,82,0.08); color: #ff5252;
+    }
+    .btn-submit {
+        width: 100%; padding: 10px; background: #ff5252; color: #fff;
+        border: none; border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-submit:hover { background: #ff1744; }
+
+    .user-search-section { display: none; }
+    .user-search-section.show { display: block; }
+    .selected-users { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .selected-user-tag {
+        padding: 3px 10px; background: rgba(79,142,247,0.1);
+        border: 1px solid rgba(79,142,247,0.3); border-radius: 15px;
+        font-size: 0.68rem; font-weight: 600; color: #4f8ef7;
+        display: flex; align-items: center; gap: 4px;
+    }
+    .selected-user-tag .remove { cursor: pointer; color: #ff5252; }
+
+    .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="control-container">
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card active">
+            <div class="stat-val">{{ active_blocks }}</div>
+            <div class="stat-lbl">Active Blocks</div>
+        </div>
+        <div class="stat-card total">
+            <div class="stat-val">{{ total_blocks }}</div>
+            <div class="stat-lbl">Total Created</div>
+        </div>
+    </div>
+
+    <button class="btn-create-block" onclick="openCreateModal()">🚫 Block Purchases</button>
+
+    <!-- Blocks List -->
+    {% if controls %}
+        {% for control in controls %}
+        <div class="block-card {{ 'inactive' if not control.is_active else '' }} {{ 'expired' if control.is_expired() else '' }}">
+            <div class="block-header">
+                <span class="block-type-badge {{ control.block_type }}">
+                    {% if control.block_type == 'all' %}🌐 All Purchases
+                    {% elif control.block_type == 'specific_tier' %}📦 {{ control.blocked_tier.upper() }} Plan
+                    {% else %}👤 Specific Users
+                    {% endif %}
+                </span>
+                <span style="font-size:0.7rem;color:var(--text-muted);">
+                    Created: {{ control.created_at.strftime('%d %b %Y, %H:%M') }}
+                </span>
+            </div>
+            <div class="block-reason">{{ control.reason }}</div>
+            {% if control.admin_notes %}
+            <div class="block-details" style="font-style:italic;">📝 {{ control.admin_notes }}</div>
+            {% endif %}
+            <div class="block-timing">
+                {% if control.is_expired() %}
+                    <span class="time-badge expired">⏰ Expired</span>
+                {% elif control.is_active %}
+                    <span class="time-badge active">🟢 Active</span>
+                {% else %}
+                    <span class="time-badge expired">🔴 Inactive</span>
+                {% endif %}
+                {% if control.ends_at %}
+                    <span>{{ control.get_time_remaining() }}</span>
+                {% else %}
+                    <span class="time-badge permanent">♾️ Permanent</span>
+                {% endif %}
+            </div>
+            <div class="block-actions">
+                <button class="btn-block-action" onclick="toggleBlock({{ control.id }})">
+                    {{ '🔴 Deactivate' if control.is_active else '🟢 Activate' }}
+                </button>
+                {% if control.is_active and control.ends_at %}
+                <button class="btn-block-action extend" onclick="extendBlock({{ control.id }})">⏰ +1 Hour</button>
+                {% endif %}
+                <button class="btn-block-action delete" onclick="deleteBlock({{ control.id }})">🗑️ Delete</button>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div style="font-size:3rem;opacity:0.2;">🛡️</div>
+        <p>No purchase blocks created yet.</p>
+        <p style="font-size:0.75rem;">All purchases are currently allowed.</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5>🚫 Block Purchases</h5>
+            <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Block Type</label>
+                <select id="blockType" onchange="toggleBlockType()">
+                    <option value="all">🌐 All Purchases</option>
+                    <option value="specific_tier">📦 Specific Plan</option>
+                    <option value="specific_users">👤 Specific Users</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="tierSelect" style="display:none;">
+                <label>Blocked Plan</label>
+                <select id="blockedTier">
+                    <option value="pro">Pro</option>
+                    <option value="elite">Elite</option>
+                </select>
+            </div>
+
+            <div class="user-search-section" id="userSearchSection">
+                <div class="form-group">
+                    <label>Select Users</label>
+                    <input type="text" id="userSearchInput" placeholder="Search by email..." oninput="searchUsers()">
+                    <div id="userSearchResults" style="max-height:150px;overflow-y:auto;margin-top:4px;"></div>
+                    <div class="selected-users" id="selectedUsersContainer"></div>
+                    <input type="hidden" id="selectedUserIds">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Duration</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="duration" value="1hour" id="dur1h" checked>
+                        <label for="dur1h">1 Hour</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="duration" value="1day" id="dur1d">
+                        <label for="dur1d">1 Day</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="duration" value="permanent" id="durPerm">
+                        <label for="durPerm">Permanent</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Reason (shown to users)</label>
+                <textarea id="blockReason" rows="2" placeholder="e.g., Site maintenance in progress. Purchases will resume shortly."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Admin Notes (private)</label>
+                <textarea id="adminNotes" rows="2" placeholder="Internal notes..."></textarea>
+            </div>
+
+            <button class="btn-submit" onclick="createBlock()">🚫 Block Purchases</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedUsers = [];
+
+    function openCreateModal() {
+        document.getElementById('createModal').classList.add('show');
+        document.getElementById('blockType').value = 'all';
+        toggleBlockType();
+    }
+
+    function closeCreateModal() {
+        document.getElementById('createModal').classList.remove('show');
+    }
+
+    function toggleBlockType() {
+        const type = document.getElementById('blockType').value;
+        document.getElementById('tierSelect').style.display = type === 'specific_tier' ? 'block' : 'none';
+        document.getElementById('userSearchSection').classList.toggle('show', type === 'specific_users');
+    }
+
+    function searchUsers() {
+        const q = document.getElementById('userSearchInput').value.trim();
+        if (q.length < 2) { document.getElementById('userSearchResults').innerHTML = ''; return; }
+        
+        fetch('/coupon/api/search-users?q=' + encodeURIComponent(q))
+            .then(r => r.json())
+            .then(d => {
+                const results = document.getElementById('userSearchResults');
+                if (d.users && d.users.length > 0) {
+                    results.innerHTML = d.users.map(u => `
+                        <div style="padding:6px 10px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:0.78rem;"
+                             onclick="addUser(${u.id}, '${u.email.replace(/'/g, "\\'")}')">
+                            ${u.email} (${u.username})
+                        </div>
+                    `).join('');
+                } else {
+                    results.innerHTML = '<div style="padding:8px;color:var(--text-muted);font-size:0.75rem;">No users found</div>';
+                }
+            });
+    }
+
+    function addUser(id, email) {
+        if (selectedUsers.find(u => u.id === id)) return;
+        selectedUsers.push({id, email});
+        renderSelectedUsers();
+        document.getElementById('userSearchInput').value = '';
+        document.getElementById('userSearchResults').innerHTML = '';
+    }
+
+    function removeUser(id) {
+        selectedUsers = selectedUsers.filter(u => u.id !== id);
+        renderSelectedUsers();
+    }
+
+    function renderSelectedUsers() {
+        const container = document.getElementById('selectedUsersContainer');
+        container.innerHTML = selectedUsers.map(u => `
+            <span class="selected-user-tag">${u.email} <span class="remove" onclick="removeUser(${u.id})">✕</span></span>
+        `).join('');
+        document.getElementById('selectedUserIds').value = selectedUsers.map(u => u.id).join(',');
+    }
+
+    function createBlock() {
+        const duration = document.querySelector('input[name="duration"]:checked').value;
+        
+        const data = {
+            block_type: document.getElementById('blockType').value,
+            blocked_tier: document.getElementById('blockedTier').value,
+            blocked_user_ids: document.getElementById('selectedUserIds').value,
+            reason: document.getElementById('blockReason').value,
+            admin_notes: document.getElementById('adminNotes').value,
+            duration_type: duration
+        };
+
+        if (!data.reason) { alert('Please enter a reason.'); return; }
+
+        fetch('/admin/api/purchase-control/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) { location.reload(); }
+            else { alert(d.message); }
+        });
+    }
+
+    function toggleBlock(id) {
+        fetch('/admin/api/purchase-control/' + id + '/toggle', {method: 'POST'})
+            .then(r => r.json()).then(d => { if (d.success) location.reload(); });
+    }
+
+    function deleteBlock(id) {
+        if (!confirm('Delete this block permanently?')) return;
+        fetch('/admin/api/purchase-control/' + id + '/delete', {method: 'POST'})
+            .then(r => r.json()).then(d => { if (d.success) location.reload(); });
+    }
+
+    function extendBlock(id) {
+        fetch('/admin/api/purchase-control/' + id + '/extend', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({add_minutes: 60})
+        }).then(r => r.json()).then(d => { if (d.success) location.reload(); });
+    }
+
+    document.getElementById('createModal').addEventListener('click', function(e) {
+        if (e.target === this) closeCreateModal();
+    });
+</script>
+{% endblock %}

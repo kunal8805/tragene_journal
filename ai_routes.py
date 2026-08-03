@@ -271,7 +271,20 @@ def coach_page():
 @ai_bp.route('/token-info')
 @login_required
 def api_token_info():
-    return jsonify({'limit': current_user.get_token_limit(), 'used': current_user.get_used_tokens(), 'remaining': current_user.get_remaining_tokens(), 'plan': current_user.subscription_tier, 'is_banned': current_user.is_ai_banned(), 'weekly_queries': current_user.get_queries_used_this_week(), 'weekly_limit': current_user.get_queries_per_week()})
+    """Return token info - paid users see 'unlimited', free users see actual count"""
+    tier = current_user.subscription_tier
+    is_paid = tier in ['pro', 'elite', 'enterprise']
+    
+    return jsonify({
+        'limit': current_user.get_token_limit(),
+        'used': current_user.get_used_tokens(),
+        'remaining': current_user.get_remaining_tokens(),
+        'plan': tier,
+        'is_banned': current_user.is_ai_banned(),
+        'is_paid': is_paid,  # 🆕 tells frontend to show "unlimited"
+        'weekly_queries': current_user.get_queries_used_this_week(),
+        'weekly_limit': current_user.get_queries_per_week()
+    })
 
 
 # ═══════════════════════════════════════════════════════════

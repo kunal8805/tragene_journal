@@ -1,0 +1,450 @@
+{% extends "base_admin.html" %}
+{% block title %}Coupons - Admin{% endblock %}
+{% block page_title %}🎟️ Coupon Codes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.2s;
+    }
+    
+    .stat-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 16px rgba(38,166,154,0.1);
+    }
+    
+    .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    
+    .stat-icon.total { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+    .stat-icon.active { background: rgba(0,200,83,0.15); color: #00c853; }
+    .stat-icon.expired { background: rgba(255,82,82,0.15); color: #ff5252; }
+    .stat-icon.discount { background: rgba(255,179,0,0.15); color: #ffb300; }
+    
+    .stat-info .stat-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+    
+    .stat-info .stat-label {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    .coupon-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .coupon-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .coupon-table td {
+        padding: 14px 16px;
+        font-size: 0.82rem;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+    
+    .coupon-table tr:hover td {
+        background: rgba(38,166,154,0.03);
+    }
+    
+    .coupon-code-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 4px 10px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        letter-spacing: 1px;
+    }
+    
+    .discount-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.75rem;
+    }
+    
+    .discount-badge.percentage {
+        background: rgba(139,92,246,0.15);
+        color: #8b5cf6;
+    }
+    
+    .discount-badge.fixed {
+        background: rgba(255,179,0,0.15);
+        color: #ffb300;
+    }
+    
+    .type-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .type-badge.universal { background: rgba(79,142,247,0.12); color: #4f8ef7; }
+    .type-badge.specific { background: rgba(0,200,83,0.12); color: #00c853; }
+    .type-badge.influencer { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .status-badge.active-status { background: rgba(0,200,83,0.12); color: #00c853; }
+    .status-badge.expired-status { background: rgba(255,82,82,0.12); color: #ff5252; }
+    .status-badge.exhausted-status { background: rgba(255,179,0,0.12); color: #ffb300; }
+    
+    .usage-bar {
+        width: 80px;
+        height: 6px;
+        background: var(--bg-body);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .usage-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s;
+    }
+    
+    .usage-bar-fill.safe { background: #00c853; }
+    .usage-bar-fill.warn { background: #ffb300; }
+    .usage-bar-fill.danger { background: #ff5252; }
+    
+    .btn-actions {
+        display: flex;
+        gap: 6px;
+    }
+    
+    .btn-action {
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    
+    .btn-action:hover {
+        background: var(--sidebar-hover);
+        color: var(--text-primary);
+    }
+    
+    .btn-action.delete {
+        color: #ff5252;
+        border-color: rgba(255,82,82,0.3);
+    }
+    
+    .btn-action.delete:hover {
+        background: rgba(255,82,82,0.1);
+    }
+    
+    .btn-create {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        margin-bottom: 20px;
+    }
+    
+    .btn-create:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        color: #fff;
+    }
+    
+    .btn-analytics {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.82rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        margin-bottom: 20px;
+        margin-left: 8px;
+    }
+    
+    .btn-analytics:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+    
+    .specific-users {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon total"><i class="bi bi-ticket-perforated"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">Total Coupons</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon active"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ active }}</div>
+            <div class="stat-label">Active</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon expired"><i class="bi bi-clock-history"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ expired + exhausted }}</div>
+            <div class="stat-label">Expired / Exhausted</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon discount"><i class="bi bi-cash-coin"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">₹{{ '%.0f'|format(total_discount) }}</div>
+            <div class="stat-label">Total Discount Given</div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div style="margin-bottom: 24px;">
+    <a href="{{ url_for('coupon.admin_create_coupon') }}" class="btn-create">
+        <i class="bi bi-plus-lg"></i> Create Coupon
+    </a>
+    <a href="{{ url_for('coupon.admin_coupon_analytics') }}" class="btn-analytics">
+        <i class="bi bi-graph-up"></i> Analytics Dashboard
+    </a>
+</div>
+
+<!-- Coupons Table -->
+<div class="card" style="overflow-x:auto;">
+    {% if coupons %}
+    <table class="coupon-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Type</th>
+                <th>Discount</th>
+                <th>Usage</th>
+                <th>Expires</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for coupon in coupons %}
+            <tr>
+                <td>
+                    <span class="coupon-code-badge">{{ coupon.code }}</span>
+                    {% if coupon.description %}
+                    <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;">{{ coupon.description[:50] }}{% if coupon.description|length > 50 %}...{% endif %}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="type-badge {{ coupon.coupon_type }}">
+                        {% if coupon.coupon_type == 'universal' %}🌐 Universal
+                        {% elif coupon.coupon_type == 'specific' %}👤 Specific
+                        {% else %}📢 Influencer
+                        {% endif %}
+                    </span>
+                    {% if coupon.coupon_type == 'specific' and coupon.allowed_users %}
+                    <div class="specific-users">
+                        {% for cu in coupon.allowed_users[:3] %}
+                            {{ cu.user_email }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if coupon.allowed_users|length > 3 %}
+                            +{{ coupon.allowed_users|length - 3 }} more
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if coupon.coupon_type == 'influencer' and coupon.influencer_name %}
+                    <div style="font-size:0.7rem;color:#8b5cf6;margin-top:2px;">📢 {{ coupon.influencer_name }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="discount-badge {{ coupon.discount_type }}">
+                        {% if coupon.discount_type == 'percentage' %}
+                            {{ coupon.discount_value }}% OFF
+                        {% else %}
+                            ₹{{ coupon.discount_value }} OFF
+                        {% endif %}
+                    </span>
+                </td>
+                <td>
+                    <div style="font-size:0.82rem;font-weight:600;">
+                        {{ coupon.used_count }}{% if coupon.max_uses %} / {{ coupon.max_uses }}{% endif %}
+                    </div>
+                    {% if coupon.max_uses %}
+                    {% set pct = (coupon.used_count / coupon.max_uses * 100)|int %}
+                    <div class="usage-bar">
+                        <div class="usage-bar-fill {{ 'danger' if pct >= 90 else 'warn' if pct >= 60 else 'safe' }}" 
+                             style="width:{{ pct }}%"></div>
+                    </div>
+                    {% endif %}
+                </td>
+                <td style="font-size:0.78rem;">
+                    {% if coupon.expires_at %}
+                        {{ coupon.expires_at.strftime('%d %b %Y') }}
+                    {% else %}
+                        <span style="color:var(--text-muted);">No expiry</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if coupon.is_expired() %}
+                        <span class="status-badge expired-status">Expired</span>
+                    {% elif coupon.is_exhausted() %}
+                        <span class="status-badge exhausted-status">Exhausted</span>
+                    {% elif coupon.is_active %}
+                        <span class="status-badge active-status">Active</span>
+                    {% else %}
+                        <span class="status-badge expired-status">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-actions">
+                        <a href="{{ url_for('coupon.admin_coupon_detail', coupon_id=coupon.id) }}" class="btn-action">
+                            <i class="bi bi-eye"></i> Details
+                        </a>
+                        {% if coupon.coupon_type == 'influencer' %}
+                        <a href="{{ url_for('coupon.admin_influencer_detail', coupon_id=coupon.id) }}" class="btn-action">
+                            <i class="bi bi-graph-up"></i> Analytics
+                        </a>
+                        {% endif %}
+                        <button class="btn-action delete" onclick="deleteCoupon({{ coupon.id }}, '{{ coupon.code }}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🎟️</div>
+        <p>No coupons created yet.</p>
+        <p style="font-size:0.75rem;">Create your first coupon to offer discounts!</p>
+        <a href="{{ url_for('coupon.admin_create_coupon') }}" class="btn-create" style="margin-top:12px;">
+            <i class="bi bi-plus-lg"></i> Create First Coupon
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteCoupon(id, code) {
+    if (!confirm(`Are you sure you want to delete coupon "${code}"?\n\nThis will also delete all usage records. This action cannot be undone.`)) {
+        return;
+    }
+    
+    fetch(`/coupon/admin/coupons/${id}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Failed to delete coupon.');
+        }
+    })
+    .catch(err => {
+        alert('Error deleting coupon. Please try again.');
+    });
+}
+</script>
+{% endblock %}

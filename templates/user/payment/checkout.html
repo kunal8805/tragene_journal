@@ -133,6 +133,106 @@
         margin-top: 4px;
     }
 
+    /* 🆕 Coupon Input Styles */
+    .coupon-input-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .coupon-code-input {
+        width: 140px;
+        padding: 7px 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        font-family: 'JetBrains Mono', monospace;
+        text-transform: uppercase;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .coupon-code-input:focus {
+        border-color: var(--accent);
+    }
+
+    .coupon-code-input.applied {
+        border-color: #00e676;
+        background: rgba(0,230,118,0.05);
+    }
+
+    .btn-coupon-apply {
+        padding: 7px 16px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+
+    .btn-coupon-apply:hover:not(:disabled) {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+    }
+
+    .btn-coupon-apply:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-coupon-remove {
+        padding: 7px 12px;
+        background: rgba(255,82,82,0.1);
+        color: #ff5252;
+        border: 1px solid rgba(255,82,82,0.3);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: none;
+        transition: all 0.2s;
+    }
+
+    .btn-coupon-remove:hover {
+        background: rgba(255,82,82,0.2);
+    }
+
+    .coupon-message {
+        font-size: 0.7rem;
+        margin-top: 6px;
+        text-align: right;
+        min-height: 18px;
+        font-weight: 500;
+    }
+
+    .coupon-message.success {
+        color: #00e676;
+    }
+
+    .coupon-message.error {
+        color: #ff5252;
+    }
+
+    .discount-row {
+        display: none;
+    }
+
+    .discount-row .label {
+        color: #00e676;
+    }
+
+    .discount-row .value {
+        color: #00e676;
+    }
+
     /* ── Features Included ── */
     .features-list {
         display: grid;
@@ -340,6 +440,15 @@
         .summary-row.total .value {
             font-size: 1.1rem;
         }
+        .coupon-code-input {
+            width: 110px;
+        }
+        .coupon-input-row {
+            justify-content: center;
+        }
+        .coupon-message {
+            text-align: center;
+        }
     }
 </style>
 {% endblock %}
@@ -386,17 +495,43 @@
 
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-cash"></i> Base Price</span>
-                    <span class="value">₹{{ '%.2f'|format(base_price) }}</span>
+                    <span class="value" id="basePriceDisplay">₹{{ '%.2f'|format(base_price) }}</span>
                 </div>
 
                 <div class="summary-row">
                     <span class="label"><i class="bi bi-credit-card"></i> Gateway Fee (2%)</span>
-                    <span class="value" style="color:var(--text-muted);">₹{{ '%.2f'|format(gateway_fee) }}</span>
+                    <span class="value" style="color:var(--text-muted);" id="gatewayFeeDisplay">₹{{ '%.2f'|format(gateway_fee) }}</span>
                 </div>
 
-                <div class="summary-row total">
+                <!-- 🆕 COUPON SECTION -->
+                <div class="summary-row" style="border-bottom: 1px dashed var(--border-color); padding-bottom: 14px;">
+                    <span class="label"><i class="bi bi-ticket-perforated"></i> Have a Coupon?</span>
+                    <span class="value" style="flex:1; text-align:right;">
+                        <div class="coupon-input-row">
+                            <input type="text" id="couponInput" class="coupon-code-input" 
+                                   placeholder="Enter code" maxlength="20"
+                                   oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                                   onkeypress="if(event.key==='Enter')validateCoupon()">
+                            <button id="applyCouponBtn" class="btn-coupon-apply" onclick="validateCoupon()">
+                                Apply
+                            </button>
+                            <button id="removeCouponBtn" class="btn-coupon-remove" onclick="removeCoupon()">
+                                ✕ Remove
+                            </button>
+                        </div>
+                        <div id="couponMessage" class="coupon-message"></div>
+                    </span>
+                </div>
+
+                <!-- Coupon Discount Row (hidden by default) -->
+                <div class="summary-row discount-row" id="couponDiscountRow">
+                    <span class="label"><i class="bi bi-tag-fill"></i> Coupon Discount</span>
+                    <span class="value" id="couponDiscountAmount">-₹0.00</span>
+                </div>
+
+                <div class="summary-row total" id="totalRow">
                     <span class="label">💳 Total Amount</span>
-                    <span class="value">₹{{ '%.2f'|format(total_price) }}</span>
+                    <span class="value" id="totalAmount">₹{{ '%.2f'|format(total_price) }}</span>
                 </div>
 
                 {% if plan_type == 'yearly' %}
@@ -450,7 +585,7 @@
                 <div class="checkbox-item">
                     <input type="checkbox" id="agreePayment" onchange="validateCheckboxes()">
                     <label for="agreePayment">
-                        I confirm that I am authorized to make this payment and the amount of <strong>₹{{ '%.2f'|format(total_price) }}</strong> is correct.
+                        I confirm that I am authorized to make this payment and the amount of <strong id="confirmAmount">₹{{ '%.2f'|format(total_price) }}</strong> is correct.
                     </label>
                 </div>
                 <div id="paymentError" class="checkbox-error">Please confirm the payment amount.</div>
@@ -458,7 +593,7 @@
 
             <!-- Pay Button -->
             <button class="btn-pay {{ plan_tier }}" id="payButton" onclick="startPayment()" disabled>
-                <i class="bi bi-lock-fill"></i> Pay ₹{{ '%.2f'|format(total_price) }} with Cashfree
+                <i class="bi bi-lock-fill"></i> Pay <span id="payButtonAmount">₹{{ '%.2f'|format(total_price) }}</span> with Cashfree
             </button>
 
             <!-- Security Info -->
@@ -487,6 +622,17 @@
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 
 <script>
+    // ═══════════════════════════════════════════════════════
+    // 🎟️ COUPON SYSTEM VARIABLES
+    // ═══════════════════════════════════════════════════════
+    let appliedCouponId = null;
+    let appliedCouponCode = null;
+    const originalTotal = {{ total_price }};
+    let currentTotal = {{ total_price }};
+    
+    // ═══════════════════════════════════════════════════════
+    // ✅ CHECKBOX VALIDATION
+    // ═══════════════════════════════════════════════════════
     let paymentWindowOpened = false;
     let currentOrderId = null;
 
@@ -503,9 +649,131 @@
     function resetPayButton() {
         const btn = document.getElementById('payButton');
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-lock-fill"></i> Pay ₹{{ "%.2f"|format(total_price) }} with Cashfree';
+        updatePayButtonDisplay();
         validateCheckboxes();
     }
+
+    function updatePayButtonDisplay() {
+        document.getElementById('payButtonAmount').textContent = '₹' + currentTotal.toFixed(2);
+        document.getElementById('confirmAmount').textContent = '₹' + currentTotal.toFixed(2);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 🎟️ COUPON VALIDATION
+    // ═══════════════════════════════════════════════════════
+
+    function validateCoupon() {
+        const code = document.getElementById('couponInput').value.trim().toUpperCase();
+        
+        if (!code) {
+            showCouponMessage('Please enter a coupon code.', 'error');
+            return;
+        }
+        
+        const btn = document.getElementById('applyCouponBtn');
+        btn.disabled = true;
+        btn.textContent = 'Checking...';
+        
+        fetch('/coupon/api/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                code: code,
+                order_amount: originalTotal
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.textContent = 'Apply';
+            
+            if (data.success) {
+                // Store coupon info
+                appliedCouponId = data.coupon_id;
+                appliedCouponCode = data.code;
+                currentTotal = data.final_amount;
+                
+                // Show discount row
+                const discountRow = document.getElementById('couponDiscountRow');
+                discountRow.style.display = 'flex';
+                document.getElementById('couponDiscountAmount').textContent = '-₹' + data.discount_amount.toFixed(2);
+                
+                // Update total
+                document.getElementById('totalAmount').textContent = '₹' + data.final_amount.toFixed(2);
+                updatePayButtonDisplay();
+                
+                // Style input as applied
+                const couponInput = document.getElementById('couponInput');
+                couponInput.classList.add('applied');
+                couponInput.disabled = true;
+                
+                // Toggle buttons
+                document.getElementById('applyCouponBtn').style.display = 'none';
+                document.getElementById('removeCouponBtn').style.display = 'inline-block';
+                
+                showCouponMessage('✅ ' + data.message, 'success');
+            } else {
+                showCouponMessage('❌ ' + data.message, 'error');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.textContent = 'Apply';
+            showCouponMessage('Network error. Please try again.', 'error');
+            console.error('Coupon validation error:', err);
+        });
+    }
+
+    function removeCoupon() {
+        // Reset coupon state
+        appliedCouponId = null;
+        appliedCouponCode = null;
+        currentTotal = originalTotal;
+        
+        // Hide discount row
+        document.getElementById('couponDiscountRow').style.display = 'none';
+        
+        // Reset total display
+        document.getElementById('totalAmount').textContent = '₹' + originalTotal.toFixed(2);
+        updatePayButtonDisplay();
+        
+        // Reset input
+        const couponInput = document.getElementById('couponInput');
+        couponInput.value = '';
+        couponInput.classList.remove('applied');
+        couponInput.disabled = false;
+        
+        // Toggle buttons back
+        document.getElementById('applyCouponBtn').style.display = 'inline-block';
+        document.getElementById('removeCouponBtn').style.display = 'none';
+        
+        // Clear message
+        document.getElementById('couponMessage').innerHTML = '';
+        document.getElementById('couponMessage').className = 'coupon-message';
+        
+        // Focus back on input
+        couponInput.focus();
+    }
+
+    function showCouponMessage(msg, type) {
+        const el = document.getElementById('couponMessage');
+        el.innerHTML = msg;
+        el.className = 'coupon-message ' + type;
+        
+        // Auto-clear success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                if (el.innerHTML === msg) {
+                    el.innerHTML = '';
+                    el.className = 'coupon-message';
+                }
+            }, 5000);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 💳 PAYMENT
+    // ═══════════════════════════════════════════════════════
 
     function startPayment() {
         const terms = document.getElementById('agreeTerms').checked;
@@ -522,13 +790,22 @@
 
         document.getElementById('spinnerOverlay').classList.add('show');
 
+        // 🆕 Build request body with coupon data
+        const requestBody = {
+            plan_tier: '{{ plan_tier }}',
+            plan_type: '{{ plan_type }}'
+        };
+        
+        // Add coupon if applied
+        if (appliedCouponId && appliedCouponCode) {
+            requestBody.coupon_code = appliedCouponCode;
+            requestBody.coupon_id = appliedCouponId;
+        }
+
         fetch('/payment/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                plan_tier: '{{ plan_tier }}',
-                plan_type: '{{ plan_type }}'
-            })
+            body: JSON.stringify(requestBody)
         })
         .then(res => res.json())
         .then(data => {
@@ -536,6 +813,11 @@
 
             if (data.success && data.payment_session_id) {
                 currentOrderId = data.order_id;
+                
+                // 🆕 Show coupon success if applied
+                if (data.coupon_applied) {
+                    console.log('🎟️ Coupon applied: ' + data.coupon_code + ' | Saved: ₹' + data.discount_amount);
+                }
                 
                 const isSandbox = window.location.hostname === 'localhost' || 
                                  window.location.hostname === '127.0.0.1';
@@ -614,6 +896,7 @@
         }
     });
     
+    // Prevent double-click
     let paymentInProgress = false;
     const originalStartPayment = startPayment;
     startPayment = function() {
@@ -625,5 +908,10 @@
         originalStartPayment();
         setTimeout(() => { paymentInProgress = false; }, 10000);
     };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePayButtonDisplay();
+    });
 </script>
 {% endblock %}

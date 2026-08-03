@@ -1061,160 +1061,127 @@ def api_payment_transactions():
 # 💰 SUBSCRIPTION MANAGER
 # ═══════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════
+# 🛡️ PURCHASE CONTROL CENTER
+# ═══════════════════════════════════════════════════════════
+
 @admin_bp.route('/subscription-manager')
 @admin_required
 def subscription_manager():
-    """Manage plan pricing and subscriptions"""
-    from models import PlanPrice
+    """Purchase Control Center - Block purchases for maintenance"""
+    from models import PurchaseControl
     
-    plans = PlanPrice.query.order_by(PlanPrice.sort_order, PlanPrice.plan_tier, PlanPrice.plan_type).all()
+    controls = PurchaseControl.query.order_by(PurchaseControl.created_at.desc()).all()
+    all_users = User.query.order_by(User.email).all()
     
     # Stats
-    total_plans = PlanPrice.query.filter_by(is_active=True).count()
-    active_subs = Subscription.query.filter_by(is_active=True).count()
-    total_users = User.query.count()
+    active_blocks = len([c for c in controls if c.is_active and not c.is_expired()])
+    total_blocks = len(controls)
     
-    return render_template('admin/subscription_manager.html',
-        plans=plans,
-        total_plans=total_plans,
-        active_subs=active_subs,
-        total_users=total_users
+    return render_template('admin/purchase_control.html',
+        controls=controls,
+        all_users=all_users,
+        active_blocks=active_blocks,
+        total_blocks=total_blocks
     )
 
 
-@admin_bp.route('/api/plans')
+@admin_bp.route('/api/purchase-control/create', methods=['POST'])
 @admin_required
-def api_get_plans():
-    """Get all plans as JSON"""
-    plans = PlanPrice.query.order_by(PlanPrice.sort_order).all()
-    return jsonify({
-        'plans': [{
-            'id': p.id,
-            'plan_tier': p.plan_tier,
-            'plan_type': p.plan_type,
-            'plan_name': p.plan_name or f"{p.plan_tier.title()} {p.plan_type.title()}",
-            'currency': p.currency,
-            'price': p.price,
-            'gateway_fee_percent': p.gateway_fee_percent,
-            'total_price': p.total_price,
-            'is_active': p.is_active,
-            'is_featured': p.is_featured,
-            'discount_percent': p.discount_percent,
-            'description': p.description or '',
-            'features': p.get_features(),
-            'sort_order': p.sort_order
-        } for p in plans]
-    })
-
-
-@admin_bp.route('/api/plans/save', methods=['POST'])
-@admin_required
-def api_save_plan():
-    """Create or update a plan"""
+def api_create_purchase_control():
+    """Create a new purchase block"""
+    from models import PurchaseControl
+    
     data = request.get_json()
-    plan_id = data.get('id')
     
-    if plan_id:
-        plan = PlanPrice.query.get(plan_id)
-        if not plan:
-            return jsonify({'success': False, 'message': 'Plan not found'})
+    block_type = data.get('block_type', 'all')
+    reason = data.get('reason', '').strip()
+    admin_notes = data.get('admin_notes', '').strip()
+    blocked_tier = data.get('blocked_tier', '')
+    blocked_user_ids = data.get('blocked_user_ids', '')
+    
+    # Duration
+    duration_type = data.get('duration_type', 'permanent')  # '1hour', '1day', 'custom', 'permanent'
+    custom_minutes = data.get('custom_minutes', 0)
+    
+    if not reason:
+        return jsonify({'success': False, 'message': 'Reason is required.'})
+    
+    # Calculate end time
+    ends_at = None
+    if duration_type == '1hour':
+        ends_at = datetime.utcnow() + timedelta(hours=1)
+    elif duration_type == '1day':
+        ends_at = datetime.utcnow() + timedelta(days=1)
+    elif duration_type == 'custom' and custom_minutes > 0:
+        ends_at = datetime.utcnow() + timedelta(minutes=int(custom_minutes))
+    
+    control = PurchaseControl(
+        block_type=block_type,
+        blocked_tier=blocked_tier if block_type == 'specific_tier' else None,
+        blocked_user_ids=blocked_user_ids if block_type == 'specific_users' else None,
+        reason=reason,
+        admin_notes=admin_notes or None,
+        starts_at=datetime.utcnow(),
+        ends_at=ends_at,
+        is_active=True,
+        created_by_admin_id=current_user.id
+    )
+    db.session.add(control)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Purchase block created!', 'id': control.id})
+
+
+@admin_bp.route('/api/purchase-control/<int:control_id>/toggle', methods=['POST'])
+@admin_required
+def api_toggle_purchase_control(control_id):
+    """Toggle a purchase block on/off"""
+    from models import PurchaseControl
+    
+    control = PurchaseControl.query.get_or_404(control_id)
+    control.is_active = not control.is_active
+    db.session.commit()
+    
+    status = 'activated' if control.is_active else 'deactivated'
+    return jsonify({'success': True, 'message': f'Block {status}!', 'is_active': control.is_active})
+
+
+@admin_bp.route('/api/purchase-control/<int:control_id>/delete', methods=['POST'])
+@admin_required
+def api_delete_purchase_control(control_id):
+    """Delete a purchase control"""
+    from models import PurchaseControl
+    
+    control = PurchaseControl.query.get_or_404(control_id)
+    db.session.delete(control)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Block deleted!'})
+
+
+@admin_bp.route('/api/purchase-control/<int:control_id>/extend', methods=['POST'])
+@admin_required
+def api_extend_purchase_control(control_id):
+    """Extend a purchase block's duration"""
+    from models import PurchaseControl
+    
+    control = PurchaseControl.query.get_or_404(control_id)
+    data = request.get_json()
+    add_minutes = int(data.get('add_minutes', 60))
+    
+    if control.ends_at:
+        control.ends_at = control.ends_at + timedelta(minutes=add_minutes)
     else:
-        plan = PlanPrice()
-        db.session.add(plan)
-    
-    plan.plan_tier = data.get('plan_tier', 'pro')
-    plan.plan_type = data.get('plan_type', 'monthly')
-    plan.plan_name = data.get('plan_name', '')
-    plan.currency = data.get('currency', 'INR')
-    plan.price = float(data.get('price', 0))
-    plan.gateway_fee_percent = float(data.get('gateway_fee_percent', 2.0))
-    plan.is_active = data.get('is_active', True)
-    plan.is_featured = data.get('is_featured', False)
-    plan.discount_percent = float(data.get('discount_percent', 0))
-    plan.description = data.get('description', '')
-    plan.set_features(data.get('features', []))
-    plan.sort_order = int(data.get('sort_order', 0))
-    plan.updated_by_id = current_user.id
-    plan.calculate_total()
+        control.ends_at = datetime.utcnow() + timedelta(minutes=add_minutes)
     
     db.session.commit()
     
     return jsonify({
         'success': True,
-        'message': f'Plan "{plan.plan_name or plan.plan_tier}" saved!',
-        'plan': {
-            'id': plan.id,
-            'plan_tier': plan.plan_tier,
-            'plan_type': plan.plan_type,
-            'plan_name': plan.plan_name,
-            'price': plan.price,
-            'total_price': plan.total_price,
-            'is_active': plan.is_active
-        }
+        'message': f'Block extended by {add_minutes} minutes!',
+        'ends_at': control.ends_at.strftime('%d %b %Y, %H:%M') if control.ends_at else 'Permanent'
     })
-
-
-@admin_bp.route('/api/plans/<int:plan_id>/toggle', methods=['POST'])
-@admin_required
-def api_toggle_plan(plan_id):
-    """Toggle plan active/inactive"""
-    plan = PlanPrice.query.get_or_404(plan_id)
-    plan.is_active = not plan.is_active
-    plan.updated_by_id = current_user.id
-    db.session.commit()
-    return jsonify({
-        'success': True,
-        'message': f'Plan {"activated" if plan.is_active else "deactivated"}!',
-        'is_active': plan.is_active
-    })
-
-
-@admin_bp.route('/api/plans/<int:plan_id>/delete', methods=['POST'])
-@admin_required
-def api_delete_plan(plan_id):
-    """Delete a plan"""
-    plan = PlanPrice.query.get_or_404(plan_id)
-    name = plan.plan_name or plan.plan_tier
-    db.session.delete(plan)
-    db.session.commit()
-    return jsonify({'success': True, 'message': f'Plan "{name}" deleted!'})
-
-
-@admin_bp.route('/api/plans/seed-defaults', methods=['POST'])
-@admin_required
-def api_seed_default_plans():
-    """Seed default plans if none exist"""
-    existing = PlanPrice.query.count()
-    if existing > 0:
-        return jsonify({'success': False, 'message': 'Plans already exist. Clear them first.'})
-    
-    defaults = [
-        {'plan_tier': 'pro', 'plan_type': 'monthly', 'plan_name': 'Pro Monthly', 'currency': 'INR', 'price': 399, 'gateway_fee_percent': 2.0, 'sort_order': 1, 'is_featured': True, 'features': ['Unlimited Manual Journal', 'Unlimited CSV Import', 'MT4/MT5 Auto Sync', '10 Trading Accounts', '50,000 AI Tokens/month', 'AI Analysis & Reports', 'Ad Free Experience', 'Export PDF/CSV Reports']},
-        {'plan_tier': 'pro', 'plan_type': 'yearly', 'plan_name': 'Pro Yearly', 'currency': 'INR', 'price': 3999, 'gateway_fee_percent': 2.0, 'sort_order': 2, 'discount_percent': 16, 'features': ['Everything in Pro Monthly', 'Save 16% vs Monthly', 'Priority Support']},
-        {'plan_tier': 'elite', 'plan_type': 'monthly', 'plan_name': 'Elite Monthly', 'currency': 'INR', 'price': 799, 'gateway_fee_percent': 2.0, 'sort_order': 3, 'is_featured': True, 'features': ['Everything in Pro', 'Unlimited Accounts', '150,000 AI Tokens/month', 'Personalized AI Coach', 'Trading Goals & Planner', 'Strategy Builder', 'Ad Free Experience']},
-        {'plan_tier': 'elite', 'plan_type': 'yearly', 'plan_name': 'Elite Yearly', 'currency': 'INR', 'price': 7999, 'gateway_fee_percent': 2.0, 'sort_order': 4, 'discount_percent': 16, 'features': ['Everything in Elite Monthly', 'Save 16% vs Monthly', 'VIP Priority Support']},
-        {'plan_tier': 'elite', 'plan_type': 'quarterly', 'plan_name': 'Elite Quarterly', 'currency': 'INR', 'price': 2199, 'gateway_fee_percent': 2.0, 'sort_order': 5, 'features': ['Everything in Elite', '3 Months Access', 'Save vs Monthly']},
-    ]
-    
-    for d in defaults:
-        plan = PlanPrice(
-            plan_tier=d['plan_tier'],
-            plan_type=d['plan_type'],
-            plan_name=d['plan_name'],
-            currency=d['currency'],
-            price=d['price'],
-            gateway_fee_percent=d.get('gateway_fee_percent', 2.0),
-            sort_order=d.get('sort_order', 0),
-            is_featured=d.get('is_featured', False),
-            discount_percent=d.get('discount_percent', 0),
-        )
-        plan.set_features(d.get('features', []))
-        plan.calculate_total()
-        db.session.add(plan)
-    
-    db.session.commit()
-    return jsonify({'success': True, 'message': f'{len(defaults)} default plans created!'})
-
 
 
 

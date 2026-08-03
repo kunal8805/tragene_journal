@@ -805,6 +805,11 @@ class Payment(db.Model):
     cashfree_session_id = db.Column(db.String(200), nullable=True)
     cashfree_signature = db.Column(db.String(500), nullable=True)
     
+    # 🆕 Coupon tracking
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=True)
+    coupon_code = db.Column(db.String(50), nullable=True)
+    coupon_discount = db.Column(db.Float, default=0)
+    
     # Amount details (in paise)
     base_amount = db.Column(db.Integer, nullable=False)  # Plan price in paise
     gateway_fee = db.Column(db.Integer, default=0)  # 2% fee in paise
@@ -825,7 +830,9 @@ class Payment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationships
     user = db.relationship('User', backref='payments', foreign_keys=[user_id])
+    coupon = db.relationship('Coupon', backref='payments', foreign_keys=[coupon_id])
 
 
 # ═══════════════════════════════════════════════════════════
@@ -1179,3 +1186,287 @@ class ModeratorActivityLog(db.Model):
     new_value = db.Column(db.Text)
     ip_address = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 🎟️ COUPON SYSTEM
+# ═══════════════════════════════════════════════════════════
+
+class Coupon(db.Model):
+    """Discount coupon/promo codes"""
+    __tablename__ = 'coupons'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    description = db.Column(db.Text, nullable=True)
+    
+    # Discount
+    discount_type = db.Column(db.String(20), nullable=False)  # 'percentage' or 'fixed'
+    discount_value = db.Column(db.Float, nullable=False)  # 20 = 20% or ₹20
+    
+    # Coupon type
+    coupon_type = db.Column(db.String(20), nullable=False)  # 'universal', 'specific', 'influencer'
+    
+    # Limits
+    max_uses = db.Column(db.Integer, nullable=True)  # NULL = unlimited
+    used_count = db.Column(db.Integer, default=0)
+    min_order_amount = db.Column(db.Float, default=0)  # Minimum cart value
+    
+    # Influencer tracking
+    influencer_name = db.Column(db.String(100), nullable=True)
+    influencer_notes = db.Column(db.Text, nullable=True)
+    
+    # Validity
+    is_active = db.Column(db.Boolean, default=True)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    
+    # Audit
+    created_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    usages = db.relationship('CouponUsage', backref='coupon', lazy=True, cascade='all, delete-orphan')
+    allowed_users = db.relationship('CouponUser', backref='coupon', lazy=True, cascade='all, delete-orphan')
+    creator = db.relationship('User', backref='created_coupons', foreign_keys=[created_by_admin_id])
+    
+    def is_expired(self):
+        """Check if coupon has expired"""
+        if self.expires_at:
+            return datetime.utcnow() > self.expires_at
+        return False
+    
+    def is_exhausted(self):
+        """Check if coupon usage limit reached"""
+        if self.max_uses is not None:
+            return self.used_count >= self.max_uses
+        return False
+    
+    def can_be_used_by(self, user):
+        """Check if a specific user can use this coupon"""
+        if not self.is_active:
+            return False, "Coupon is inactive."
+        
+        if self.is_expired():
+            return False, "Coupon has expired."
+        
+        if self.is_exhausted():
+            return False, "Coupon usage limit reached."
+        
+        # Check if user already used this coupon
+        existing_usage = CouponUsage.query.filter_by(
+            coupon_id=self.id, 
+            user_id=user.id
+        ).first()
+        if existing_usage:
+            return False, "You have already used this coupon."
+        
+        # For specific coupons, check if user is in allowed list
+        if self.coupon_type == 'specific':
+            allowed = CouponUser.query.filter_by(
+                coupon_id=self.id, 
+                user_id=user.id
+            ).first()
+            if not allowed:
+                return False, "This coupon is not available for your account."
+            if allowed.is_used:
+                return False, "You have already used this coupon."
+        
+        return True, "Valid"
+    
+    def calculate_discount(self, order_amount):
+        """Calculate discount amount"""
+        if self.discount_type == 'percentage':
+            discount = order_amount * (self.discount_value / 100)
+        else:  # fixed
+            discount = self.discount_value
+        
+        # Discount cannot exceed order amount
+        return min(discount, order_amount)
+    
+    def get_discount_display(self):
+        """Human-readable discount string"""
+        if self.discount_type == 'percentage':
+            return f"{self.discount_value}% OFF"
+        else:
+            return f"₹{self.discount_value} OFF"
+    
+    def __repr__(self):
+        return f'<Coupon {self.code} - {self.get_discount_display()}>'
+
+
+class CouponUsage(db.Model):
+    """Records each time a coupon is used"""
+    __tablename__ = 'coupon_usages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'), nullable=True)
+    
+    # Order details
+    order_amount = db.Column(db.Float, nullable=False)  # Original amount
+    discount_applied = db.Column(db.Float, nullable=False)  # Discount given
+    final_amount = db.Column(db.Float, nullable=False)  # After discount
+    plan_purchased = db.Column(db.String(50), nullable=True)  # Which plan
+    
+    # Tracking
+    used_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(50), nullable=True)
+    
+    user = db.relationship('User', backref='coupon_usages', foreign_keys=[user_id])
+    payment = db.relationship('Payment', backref='coupon_usage', foreign_keys=[payment_id])
+    
+    def __repr__(self):
+        return f'<CouponUsage coupon={self.coupon_id} user={self.user_id} discount=₹{self.discount_applied}>'
+
+
+class CouponUser(db.Model):
+    """Links specific coupons to allowed users"""
+    __tablename__ = 'coupon_users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Denormalized for quick display
+    user_email = db.Column(db.String(120), nullable=True)
+    user_phone = db.Column(db.String(20), nullable=True)
+    
+    is_used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='assigned_coupons', foreign_keys=[user_id])
+    
+    def __repr__(self):
+        return f'<CouponUser coupon={self.coupon_id} user={self.user_id}>'
+
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 🛡️ PURCHASE CONTROL SYSTEM
+# ═══════════════════════════════════════════════════════════
+
+class PurchaseControl(db.Model):
+    """Admin-controlled purchase blocks for maintenance"""
+    __tablename__ = 'purchase_controls'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Block type
+    block_type = db.Column(db.String(20), nullable=False)  # 'all', 'specific_tier', 'specific_users'
+    
+    # What's blocked
+    blocked_tier = db.Column(db.String(20), nullable=True)  # 'pro', 'elite' etc (if specific_tier)
+    
+    # Users affected (comma-separated user IDs as string, or 'all')
+    blocked_user_ids = db.Column(db.Text, nullable=True)  # "1,5,23" or "all"
+    
+    # Reason shown to users
+    reason = db.Column(db.Text, nullable=True)
+    admin_notes = db.Column(db.Text, nullable=True)  # Private notes
+    
+    # Timing
+    starts_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ends_at = db.Column(db.DateTime, nullable=True)  # NULL = permanent until turned off
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Audit
+    created_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    creator = db.relationship('User', backref='purchase_controls', foreign_keys=[created_by_admin_id])
+    
+    def is_expired(self):
+        """Check if the block has expired"""
+        if self.ends_at and datetime.utcnow() > self.ends_at:
+            return True
+        return False
+    
+    def get_blocked_users_list(self):
+        """Parse blocked_user_ids string to list of integers"""
+        if not self.blocked_user_ids or self.blocked_user_ids == 'all':
+            return []
+        try:
+            return [int(uid.strip()) for uid in self.blocked_user_ids.split(',') if uid.strip()]
+        except:
+            return []
+    
+    def get_time_remaining(self):
+        """Get human-readable time remaining"""
+        if not self.ends_at:
+            return "Permanent"
+        now = datetime.utcnow()
+        if now > self.ends_at:
+            return "Expired"
+        diff = self.ends_at - now
+        if diff.days > 0:
+            return f"{diff.days}d {diff.seconds // 3600}h remaining"
+        hours = diff.seconds // 3600
+        minutes = (diff.seconds % 3600) // 60
+        if hours > 0:
+            return f"{hours}h {minutes}m remaining"
+        return f"{minutes}m remaining"
+    
+    def blocks_user(self, user):
+        """Check if this control blocks a specific user"""
+        if not self.is_active:
+            return False
+        if self.is_expired():
+            return False
+        
+        if self.block_type == 'all':
+            return True
+        
+        if self.block_type == 'specific_tier':
+            return user.subscription_tier == self.blocked_tier or True  # Blocks anyone buying this tier
+        
+        if self.block_type == 'specific_users':
+            blocked_ids = self.get_blocked_users_list()
+            return user.id in blocked_ids
+        
+        return False
+    
+    def __repr__(self):
+        return f'<PurchaseControl {self.block_type} - {"Active" if self.is_active else "Inactive"}>'
+
+
+def check_purchase_blocked(user, plan_tier=None):
+    """
+    Check if a user is blocked from purchasing.
+    Returns (is_blocked, message) tuple.
+    """
+    active_controls = PurchaseControl.query.filter_by(is_active=True).all()
+    
+    for control in active_controls:
+        if control.is_expired():
+            continue
+        
+        if control.block_type == 'all':
+            msg = control.reason or "Purchases are temporarily disabled for maintenance."
+            if control.ends_at:
+                remaining = control.get_time_remaining()
+                msg += f" Expected to resume in: {remaining}"
+            return True, msg
+        
+        if control.block_type == 'specific_tier' and control.blocked_tier == plan_tier:
+            msg = control.reason or f"Purchases for {plan_tier.upper()} plan are temporarily paused."
+            if control.ends_at:
+                remaining = control.get_time_remaining()
+                msg += f" Expected to resume in: {remaining}"
+            return True, msg
+        
+        if control.block_type == 'specific_users' and control.blocks_user(user):
+            msg = control.reason or "Your account is temporarily restricted from making purchases."
+            if control.ends_at:
+                remaining = control.get_time_remaining()
+                msg += f" Expected to resume in: {remaining}"
+            return True, msg
+    
+    return False, None
+

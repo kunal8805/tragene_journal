@@ -485,6 +485,59 @@ def add_trade():
         )
         trade.calculate_pnl()
         db.session.add(trade)
+        db.session.flush()  # 🆕 Get trade.id for screenshots
+        
+        # 🆕 Handle screenshot uploads (up to 2)
+        for i in [1, 2]:
+            file_key = f'screenshot{i}'
+            if file_key in request.files:
+                file = request.files[file_key]
+                if file and file.filename and file.filename != '':
+                    # Validate extension
+                    allowed = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+                    if ext in allowed:
+                        try:
+                            from PIL import Image
+                            import io
+                            
+                            file_content = file.read()
+                            img = Image.open(io.BytesIO(file_content))
+                            img.verify()
+                            file.seek(0)
+                            img = Image.open(io.BytesIO(file_content))
+                            
+                            # Save screenshot
+                            upload_dir = os.path.join('static', 'uploads', 'trades', str(current_user.id))
+                            os.makedirs(upload_dir, exist_ok=True)
+                            
+                            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+                            safe_filename = secure_filename(f"trade_{trade.id}_{timestamp}_{i}.jpg")
+                            filepath = os.path.join(upload_dir, safe_filename)
+                            
+                            if img.mode in ('RGBA', 'P'):
+                                img = img.convert('RGB')
+                            
+                            max_size = 1920
+                            if img.width > max_size or img.height > max_size:
+                                img.thumbnail((max_size, max_size), Image.LANCZOS)
+                            
+                            img.save(filepath, 'JPEG', quality=75, optimize=True)
+                            
+                            file_size = os.path.getsize(filepath)
+                            
+                            screenshot = TradeScreenshot(
+                                trade_id=trade.id,
+                                user_id=current_user.id,
+                                filename=safe_filename,
+                                filepath=filepath.replace('\\', '/'),
+                                file_size=file_size
+                            )
+                            db.session.add(screenshot)
+                            print(f"✅ Screenshot {i} saved for trade {trade.id}")
+                        except Exception as e:
+                            print(f"⚠️ Screenshot {i} upload error: {e}")
+        
         db.session.add(ImportHistory(
             user_id=current_user.id,
             account_id=account_id,
@@ -541,6 +594,63 @@ def edit_trade(trade_id):
             trade.exit_date = datetime.strptime(request.form.get('exit_date'), '%Y-%m-%dT%H:%M')
         
         trade.calculate_pnl()
+        db.session.flush()  # 🆕 Get trade.id if needed
+        
+        # 🆕 Handle screenshot uploads (up to 2)
+        for i in [1, 2]:
+            file_key = f'screenshot{i}'
+            if file_key in request.files:
+                file = request.files[file_key]
+                if file and file.filename and file.filename != '':
+                    # Validate extension
+                    allowed = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+                    if ext in allowed:
+                        try:
+                            from PIL import Image
+                            import io
+                            
+                            # Check existing count
+                            existing_count = TradeScreenshot.query.filter_by(trade_id=trade.id).count()
+                            limit = _get_user_image_limit(current_user)
+                            if existing_count < limit:
+                                file_content = file.read()
+                                img = Image.open(io.BytesIO(file_content))
+                                img.verify()
+                                file.seek(0)
+                                img = Image.open(io.BytesIO(file_content))
+                                
+                                # Save screenshot
+                                upload_dir = os.path.join('static', 'uploads', 'trades', str(current_user.id))
+                                os.makedirs(upload_dir, exist_ok=True)
+                                
+                                timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+                                safe_filename = secure_filename(f"trade_{trade.id}_{timestamp}_{i}.jpg")
+                                filepath = os.path.join(upload_dir, safe_filename)
+                                
+                                if img.mode in ('RGBA', 'P'):
+                                    img = img.convert('RGB')
+                                
+                                max_size = 1920
+                                if img.width > max_size or img.height > max_size:
+                                    img.thumbnail((max_size, max_size), Image.LANCZOS)
+                                
+                                img.save(filepath, 'JPEG', quality=75, optimize=True)
+                                
+                                file_size = os.path.getsize(filepath)
+                                
+                                screenshot = TradeScreenshot(
+                                    trade_id=trade.id,
+                                    user_id=current_user.id,
+                                    filename=safe_filename,
+                                    filepath=filepath.replace('\\', '/'),
+                                    file_size=file_size
+                                )
+                                db.session.add(screenshot)
+                                print(f"✅ Screenshot {i} saved for trade {trade.id}")
+                        except Exception as e:
+                            print(f"⚠️ Screenshot {i} upload error during edit: {e}")
+        
         db.session.commit()
         flash('Trade updated!', 'success')
         return redirect(url_for('user.trade_detail', trade_id=trade.id))

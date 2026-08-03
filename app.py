@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, redirect, url_for, request, session
+from flask import Flask, render_template, flash, redirect, url_for, request, session, Response
 from extensions import db, login_manager, migrate
 import os
 from datetime import datetime, timedelta
@@ -22,7 +22,7 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
     
-    from models import User, Trade, ImportHistory, DayNote, TradingAccount, Category, Tag, Blog, SEOSettings, PageMetadata, Redirect, NewsletterSubscriber, MediaLibrary, ContactMessage
+    from models import User, Trade, ImportHistory, DayNote, TradingAccount, Category, Tag, Blog, SEOSettings, PageMetadata, Redirect, NewsletterSubscriber, MediaLibrary, ContactMessage, Coupon, CouponUsage, CouponUser
     
     @login_manager.user_loader
     def load_user(user_id):
@@ -37,6 +37,7 @@ def create_app():
     from blog_routes import blog_bp
     from seo_routes import seo_bp
     from moderator_routes import moderator_bp
+    from coupon_routes import coupon_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
@@ -47,6 +48,7 @@ def create_app():
     app.register_blueprint(blog_bp)
     app.register_blueprint(seo_bp)
     app.register_blueprint(moderator_bp)
+    app.register_blueprint(coupon_bp)
     
     with app.app_context():
         db_path = os.path.join(basedir, 'trading_journal.db')
@@ -140,6 +142,12 @@ def create_app():
     @app.route('/home')
     def home():
         return render_template('index.html')
+    
+    # ===== ADS.TXT FOR GOOGLE ADSENSE =====
+    @app.route('/ads.txt')
+    def ads_txt():
+        content = "google.com, pub-4811775453229832, DIRECT, f08c47fec0942fa0"
+        return Response(content, mimetype='text/plain')
     
     # ===== LEGAL AND STATIC PAGES =====
     @app.route('/terms')

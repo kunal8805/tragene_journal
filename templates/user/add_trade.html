@@ -1,8 +1,8 @@
 {% extends "base_user.html" %}
 {% block title %}Add Trade - Tragene Journal{% endblock %}
-{% block page_title %}Manual Entry{% endblock %}
-{% block content %}
+{% block page_title %}📝 Manual Entry{% endblock %}
 
+{% block extra_css %}
 <style>
     .market-selector {
         display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
@@ -74,12 +74,141 @@
     
     .market-form-section { display: none; }
     .market-form-section.active { display: block; }
-    
+
+    /* 🆕 Screenshot Upload */
+    .screenshot-upload-section {
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+    .screenshot-upload-section h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .screenshot-upload-section h6 .badge-count {
+        font-size: 0.65rem;
+        background: rgba(38,166,154,0.1);
+        color: var(--accent);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .screenshot-upload-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+
+    .screenshot-upload-zone {
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 120px;
+        background: var(--bg-card);
+    }
+
+    .screenshot-upload-zone:hover {
+        border-color: var(--accent);
+        background: rgba(38,166,154,0.03);
+    }
+
+    .screenshot-upload-zone i {
+        font-size: 1.5rem;
+        color: var(--text-muted);
+    }
+
+    .screenshot-upload-zone span {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .screenshot-upload-zone .max-note {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        opacity: 0.6;
+    }
+
+    .screenshot-preview-item {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        aspect-ratio: 16/10;
+        background: var(--bg-card);
+    }
+
+    .screenshot-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .screenshot-preview-item .remove-preview {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(255,82,82,0.9);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-size: 0.65rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .screenshot-preview-item .remove-preview:hover {
+        background: #ff5252;
+        transform: scale(1.1);
+    }
+
+    .screenshot-preview-item .preview-label {
+        position: absolute;
+        bottom: 6px;
+        left: 6px;
+        padding: 3px 8px;
+        background: rgba(0,0,0,0.7);
+        color: #fff;
+        border-radius: 6px;
+        font-size: 0.6rem;
+        font-weight: 600;
+    }
+
     @media (max-width: 576px) {
         .market-btn { padding: 10px 8px; font-size: 0.75rem; }
         .market-btn .market-icon { font-size: 1.2rem; }
+        .screenshot-upload-grid {
+            grid-template-columns: 1fr 1fr;
+        }
     }
 </style>
+{% endblock %}
+
+{% block content %}
 
 <div class="mb-3">
     <a href="{{ url_for('user.import_trades') }}" class="text-decoration-none" style="color: var(--text-secondary);">
@@ -88,7 +217,7 @@
 </div>
 
 <div class="card p-3 p-md-4">
-    <form method="POST" id="tradeForm">
+    <form method="POST" id="tradeForm" enctype="multipart/form-data">
         
         <!-- ═══════════════════════════════════════════ -->
         <!-- MARKET SELECTOR -->
@@ -107,7 +236,7 @@
         <input type="hidden" name="market" id="marketInput" value="forex">
         
         <!-- ═══════════════════════════════════════════ -->
-        <!-- QUICK SELECT SYMBOLS (changes per market) -->
+        <!-- QUICK SELECT SYMBOLS -->
         <!-- ═══════════════════════════════════════════ -->
         <div class="mb-3">
             <div class="category-label" id="quickSelectLabel">💱 Quick Select Forex Pair</div>
@@ -148,7 +277,7 @@
         <hr class="section-divider">
         
         <!-- ═══════════════════════════════════════════ -->
-        <!-- CORE FIELDS (All Markets) -->
+        <!-- CORE FIELDS -->
         <!-- ═══════════════════════════════════════════ -->
         <div class="row g-3">
             <div class="col-md-6">
@@ -207,7 +336,7 @@
         <hr class="section-divider">
         
         <!-- ═══════════════════════════════════════════ -->
-        <!-- FOREX SPECIFIC FIELDS -->
+        <!-- FOREX SPECIFIC -->
         <!-- ═══════════════════════════════════════════ -->
         <div id="forexFields" class="market-form-section active">
             <div class="row g-3">
@@ -253,7 +382,7 @@
         </div>
         
         <!-- ═══════════════════════════════════════════ -->
-        <!-- CRYPTO SPECIFIC FIELDS -->
+        <!-- CRYPTO SPECIFIC -->
         <!-- ═══════════════════════════════════════════ -->
         <div id="cryptoFields" class="market-form-section">
             <div class="row g-3">
@@ -298,7 +427,7 @@
         </div>
         
         <!-- ═══════════════════════════════════════════ -->
-        <!-- INDIAN STOCK SPECIFIC FIELDS -->
+        <!-- INDIAN STOCK SPECIFIC -->
         <!-- ═══════════════════════════════════════════ -->
         <div id="indianFields" class="market-form-section">
             <div class="row g-3">
@@ -350,8 +479,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- F&O Fields (hidden by default) -->
             <div class="row g-3 mt-2" id="indianFnoFields" style="display:none;">
                 <div class="col-md-4">
                     <div class="form-floating-custom">
@@ -382,8 +509,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Charges Fields -->
             <div class="row g-3 mt-2">
                 <div class="col-md-4">
                     <div class="form-floating-custom">
@@ -445,6 +570,33 @@
                 </div>
             </div>
         </div>
+
+        <!-- 🆕 SCREENSHOT UPLOAD SECTION -->
+        <div class="screenshot-upload-section">
+            <h6>
+                <i class="bi bi-camera"></i> Trade Screenshots
+                <span class="badge-count" id="screenshotCount">0/2</span>
+            </h6>
+            <div class="screenshot-upload-grid" id="screenshotGrid">
+                <!-- Upload Zone 1 -->
+                <div class="screenshot-upload-zone" id="uploadZone1" onclick="document.getElementById('screenshotInput1').click()">
+                    <i class="bi bi-cloud-upload"></i>
+                    <span>Screenshot 1</span>
+                    <span class="max-note">Click to upload</span>
+                </div>
+                <!-- Upload Zone 2 -->
+                <div class="screenshot-upload-zone" id="uploadZone2" onclick="document.getElementById('screenshotInput2').click()">
+                    <i class="bi bi-cloud-upload"></i>
+                    <span>Screenshot 2</span>
+                    <span class="max-note">Click to upload</span>
+                </div>
+            </div>
+            <input type="file" id="screenshotInput1" name="screenshot1" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" onchange="previewScreenshot(1, this)">
+            <input type="file" id="screenshotInput2" name="screenshot2" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" onchange="previewScreenshot(2, this)">
+            <div style="font-size:0.65rem;color:var(--text-muted);margin-top:8px;text-align:center;">
+                <i class="bi bi-info-circle"></i> Max 2 screenshots. Supported: PNG, JPG, GIF, WEBP. Max 5MB each.
+            </div>
+        </div>
         
         <!-- Submit -->
         <div class="d-flex gap-2 mt-4">
@@ -456,21 +608,23 @@
     </form>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
 <script>
     // Set default entry date
     document.querySelector('input[name="entry_date"]').value = new Date().toISOString().slice(0, 16);
     
     let currentMarket = 'forex';
-    
+    let screenshotFiles = {1: null, 2: null};
+
     function switchMarket(market) {
         currentMarket = market;
         document.getElementById('marketInput').value = market;
         
-        // Update market buttons
         document.querySelectorAll('.market-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('marketBtn' + (market === 'forex' ? 'Forex' : market === 'crypto' ? 'Crypto' : 'Indian')).classList.add('active');
         
-        // Show/hide quick select chips
         document.querySelectorAll('.market-form-section').forEach(s => s.classList.remove('active'));
         document.getElementById('symbolChips' + (market === 'forex' ? 'Forex' : market === 'crypto' ? 'Crypto' : 'Indian')).classList.add('active');
         document.getElementById('quickSelectLabel').textContent = 
@@ -478,17 +632,14 @@
             market === 'crypto' ? '₿ Quick Select Crypto' : 
             '📈 Quick Select Indian Stock';
         
-        // Show/hide market-specific fields
         document.getElementById('forexFields').classList.toggle('active', market === 'forex');
         document.getElementById('cryptoFields').classList.toggle('active', market === 'crypto');
         document.getElementById('indianFields').classList.toggle('active', market === 'indian_stock');
         
-        // Update quantity label
         document.getElementById('quantityLabel').textContent = 
             market === 'indian_stock' ? 'Quantity (Shares)' : 
             market === 'crypto' ? 'Quantity (Coins)' : 'Lot Size';
         
-        // Reset symbol
         document.getElementById('symbolInput').value = '';
         previewPnL();
     }
@@ -557,5 +708,64 @@
     document.getElementById('symbolInput').addEventListener('input', function() {
         document.querySelectorAll('.symbol-chip').forEach(c => c.classList.remove('selected'));
     });
+
+    // 🆕 SCREENSHOT UPLOAD FUNCTIONS
+    function previewScreenshot(num, input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        // Validate size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File too large. Maximum size is 5MB.');
+            input.value = '';
+            return;
+        }
+
+        // Validate type
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Invalid file type. Allowed: PNG, JPG, GIF, WEBP.');
+            input.value = '';
+            return;
+        }
+
+        screenshotFiles[num] = file;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const zone = document.getElementById('uploadZone' + num);
+            zone.innerHTML = `
+                <div class="screenshot-preview-item">
+                    <img src="${e.target.result}" alt="Screenshot ${num}">
+                    <button type="button" class="remove-preview" onclick="removeScreenshot(${num}); event.stopPropagation();">
+                        <i class="bi bi-x"></i>
+                    </button>
+                    <span class="preview-label">Screenshot ${num}</span>
+                </div>
+            `;
+            zone.onclick = null; // Remove click to re-upload
+            updateScreenshotCount();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeScreenshot(num) {
+        screenshotFiles[num] = null;
+        document.getElementById('screenshotInput' + num).value = '';
+        
+        const zone = document.getElementById('uploadZone' + num);
+        zone.innerHTML = `
+            <i class="bi bi-cloud-upload"></i>
+            <span>Screenshot ${num}</span>
+            <span class="max-note">Click to upload</span>
+        `;
+        zone.onclick = function() { document.getElementById('screenshotInput' + num).click(); };
+        updateScreenshotCount();
+    }
+
+    function updateScreenshotCount() {
+        const count = (screenshotFiles[1] ? 1 : 0) + (screenshotFiles[2] ? 1 : 0);
+        document.getElementById('screenshotCount').textContent = count + '/2';
+    }
 </script>
 {% endblock %}

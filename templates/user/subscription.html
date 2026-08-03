@@ -558,6 +558,20 @@
         display: block;
     }
 
+    /* Screenshot Attachment Feature Badge */
+    .new-feature-badge {
+        display: inline-block;
+        background: rgba(176, 38, 255, 0.1);
+        border: 1px solid rgba(176, 38, 255, 0.3);
+        color: #b026ff;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        margin-left: 6px;
+        letter-spacing: 0.5px;
+    }
+
     @media (max-width: 768px) {
         .comparison-table .table thead th,
         .comparison-table .table tbody td {
@@ -592,11 +606,11 @@
             {{ current_user.subscription_tier | upper }}
         </h4>
         {% if current_user.subscription_tier == 'free' %}
-        <small style="color: var(--text-muted);">3,000 tokens / week</small>
+        <small style="color: var(--text-muted);">Limited AI Tokens</small>
         {% elif current_user.subscription_tier == 'pro' %}
-        <small style="color: var(--text-muted);">200,000 tokens / month</small>
+        <small style="color: var(--text-muted);">Unlimited AI Tokens</small>
         {% elif current_user.subscription_tier == 'elite' %}
-        <small style="color: var(--glow-gold);">1,000,000 tokens / month</small>
+        <small style="color: var(--glow-gold);">Unlimited AI Tokens · Advanced Model</small>
         {% endif %}
     </div>
 </div>
@@ -639,6 +653,11 @@
                         <span class="feature-text">CSV Import — 1 / Week</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
+                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
+                        <span class="feature-text">Crypto Auto Sync</span>
+                        <span class="new-feature-badge">NEW</span>
+                    </div>
+                    <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-x-circle-fill cross-icon flex-shrink-0"></i>
                         <span class="feature-text muted">MT4/MT5 Auto Sync</span>
                     </div>
@@ -660,12 +679,11 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text">3,000 Tokens / Week</span>
-                        <span class="token-badge ms-auto">Basic Model</span>
+                        <span class="feature-text">Limited AI Tokens</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-x-circle-fill cross-icon flex-shrink-0"></i>
-                        <span class="feature-text muted">AI Analysis</span>
+                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
+                        <span class="feature-text">AI Analysis</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-x-circle-fill cross-icon flex-shrink-0"></i>
@@ -731,6 +749,11 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
+                        <span class="feature-text highlight">Crypto Auto Sync</span>
+                        <span class="new-feature-badge">NEW</span>
+                    </div>
+                    <div class="feature-row d-flex align-items-center gap-3">
+                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
                         <span class="feature-text highlight">MT4/MT5 Auto Sync</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
@@ -751,8 +774,7 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text highlight">200,000 Tokens / Month</span>
-                        <span class="token-badge ms-auto">Advanced Model</span>
+                        <span class="feature-text highlight">Unlimited AI Tokens</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
@@ -822,6 +844,11 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
+                        <span class="feature-text gold">Crypto Auto Sync</span>
+                        <span class="new-feature-badge">NEW</span>
+                    </div>
+                    <div class="feature-row d-flex align-items-center gap-3">
+                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
                         <span class="feature-text gold">MT4/MT5 Auto Sync</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
@@ -842,8 +869,8 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text gold">1,000,000 Tokens / Month</span>
-                        <span class="token-badge token-badge-gold ms-auto">Premium Model</span>
+                        <span class="feature-text gold">Unlimited AI Tokens</span>
+                        <span class="token-badge token-badge-gold ms-auto">Advanced Model</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
@@ -852,11 +879,15 @@
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill gold-icon flex-shrink-0"></i>
                         <span class="feature-text gold">✨ AI Diary Writer</span>
-                        <span class="token-badge token-badge-gold ms-auto">Auto-write</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
                         <span class="feature-text gold">AI Coach & Goals</span>
+                    </div>
+                    <div class="feature-row d-flex align-items-center gap-3">
+                        <i class="bi bi-check-circle-fill gold-icon flex-shrink-0"></i>
+                        <span class="feature-text gold">✨ Advanced AI Trading Guide Tools</span>
+                        <span class="token-badge token-badge-gold ms-auto">Elite Only</span>
                     </div>
                 </div>
 
@@ -907,6 +938,12 @@
                     <td class="text-center py-3 col-elite fw-semibold">✅ Unlimited</td>
                 </tr>
                 <tr>
+                    <td class="ps-4 py-3 fw-semibold">Crypto Auto Sync <span class="new-feature-badge">NEW</span></td>
+                    <td class="text-center py-3"><span class="table-check">✓</span></td>
+                    <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
+                    <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
+                </tr>
+                <tr>
                     <td class="ps-4 py-3 fw-semibold">MT4/MT5 Auto Sync</td>
                     <td class="text-center py-3"><span class="table-cross">✕</span></td>
                     <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
@@ -917,6 +954,12 @@
                     <td class="text-center py-3">2</td>
                     <td class="text-center py-3 col-pro">10</td>
                     <td class="text-center py-3 col-elite fw-semibold">✅ Unlimited</td>
+                </tr>
+                <tr>
+                    <td class="ps-4 py-3 fw-semibold">Screenshot Attachments</td>
+                    <td class="text-center py-3"><span class="table-check">✓</span></td>
+                    <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
+                    <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
                 </tr>
                 <tr>
                     <td class="ps-4 py-3 fw-semibold">Analytics</td>
@@ -938,19 +981,19 @@
                 </tr>
                 <tr>
                     <td class="ps-4 py-3 fw-semibold">AI Tokens</td>
-                    <td class="text-center py-3">3,000 / Week</td>
-                    <td class="text-center py-3 col-pro fw-semibold">200,000 / Month</td>
-                    <td class="text-center py-3 col-elite fw-semibold" style="color: var(--glow-gold);">1,000,000 / Month</td>
+                    <td class="text-center py-3">Limited</td>
+                    <td class="text-center py-3 col-pro fw-semibold">✅ Unlimited</td>
+                    <td class="text-center py-3 col-elite fw-semibold" style="color: var(--glow-gold);">✅ Unlimited</td>
                 </tr>
                 <tr>
                     <td class="ps-4 py-3 fw-semibold">AI Model</td>
-                    <td class="text-center py-3">Basic</td>
-                    <td class="text-center py-3 col-pro fw-semibold">Advanced</td>
-                    <td class="text-center py-3 col-elite fw-semibold" style="color: var(--glow-gold);">Premium</td>
+                    <td class="text-center py-3">—</td>
+                    <td class="text-center py-3 col-pro">—</td>
+                    <td class="text-center py-3 col-elite fw-semibold" style="color: var(--glow-gold);">Advanced Model</td>
                 </tr>
                 <tr>
                     <td class="ps-4 py-3 fw-semibold">AI Analysis</td>
-                    <td class="text-center py-3"><span class="table-cross">✕</span></td>
+                    <td class="text-center py-3"><span class="table-check">✓</span></td>
                     <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
                     <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
                 </tr>
@@ -972,6 +1015,12 @@
                     <td class="text-center py-3 col-pro"><span class="table-cross">✕</span></td>
                     <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
                 </tr>
+                <tr>
+                    <td class="ps-4 py-3 fw-semibold">Advanced AI Trading Guide Tools</td>
+                    <td class="text-center py-3"><span class="table-cross">✕</span></td>
+                    <td class="text-center py-3 col-pro"><span class="table-cross">✕</span></td>
+                    <td class="text-center py-3 col-elite"><span class="table-gold-check">✨ ✓</span></td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -979,9 +1028,12 @@
         <small>
             <i class="bi bi-info-circle me-1"></i> 
             <span class="fw-semibold" style="color: var(--text-secondary);">Token Usage:</span> 
-            Each AI request consumes tokens based on complexity. Tokens reset monthly for paid plans, weekly for free plan.
+            Free plan includes limited AI tokens. Paid plans (Pro & Elite) include unlimited AI tokens.
             <span class="d-block mt-1" style="color: var(--glow-gold);">
-                ✨ AI Diary Writer automatically generates your trading diary entries with just one click (Elite only)
+                ✨ Elite plan includes Advanced AI Model, AI Diary Writer, and Advanced AI Trading Guide Tools
+            </span>
+            <span class="d-block mt-1" style="color: #b026ff;">
+                🆕 Crypto Auto Sync is available on ALL plans! Screenshot attachments also available for everyone.
             </span>
         </small>
     </div>

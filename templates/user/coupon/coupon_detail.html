@@ -1,0 +1,595 @@
+{% extends "base_user.html" %}
+{% block title %}{{ coupon.code }} - Coupon Detail{% endblock %}
+{% block page_title %}🎟️ Coupon Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--accent); }
+
+    /* Main Card */
+    .detail-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+    }
+
+    /* Top Section with Discount */
+    .detail-hero {
+        padding: 32px 28px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .detail-hero.universal {
+        background: linear-gradient(135deg, rgba(79,142,247,0.08) 0%, rgba(79,142,247,0.02) 100%);
+    }
+
+    .detail-hero.specific {
+        background: linear-gradient(135deg, rgba(0,200,83,0.08) 0%, rgba(0,200,83,0.02) 100%);
+    }
+
+    .detail-hero::after {
+        content: '';
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        opacity: 0.5;
+    }
+
+    .detail-hero.universal::after {
+        background: radial-gradient(circle, rgba(79,142,247,0.15) 0%, transparent 70%);
+    }
+
+    .detail-hero.specific::after {
+        background: radial-gradient(circle, rgba(0,200,83,0.15) 0%, transparent 70%);
+    }
+
+    .coupon-code-lg {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        cursor: pointer;
+        position: relative;
+        z-index: 1;
+        transition: color 0.2s;
+        user-select: all;
+    }
+
+    .coupon-code-lg:hover {
+        color: var(--accent);
+    }
+
+    .code-hint {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .discount-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .discount-circle.universal {
+        background: linear-gradient(135deg, #4f8ef7, #3b6fd4);
+        box-shadow: 0 8px 32px rgba(79,142,247,0.35);
+    }
+
+    .discount-circle.specific {
+        background: linear-gradient(135deg, #00c853, #009624);
+        box-shadow: 0 8px 32px rgba(0,200,83,0.35);
+    }
+
+    .discount-circle .discount-amount {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .discount-circle .discount-off {
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.8);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .type-badge-lg {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .type-badge-lg.universal {
+        background: rgba(79,142,247,0.15);
+        color: #4f8ef7;
+        border: 1px solid rgba(79,142,247,0.3);
+    }
+
+    .type-badge-lg.specific {
+        background: rgba(0,200,83,0.15);
+        color: #00c853;
+        border: 1px solid rgba(0,200,83,0.3);
+    }
+
+    /* Info Rows */
+    .detail-body {
+        padding: 24px 28px;
+    }
+
+    .info-group {
+        margin-bottom: 20px;
+    }
+
+    .info-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-group-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        background: var(--bg-body);
+        border-radius: 10px;
+        margin-bottom: 6px;
+        font-size: 0.82rem;
+    }
+
+    .info-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-row .label {
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-row .value {
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: right;
+    }
+
+    .info-row .value.code-font {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.78rem;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .status-badge.valid {
+        background: rgba(0,200,83,0.12);
+        color: #00c853;
+    }
+
+    .status-badge.invalid {
+        background: rgba(255,82,82,0.12);
+        color: #ff5252;
+    }
+
+    .status-badge .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-badge.valid .status-dot {
+        background: #00c853;
+        box-shadow: 0 0 8px rgba(0,200,83,0.5);
+        animation: pulse 2s infinite;
+    }
+
+    .status-badge.invalid .status-dot {
+        background: #ff5252;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    /* Usage Section */
+    .usage-section {
+        margin-top: 24px;
+        padding: 20px;
+        background: var(--bg-body);
+        border-radius: 14px;
+        border: 1px solid var(--border-color);
+    }
+
+    .usage-section h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .usage-detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        font-size: 0.8rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .usage-detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .usage-detail-row .lbl {
+        color: var(--text-secondary);
+    }
+
+    .usage-detail-row .val {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .val.saved {
+        color: #00c853;
+    }
+
+    /* Action Button */
+    .btn-action-coupon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Space Grotesk', sans-serif;
+        margin-top: 24px;
+        text-decoration: none;
+    }
+
+    .btn-action-coupon.go-subscribe {
+        background: linear-gradient(135deg, var(--accent), #1a8a80);
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(38,166,154,0.3);
+    }
+
+    .btn-action-coupon.go-subscribe:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(38,166,154,0.5);
+        color: #fff;
+    }
+
+    .btn-action-coupon.used-btn {
+        background: var(--bg-body);
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        cursor: not-allowed;
+    }
+
+    /* Copy Toast */
+    .copy-toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--accent);
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.82rem;
+        z-index: 9999;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .copy-toast.show {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 576px) {
+        .coupon-code-lg {
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+        .discount-circle {
+            width: 100px;
+            height: 100px;
+        }
+        .discount-circle .discount-amount {
+            font-size: 1.4rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-container">
+
+    <a href="{{ url_for('coupon.my_coupons') }}" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to My Coupons
+    </a>
+
+    <div class="detail-card">
+
+        <!-- Hero Section -->
+        <div class="detail-hero {{ coupon.coupon_type }}">
+            <div class="coupon-code-lg" onclick="copyCode('{{ coupon.code }}')" title="Click to copy">
+                {{ coupon.code }}
+            </div>
+            <div class="code-hint">👆 Click to copy code</div>
+
+            <div class="discount-circle {{ coupon.coupon_type }}">
+                <span class="discount-amount">
+                    {% if coupon.discount_type == 'percentage' %}
+                        {{ coupon.discount_value }}%
+                    {% else %}
+                        ₹{{ coupon.discount_value }}
+                    {% endif %}
+                </span>
+                <span class="discount-off">OFF</span>
+            </div>
+
+            <span class="type-badge-lg {{ coupon.coupon_type }}">
+                {% if coupon.coupon_type == 'universal' %}
+                    🌐 Universal Coupon
+                {% else %}
+                    👤 Exclusive for You
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Detail Body -->
+        <div class="detail-body">
+
+            <!-- Status -->
+            <div class="info-group">
+                <div class="info-group-label"><i class="bi bi-info-circle"></i> Status</div>
+                <div class="info-row">
+                    <span class="label">
+                        {% if can_use %}
+                            <span class="status-badge valid">
+                                <span class="status-dot"></span> Ready to Use
+                            </span>
+                        {% else %}
+                            <span class="status-badge invalid">
+                                <span class="status-dot"></span> {{ message }}
+                            </span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if coupon.description %}
+            <div class="info-group">
+                <div class="info-group-label"><i class="bi bi-chat-left-text"></i> Description</div>
+                <div class="info-row">
+                    <span class="label">{{ coupon.description }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Discount Details -->
+            <div class="info-group">
+                <div class="info-group-label"><i class="bi bi-tag"></i> Discount Details</div>
+                <div class="info-row">
+                    <span class="label">Type</span>
+                    <span class="value">
+                        {{ 'Percentage Discount' if coupon.discount_type == 'percentage' else 'Fixed Amount Off' }}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Value</span>
+                    <span class="value code-font">
+                        {% if coupon.discount_type == 'percentage' %}
+                            {{ coupon.discount_value }}% off
+                        {% else %}
+                            ₹{{ '%.2f'|format(coupon.discount_value) }} off
+                        {% endif %}
+                    </span>
+                </div>
+                {% if coupon.min_order_amount > 0 %}
+                <div class="info-row">
+                    <span class="label">Minimum Order</span>
+                    <span class="value code-font">₹{{ '%.2f'|format(coupon.min_order_amount) }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Validity -->
+            <div class="info-group">
+                <div class="info-group-label"><i class="bi bi-calendar-check"></i> Validity</div>
+                <div class="info-row">
+                    <span class="label">Expires</span>
+                    <span class="value">
+                        {% if coupon.expires_at %}
+                            {{ coupon.expires_at.strftime('%d %B %Y at %H:%M') }}
+                            {% set days_left = (coupon.expires_at - now).days if coupon.expires_at > now else 0 %}
+                            {% if coupon.expires_at > now and days_left <= 7 %}
+                                <span style="display:inline-block;margin-left:6px;padding:2px 8px;background:rgba(255,179,0,0.12);color:#ffb300;border-radius:6px;font-size:0.7rem;font-weight:600;">
+                                    ⏰ {{ days_left }} day{{ 's' if days_left != 1 else '' }} left
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color:var(--accent);">No expiry</span>
+                        {% endif %}
+                    </span>
+                </div>
+                {% if coupon.max_uses %}
+                <div class="info-row">
+                    <span class="label">Usage Limit</span>
+                    <span class="value">{{ coupon.used_count }} / {{ coupon.max_uses }} used</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Your Usage -->
+            {% if user_usage %}
+            <div class="usage-section">
+                <h6><i class="bi bi-check-circle"></i> Your Usage</h6>
+                <div class="usage-detail-row">
+                    <span class="lbl">Used on</span>
+                    <span class="val">{{ user_usage.used_at.strftime('%d %B %Y at %H:%M') }}</span>
+                </div>
+                <div class="usage-detail-row">
+                    <span class="lbl">Plan purchased</span>
+                    <span class="val">{{ user_usage.plan_purchased or 'N/A' }}</span>
+                </div>
+                <div class="usage-detail-row">
+                    <span class="lbl">Order amount</span>
+                    <span class="val">₹{{ '%.2f'|format(user_usage.order_amount) }}</span>
+                </div>
+                <div class="usage-detail-row">
+                    <span class="lbl">You saved</span>
+                    <span class="val saved">
+                        <i class="bi bi-piggy-bank"></i> ₹{{ '%.2f'|format(user_usage.discount_applied) }}
+                    </span>
+                </div>
+                <div class="usage-detail-row">
+                    <span class="lbl">Final paid</span>
+                    <span class="val" style="font-weight:700;">₹{{ '%.2f'|format(user_usage.final_amount) }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Button -->
+            {% if can_use %}
+            <a href="{{ url_for('user.subscription') }}" class="btn-action-coupon go-subscribe">
+                <i class="bi bi-rocket-takeoff"></i> Use This Coupon — Go to Plans
+            </a>
+            {% elif user_usage %}
+            <div class="btn-action-coupon used-btn">
+                <i class="bi bi-check-circle"></i> Already Used — Saved ₹{{ '%.2f'|format(user_usage.discount_applied) }}
+            </div>
+            {% else %}
+            <div class="btn-action-coupon used-btn">
+                <i class="bi bi-exclamation-circle"></i> {{ message }}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Copy Toast -->
+<div class="copy-toast" id="copyToast">
+    <i class="bi bi-clipboard-check"></i> Code copied: <strong id="toastCode"></strong>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            showToast(code);
+        }).catch(() => {
+            // Fallback for older browsers
+            const input = document.createElement('input');
+            input.value = code;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            showToast(code);
+        });
+    }
+
+    function showToast(code) {
+        const toast = document.getElementById('copyToast');
+        document.getElementById('toastCode').textContent = code;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2500);
+    }
+
+    // Also trigger copy on the code element click
+    document.querySelector('.coupon-code-lg').addEventListener('click', function() {
+        copyCode('{{ coupon.code }}');
+    });
+</script>
+{% endblock %}
