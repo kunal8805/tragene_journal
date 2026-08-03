@@ -24,6 +24,8 @@
         --bear-glow: rgba(239,83,80,0.35);
         --gold: #f2b544;
         --gold-glow: rgba(242,181,68,0.35);
+        --purple: #8b5cf6;
+        --purple-glow: rgba(139,92,246,0.35);
         --glass-bg: rgba(255,255,255,0.06);
         --glass-border: rgba(255,255,255,0.14);
         --font-display: 'Space Grotesk', sans-serif;
@@ -340,6 +342,12 @@
         font-family: var(--font-mono); font-size: 0.66rem; color: var(--gold);
         border: 1px solid rgba(242,181,68,0.35); border-radius: 6px;
         padding: 2px 7px; margin-left: 8px; vertical-align: middle;
+    }
+    .tj-new-badge{
+        font-family: var(--font-mono); font-size: 0.62rem; color: var(--purple);
+        border: 1px solid rgba(139,92,246,0.4); border-radius: 6px;
+        padding: 2px 7px; margin-left: 6px; vertical-align: middle;
+        background: rgba(139,92,246,0.1);
     }
 
     /* ===== Article / editorial cards ===== */
@@ -753,7 +761,7 @@
     </div>
 </section>
 
-<!-- Showcase: 4 Screenshots (Badge text removed) -->
+<!-- Showcase: 4 Screenshots -->
 <section id="showcase">
     <div class="container">
         <span class="tj-section-eyebrow tj-reveal">Product Tour</span>
@@ -817,16 +825,189 @@
         <h2 class="tj-section-title tj-reveal tj-d1">Start free. Add AI when you're ready.</h2>
         <p class="tj-section-sub tj-reveal tj-d2">Every plan includes the full manual journal, and every plan — including Free — includes real AI usage.</p>
         <div class="row g-4 justify-content-center align-items-stretch">
-            <div class="col-lg-4 col-md-6 tj-reveal"><div class="tj-price-card"><div class="tj-plan-name">Free</div><div class="tj-plan-tag">Start your Tragene Journal</div><div class="tj-price">₹0<small>/forever</small></div><ul><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited manual journal</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> CSV import — 1 / week</li><li class="tj-no"><i class="bi bi-x-circle"></i> MT4/MT5 auto sync</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 2 trading accounts</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Standard analytics</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Export PDF/CSV reports</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Ad-free</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 3,000 AI tokens / week <span class="tj-ai-badge">Basic model</span></li><li class="tj-no"><i class="bi bi-x-circle"></i> AI diary writer &amp; coach</li></ul><a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-block">Get Started</a></div></div>
-            <div class="col-lg-4 col-md-6 tj-reveal tj-d1"><div class="tj-price-card tj-popular"><span class="tj-price-badge tj-badge-bull">🔥 Most Popular</span><div class="tj-plan-name">Pro</div><div class="tj-plan-tag">AI-powered trading insights</div><div class="tj-price"><sup>₹</sup>399<small>/month</small></div><ul><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> <strong>Everything in Free</strong></li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited CSV import</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> MT4/MT5 auto sync</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 10 trading accounts</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 200,000 AI tokens / month <span class="tj-ai-badge">Advanced model</span></li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> AI analysis &amp; diary writer</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> AI coach &amp; goals</li></ul><a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-primary tj-btn-block">Start Free Trial</a></div></div>
-            <div class="col-lg-4 col-md-6 tj-reveal tj-d2"><div class="tj-price-card tj-elite"><span class="tj-price-badge tj-badge-gold">👑 Premium</span><div class="tj-plan-name">Elite</div><div class="tj-plan-tag">Complete AI coaching suite</div><div class="tj-price"><sup>₹</sup>799<small>/month</small></div><ul><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> <strong>Everything in Pro</strong></li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited trading accounts</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Advanced analytics</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 1,000,000 AI tokens / month <span class="tj-ai-badge">Premium model</span></li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> ✨ AI diary — auto-write</li><li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Personalized AI coach &amp; planner</li></ul><a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-gold tj-btn-block">Start Free Trial</a></div></div>
+            <!-- FREE PLAN -->
+            <div class="col-lg-4 col-md-6 tj-reveal">
+                <div class="tj-price-card">
+                    <div class="tj-plan-name">Free</div>
+                    <div class="tj-plan-tag">Start your Tragene Journal</div>
+                    <div class="tj-price">₹0<small>/forever</small></div>
+                    <ul>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited Manual Journal</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> CSV Import — 1 / Week</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Crypto Auto Sync <span class="tj-new-badge">NEW</span></li>
+                        <li class="tj-no"><i class="bi bi-x-circle"></i> MT4/MT5 Auto Sync</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 2 Trading Accounts</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Standard Analytics</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Export PDF/CSV Reports</li>
+                        <li class="tj-no"><i class="bi bi-x-circle"></i> Ad Free</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Limited AI Tokens</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> AI Analysis</li>
+                        <li class="tj-no"><i class="bi bi-x-circle"></i> AI Diary Writer</li>
+                        <li class="tj-no"><i class="bi bi-x-circle"></i> AI Coach &amp; Goals</li>
+                    </ul>
+                    <a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-block">Get Started</a>
+                </div>
+            </div>
+            <!-- PRO PLAN -->
+            <div class="col-lg-4 col-md-6 tj-reveal tj-d1">
+                <div class="tj-price-card tj-popular">
+                    <span class="tj-price-badge tj-badge-bull">🔥 Most Popular</span>
+                    <div class="tj-plan-name">Pro</div>
+                    <div class="tj-plan-tag">AI-powered trading insights</div>
+                    <div class="tj-price"><sup>₹</sup>399<small>/month</small></div>
+                    <ul>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> <strong>Everything in Free</strong></li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited CSV Import</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Crypto Auto Sync <span class="tj-new-badge">NEW</span></li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> MT4/MT5 Auto Sync</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> 10 Trading Accounts</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Ad Free Experience</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited AI Tokens</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> AI Analysis</li>
+                        <li class="tj-yes"><i class="bi bi-x-circle"></i> AI Diary Writer</li>
+                        <li class="tj-yes"><i class="bi bi-x-circle"></i> AI Coach &amp; Goals</li>
+                    </ul>
+                    <a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-primary tj-btn-block">Start Free Trial</a>
+                </div>
+            </div>
+            <!-- ELITE PLAN -->
+            <div class="col-lg-4 col-md-6 tj-reveal tj-d2">
+                <div class="tj-price-card tj-elite">
+                    <span class="tj-price-badge tj-badge-gold">👑 Premium</span>
+                    <div class="tj-plan-name">Elite</div>
+                    <div class="tj-plan-tag">Complete AI coaching suite</div>
+                    <div class="tj-price"><sup>₹</sup>799<small>/month</small></div>
+                    <ul>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> <strong>Everything in Pro</strong></li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Crypto Auto Sync <span class="tj-new-badge">NEW</span></li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited Accounts</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Advanced Analytics</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Unlimited AI Tokens <span class="tj-ai-badge">Advanced Model</span></li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> ✨ AI Diary Writer — Auto-write</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Personalized AI Coach</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> Trading Goals &amp; Planner</li>
+                        <li class="tj-yes"><i class="bi bi-check-circle-fill"></i> ✨ Advanced AI Trading Guide Tools <span class="tj-ai-badge">Elite Only</span></li>
+                    </ul>
+                    <a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-gold tj-btn-block">Start Free Trial</a>
+                </div>
+            </div>
         </div>
-        <div class="tj-compare-wrap tj-reveal"><table class="tj-compare"><thead><tr><th>Feature</th><th>Free</th><th>Pro · ₹399/mo</th><th>Elite · ₹799/mo</th></tr></thead><tbody><tr><td>Manual trade journal</td><td><i class="bi bi-check-circle-fill"></i> Unlimited</td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>CSV import</td><td>1 / week</td><td><i class="bi bi-check-circle-fill"></i> Unlimited</td><td><i class="bi bi-check-circle-fill"></i> Unlimited</td></tr><tr><td>MT4/MT5 auto sync</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>Trading accounts</td><td>2</td><td>10</td><td><i class="bi bi-check-circle-fill"></i> Unlimited</td></tr><tr><td>Analytics</td><td>Standard</td><td>Standard</td><td><span class="tj-sparkle">✨</span> Advanced</td></tr><tr><td>Export reports</td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>Ad-free</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>AI tokens</td><td>3,000 / week</td><td>200,000 / month</td><td>1,000,000 / month</td></tr><tr><td>AI model</td><td>Basic</td><td>Advanced</td><td>Premium</td></tr><tr><td>AI analysis</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>AI diary writer</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td><td><span class="tj-sparkle">✨</span> Auto-write</td></tr><tr><td>AI coach</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr><tr><td>Goals &amp; planner</td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-x-circle"></i></td><td><i class="bi bi-check-circle-fill"></i></td></tr></tbody></table></div>
-        <p class="tj-token-note"><i class="bi bi-info-circle"></i> Each AI request consumes tokens based on complexity. Tokens reset weekly on Free, monthly on Pro and Elite.</p>
+        <!-- Comparison Table -->
+        <div class="tj-compare-wrap tj-reveal">
+            <table class="tj-compare">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>🟢 Free</th>
+                        <th>🔵 Pro · ₹399/mo</th>
+                        <th>👑 Elite · ₹799/mo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Manual Trade Journal</td>
+                        <td>✅ Unlimited</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                    </tr>
+                    <tr>
+                        <td>CSV Import</td>
+                        <td>1 / Week</td>
+                        <td>✅ Unlimited</td>
+                        <td>✅ Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>Crypto Auto Sync <span class="tj-new-badge">NEW</span></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                    </tr>
+                    <tr>
+                        <td>MT4/MT5 Auto Sync</td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Trading Accounts</td>
+                        <td>2</td>
+                        <td>10</td>
+                        <td>✅ Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>Screenshot Attachments</td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Analytics</td>
+                        <td>Standard</td>
+                        <td>Standard</td>
+                        <td><span class="tj-sparkle">✨</span> Advanced</td>
+                    </tr>
+                    <tr>
+                        <td>Export Reports (PDF/CSV)</td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Ad Free</td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                    </tr>
+                    <tr>
+                        <td>AI Tokens</td>
+                        <td>Limited</td>
+                        <td>✅ Unlimited</td>
+                        <td>✅ Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>AI Model</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>Advanced Model</td>
+                    </tr>
+                    <tr>
+                        <td>AI Analysis</td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                    </tr>
+                    <tr>
+                        <td>AI Diary Writer</td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><span class="tj-sparkle">✨</span> ✓</td>
+                    </tr>
+                    <tr>
+                        <td>Personalized AI Coach</td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Trading Goals &amp; Planner</td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><i class="bi bi-check-circle-fill"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Advanced AI Trading Guide Tools</td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><i class="bi bi-x-circle"></i></td>
+                        <td><span class="tj-sparkle">✨</span> ✓</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="tj-token-note"><i class="bi bi-info-circle"></i> Free plan includes limited AI tokens. Paid plans (Pro & Elite) include unlimited AI tokens. Elite plan includes Advanced AI Model. Crypto Auto Sync available on ALL plans!</p>
     </div>
 </section>
 
-<!-- Editorial / article content (Moved after Pricing) -->
+<!-- Editorial / article content -->
 <section id="tj-articles">
     <div class="container">
         <span class="tj-section-eyebrow tj-reveal">Why Traders Switch</span>
@@ -838,7 +1019,7 @@
                 <div class="tj-article-card tj-gold-glow">
                     <div class="tj-article-icon"><i class="bi bi-stars"></i></div>
                     <h3>AI Coaching, Even On The Free Plan</h3>
-                    <p>Most Tragene Journals lock every AI feature behind a paywall, so you never actually find out if the analysis is any good before you pay for it. Tragene Journal takes a different approach: <strong>every Free account gets a real weekly AI token allowance</strong>, enough to run an AI diary entry or a quick analysis pass without touching a card.</p>
+                    <p>Most Tragene Journals lock every AI feature behind a paywall, so you never actually find out if the analysis is any good before you pay for it. Tragene Journal takes a different approach: <strong>every Free account gets real AI access</strong>, enough to run an AI analysis pass without touching a card.</p>
                     <p>That makes it one of the few AI-powered journals where the AI isn't a locked demo — it's a genuine part of the free product, upgraded to an advanced model and much higher limits once you move to Pro or Elite.</p>
                 </div>
             </div>
@@ -861,7 +1042,7 @@
                 </div>
                 <div class="col-lg-6">
                     <p>The AI layer is designed to be genuinely useful rather than decorative: it reads your actual entries and notes, not just your P&amp;L, and calls out things like oversized risk after a loss or a string of trades taken outside your usual session.</p>
-                    <p>Free traders get a real taste of that with a weekly AI allowance. Pro and Elite traders get the advanced models, higher limits, and the full AI coach and goals planner on top.</p>
+                    <p>Free traders get a real taste of that with AI analysis. Pro and Elite traders get the advanced models, higher limits, and the full AI coach and goals planner on top.</p>
                 </div>
             </div>
         </div>
@@ -878,7 +1059,7 @@
                 <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq1">What is a Tragene Journal and why do I actually need one?</button></h2><div id="tjFaq1" class="accordion-collapse collapse show" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">A Tragene Journal is a structured record of every trade you take — entry, exit, size, reasoning, and outcome. Without one, you're relying on memory to spot patterns in your own behavior, which is exactly where most traders lose the most money without realizing it.</div></div></div>
                 <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq2">How does the AI analysis actually work?</button></h2><div id="tjFaq2" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">It reads your logged trades — entries, exits, sizing, timing, and your own notes — and looks for recurring patterns like overtrading, revenge trading after a loss, or oversized risk on losing setups. You get plain-language insights, not a black-box score.</div></div></div>
                 <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq3">Can I import trades automatically from MT4 or MT5?</button></h2><div id="tjFaq3" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Yes, on Pro and Elite. Connect your account once and closed trades sync into your journal automatically — the sync works with both MT4 and MT5, so it doesn't matter which platform your broker runs. Free plan users can still bring trades in with a weekly CSV import.</div></div></div>
-                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq4">Is AI really available on the free plan?</button></h2><div id="tjFaq4" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Yes. Free accounts get 3,000 AI tokens every week on our basic model — enough to try AI analysis or write a diary entry without adding a card. Pro and Elite raise that ceiling with more tokens and stronger models.</div></div></div>
+                <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq4">Is AI really available on the free plan?</button></h2><div id="tjFaq4" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Yes. Free accounts get limited AI tokens with access to AI Analysis. Pro and Elite raise that to unlimited tokens with stronger models and additional AI features like Diary Writer and Coach.</div></div></div>
                 <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq5">Is my trading data private and secure?</button></h2><div id="tjFaq5" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Your trades and account data are yours and are never sold or shared with third parties. Broker credentials used for auto sync are stored securely and only used to pull your trade history.</div></div></div>
                 <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq6">What happens to my journal if I downgrade or cancel?</button></h2><div id="tjFaq6" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Your trade history is never deleted when you downgrade. You'll simply lose access to plan-specific features like auto sync or the AI coach until you upgrade again, and any account limits will apply going forward.</div></div></div>
                 <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tjFaq7">How are AI tokens counted, and what happens when they run out?</button></h2><div id="tjFaq7" class="accordion-collapse collapse" data-bs-parent="#tjFaqAccordion"><div class="accordion-body">Each AI action — an analysis, a diary entry, a coaching reply — uses tokens based on how much it has to process. If you run out before your reset date, AI features pause until the next cycle, but your manual journal keeps working normally.</div></div></div>
@@ -889,7 +1070,7 @@
     </div>
 </section>
 
-<!-- Trader voices (Moved to end) -->
+<!-- Trader voices -->
 <section id="tj-voices">
     <div class="container">
         <span class="tj-section-eyebrow tj-reveal">Trader Voices</span>
