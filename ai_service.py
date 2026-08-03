@@ -1775,6 +1775,12 @@ def auto_write_diary(user, account_id):
     tp_count = len([t for t in today_trades if t.take_profit])
     no_sl_losses = [t for t in losses if not t.stop_loss]
     
+    recent_symbols = list(set(t.symbol for t in recent_trades))
+    recent_best = max(recent_trades, key=lambda t: t.profit_loss or 0, default=None)
+    recent_worst = min(recent_trades, key=lambda t: t.profit_loss or 0, default=None)
+    recent_sl_count = len([t for t in recent_trades if t.stop_loss])
+    recent_total = len(recent_trades)
+    recent_sl_pct = round((recent_sl_count/recent_total)*100) if recent_total > 0 else 0
     if trade_count == 0:
         story_size = "ZERO_TRADES"
         mood_hint = "neutral"
@@ -1785,12 +1791,6 @@ def auto_write_diary(user, account_id):
             mood_hint = "confident"
         
         # Build richer recent context for no-trade days
-        recent_symbols = list(set(t.symbol for t in recent_trades))
-        recent_best = max(recent_trades, key=lambda t: t.profit_loss or 0, default=None)
-        recent_worst = min(recent_trades, key=lambda t: t.profit_loss or 0, default=None)
-        recent_sl_count = len([t for t in recent_trades if t.stop_loss])
-        recent_total = len(recent_trades)
-        recent_sl_pct = round((recent_sl_count/recent_total)*100) if recent_total > 0 else 0
         
         recent_context_extra = f"""
 RECENT TRADING CONTEXT (last 3 days - use these specific details!):
@@ -1861,8 +1861,8 @@ IF ZERO_TRADES (no trades today):
 → Reference SPECIFIC recent trades from the RECENT TRADING CONTEXT above — cite exact symbols, dollar amounts, and dates
 → If recent days were profitable: mention protecting those gains, reference the best trade by symbol and amount
 → If recent days were losing: acknowledge the losses honestly, mention the worst trade specifically
-→ If SL usage was low: mention needing to improve stop-loss discipline with a specific number (e.g. "only X/Y trades had SL")
-→ Name 1-2 specific skills or patterns to work on based on the recent data (e.g. mention a specific symbol or dollar loss amount from the RECENT TRADING CONTEXT above)
+→ If SL usage was low: mention needing to improve stop-loss discipline with a specific number ("only {recent_sl_count}/{recent_total} trades had SL")
+→ Name 1-2 specific skills or patterns to work on based on the recent data (e.g. "need to stop moving my SL on {{symbol}}" or "should size down on {{symbol}} after that ${{amount}} loss")
 → End with 1-2 forward-looking intentions tied to real trades
 → DO NOT be generic — every paragraph must mention a real symbol, dollar amount, or stat from the RECENT TRADING CONTEXT
 

@@ -8,7 +8,7 @@ seo_bp = Blueprint('seo', __name__)
 # ═══════════════════════════════════════════════════
 # YOUR REAL DOMAIN
 # ═══════════════════════════════════════════════════
-SITE_URL = 'https://journal.tragenefunded.com'
+SITE_URL = 'https://tragenejournal.com'
 
 
 def _base_url():
