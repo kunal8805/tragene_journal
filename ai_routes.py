@@ -36,7 +36,7 @@ def ai_reports():
     tokens_remaining = current_user.get_remaining_tokens()
     can_use, ai_message = current_user.can_use_ai()
     is_banned = current_user.is_ai_banned()
-    can_chat = current_user.subscription_tier in ['pro', 'enterprise', 'elite']
+    can_chat = current_user.subscription_tier in ['pro', 'elite']
     can_coach = current_user.can_access_coach()
     can_goals = current_user.can_access_goals()
     weekly_queries = 0

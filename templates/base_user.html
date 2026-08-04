@@ -679,7 +679,7 @@
             return;
         }
         
-        if (d.is_paid) {
+        if (d.is_paid || d.plan === 'pro' || d.plan === 'elite') {
             // Paid users - show unlimited
             dot.className = 'token-dot good';
             text.textContent = '🪙 Unlimited AI';

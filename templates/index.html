@@ -120,7 +120,49 @@
             radial-gradient(ellipse 900px 500px at 78% -10%, rgba(38,166,154,0.14), transparent 60%),
             radial-gradient(ellipse 700px 500px at 5% 20%, rgba(239,83,80,0.08), transparent 60%),
             var(--bg);
+        overflow: hidden;
     }
+    #tj-hero .tj-blob{
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(70px);
+        opacity: 0.28;
+        pointer-events: none;
+        z-index: 0;
+        will-change: transform;
+    }
+    #tj-hero .tj-blob-1{
+        width: 420px; height: 420px;
+        top: -140px; right: 6%;
+        background: radial-gradient(circle, var(--bull), transparent 70%);
+        animation: tj-blob-drift-1 16s ease-in-out infinite;
+    }
+    #tj-hero .tj-blob-2{
+        width: 320px; height: 320px;
+        bottom: -120px; left: 2%;
+        background: radial-gradient(circle, var(--purple), transparent 70%);
+        animation: tj-blob-drift-2 20s ease-in-out infinite;
+    }
+    #tj-hero .tj-blob-3{
+        width: 260px; height: 260px;
+        top: 30%; left: 40%;
+        background: radial-gradient(circle, var(--gold), transparent 70%);
+        opacity: 0.16;
+        animation: tj-blob-drift-3 24s ease-in-out infinite;
+    }
+    @keyframes tj-blob-drift-1{
+        0%,100%{ transform: translate(0,0) scale(1); }
+        50%{ transform: translate(-40px, 50px) scale(1.12); }
+    }
+    @keyframes tj-blob-drift-2{
+        0%,100%{ transform: translate(0,0) scale(1); }
+        50%{ transform: translate(50px, -30px) scale(1.08); }
+    }
+    @keyframes tj-blob-drift-3{
+        0%,100%{ transform: translate(0,0) scale(1); }
+        50%{ transform: translate(30px, 30px) scale(0.9); }
+    }
+    #tj-hero .container{ position: relative; z-index: 1; }
     #tj-hero .tj-eyebrow{
         display: inline-flex; align-items: center; gap: 8px;
         font-family: var(--font-mono);
@@ -419,11 +461,12 @@
         border: 1px solid var(--border);
         overflow: hidden;
         background: var(--surface);
-        transition: all 0.4s cubic-bezier(.2,.8,.2,1);
+        transition: transform 0.15s ease, border-color 0.4s, box-shadow 0.4s;
         cursor: pointer;
+        transform-style: preserve-3d;
+        will-change: transform;
     }
     .tj-screenshot-card:hover{
-        transform: translateY(-8px);
         border-color: rgba(38,166,154,0.4);
         box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 2px rgba(38,166,154,0.15);
     }
@@ -491,9 +534,18 @@
     #tj-how .tj-step p{ color: var(--text-dim); font-size: 0.92rem; }
     #tj-how .tj-step-line{
         position: absolute; top: 22px; left: 44px; right: -20px; height: 1px;
-        background: linear-gradient(90deg, var(--border), transparent);
         display: none;
+        overflow: hidden;
     }
+    #tj-how .tj-step-line::after{
+        content: '';
+        position: absolute; inset: 0;
+        background: linear-gradient(90deg, var(--bull), transparent);
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition: transform 0.9s cubic-bezier(.2,.8,.2,1) 0.15s;
+    }
+    #tj-how .tj-reveal.tj-in .tj-step-line::after{ transform: scaleX(1); }
     @media (min-width: 992px){ #tj-how .tj-step-line{ display: block; } }
 
     /* ===== Trader voices / testimonials ===== */
@@ -507,6 +559,12 @@
         transition: transform 0.3s, border-color 0.3s;
     }
     .tj-voice-card:hover{ transform: translateY(-5px); border-color: rgba(242,181,68,0.3); }
+    .tj-voice-card{ transition: transform 0.5s cubic-bezier(.2,.8,.2,1), border-color 0.5s, box-shadow 0.5s; }
+    .tj-voice-card.tj-spotlight{
+        transform: translateY(-5px);
+        border-color: rgba(38,166,154,0.45);
+        box-shadow: 0 20px 50px rgba(38,166,154,0.15);
+    }
     .tj-voice-stars{ color: var(--gold); font-size: 0.85rem; margin-bottom: 14px; letter-spacing: 2px; }
     .tj-voice-card p.tj-voice-quote{ color: var(--text-dim); font-size: 0.94rem; line-height: 1.7; margin-bottom: 22px; }
     .tj-voice-person{ display: flex; align-items: center; gap: 12px; }
@@ -539,7 +597,25 @@
     .tj-price-card.tj-popular{
         border-color: rgba(38,166,154,0.5);
         box-shadow: 0 0 0 1px rgba(38,166,154,0.25), 0 25px 60px rgba(38,166,154,0.12);
+        position: relative;
+        overflow: hidden;
     }
+    .tj-price-card.tj-popular::before{
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 22px;
+        padding: 2px;
+        background: conic-gradient(from 0deg, transparent 0%, var(--bull) 12%, transparent 24%, transparent 100%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        animation: tj-shimmer-spin 4s linear infinite;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .tj-price-card.tj-popular > *{ position: relative; z-index: 1; }
+    @keyframes tj-shimmer-spin{ to{ transform: rotate(360deg); } }
     .tj-price-card.tj-elite{
         border-color: rgba(242,181,68,0.4);
         background: linear-gradient(180deg, var(--surface), #1c1710);
@@ -659,11 +735,14 @@
 
 <!-- Hero -->
 <section id="tj-hero">
+    <div class="tj-blob tj-blob-1" aria-hidden="true"></div>
+    <div class="tj-blob tj-blob-2" aria-hidden="true"></div>
+    <div class="tj-blob tj-blob-3" aria-hidden="true"></div>
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6">
                 <span class="tj-eyebrow"><span class="tj-dot"></span> AI-Powered Journal</span>
-                <h1>Journal every trade.<br>Let the <span class="tj-accent">AI</span> find your edge.</h1>
+                <h1>Trading is in our <span class="tj-accent">genes.</span><br>Journaling should be too.</h1>
                 <p class="tj-lede">Log entries in seconds, sync straight from MT4/MT5, and let your AI coach flag the mistakes that are actually costing you money — before they become a pattern.</p>
                 <div class="d-flex gap-3 flex-wrap">
                     <a href="{{ url_for('auth.register') }}" class="tj-btn tj-btn-primary">Start Free — No Card Needed</a>
@@ -1169,6 +1248,36 @@
             });
         }, { threshold: 0.4 });
         counters.forEach(function(el){ cio.observe(el); });
+    }
+
+    // Mouse-tilt on product tour screenshots
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var tiltCards = document.querySelectorAll('.tj-screenshot-card');
+    if(!reduceMotion && window.matchMedia('(hover: hover)').matches){
+        tiltCards.forEach(function(card){
+            card.addEventListener('mousemove', function(e){
+                var rect = card.getBoundingClientRect();
+                var x = (e.clientX - rect.left) / rect.width - 0.5;
+                var y = (e.clientY - rect.top) / rect.height - 0.5;
+                var rotateY = x * 10;
+                var rotateX = y * -10;
+                card.style.transform = 'perspective(900px) translateY(-8px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) scale(1.01)';
+            });
+            card.addEventListener('mouseleave', function(){
+                card.style.transform = '';
+            });
+        });
+    }
+
+    // Testimonial spotlight auto-cycle
+    var voiceCards = document.querySelectorAll('.tj-voice-card');
+    if(voiceCards.length && !reduceMotion){
+        var vIndex = 0;
+        setInterval(function(){
+            voiceCards.forEach(function(c){ c.classList.remove('tj-spotlight'); });
+            voiceCards[vIndex].classList.add('tj-spotlight');
+            vIndex = (vIndex + 1) % voiceCards.length;
+        }, 2400);
     }
 })();
 </script>
