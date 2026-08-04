@@ -1,0 +1,31 @@
+﻿{% extends "tools/base_tool.html" %}
+{% block tool_title %}Trading Compounding Calculator - Free Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free trading compounding calculator. See how compound growth can multiply your account over time. No signup required.{% endblock %}
+{% block tool_keywords %}trading compounding calculator, compound growth, trading returns calculator, account growth calculator{% endblock %}
+{% block tool_h1 %}<span>Compounding</span> Calculator{% endblock %}
+{% block tool_subtitle %}See how compounding returns can grow your trading account over time.{% endblock %}
+{% block form_title %}Growth Parameters{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group"><label>Starting Balance ($)</label><input type="number" id="startBalance" placeholder="1000" step="0.01" min="0"></div>
+<div class="form-group"><label>Monthly Return (%)</label><input type="number" id="monthlyReturn" placeholder="5" step="0.1" min="0" value="5"></div>
+<div class="form-group"><label>Number of Months</label><input type="number" id="months" placeholder="12" min="1" value="12"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const start = parseFloat(document.getElementById('startBalance').value);
+    const rate = parseFloat(document.getElementById('monthlyReturn').value) / 100;
+    const months = parseInt(document.getElementById('months').value);
+    if (!start || !rate || !months) { alert('Please fill in all fields.'); return; }
+    const final = start * Math.pow(1 + rate, months);
+    const profit = final - start;
+    showResults('$' + final.toFixed(2), 'Final Balance', [
+        {value: '$' + profit.toFixed(2), label: 'Total Profit'},
+        {value: ((final / start - 1) * 100).toFixed(1) + '%', label: 'Total Return'},
+        {value: months.toString(), label: 'Months'}
+    ]);
+}
+</script>
+{% endblock %}

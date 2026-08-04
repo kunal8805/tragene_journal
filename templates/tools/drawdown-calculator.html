@@ -1,0 +1,44 @@
+﻿{% extends "tools/base_tool.html" %}
+{% block tool_title %}Drawdown Calculator - Free Trading Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free drawdown calculator. Calculate maximum drawdown, recovery required, and drawdown percentage from peak equity. No signup required.{% endblock %}
+{% block tool_keywords %}drawdown calculator, max drawdown calculator, trading drawdown, recovery calculator{% endblock %}
+{% block tool_h1 %}<span>Drawdown</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate your maximum drawdown and the recovery needed to get back to peak.{% endblock %}
+{% block form_title %}Equity Data{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group">
+    <label>Peak Equity ($)</label>
+    <input type="number" id="peakEquity" placeholder="10,000" step="0.01" min="0">
+</div>
+<div class="form-group">
+    <label>Current/Lowest Equity ($)</label>
+    <input type="number" id="currentEquity" placeholder="8,500" step="0.01" min="0">
+</div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>📖 How Drawdown Works</h3>
+    <p><code>Drawdown % = ((Peak - Trough) / Peak) × 100</code></p>
+    <p><code>Recovery Required % = ((Peak - Trough) / Trough) × 100</code></p>
+    <p>A 50% drawdown requires a 100% gain to recover. This is why risk management matters.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const peak = parseFloat(document.getElementById('peakEquity').value);
+    const current = parseFloat(document.getElementById('currentEquity').value);
+    if (!peak || !current) { alert('Please fill in all fields.'); return; }
+    const dd = ((peak - current) / peak) * 100;
+    const recovery = ((peak - current) / current) * 100;
+    showResults(dd.toFixed(2) + '%', 'Drawdown', [
+        {value: '$' + (peak - current).toFixed(2), label: 'Dollar Loss'},
+        {value: recovery.toFixed(2) + '%', label: 'Recovery Needed'},
+        {value: dd > 20 ? '⚠️ High Risk' : dd > 10 ? '⚠️ Moderate' : '✅ Low', label: 'Risk Level'}
+    ]);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block tool_title %}Trading Calculator - Tragene Journal{% endblock %}</title>
+    <meta name="description" content="{% block tool_desc %}Free online trading calculator. No signup required.{% endblock %}">
+    <meta name="keywords" content="{% block tool_keywords %}trading calculator, free trading tool{% endblock %}">
+    <link rel="canonical" href="{{ request.url_root.rstrip('/') }}{{ request.path }}">
+    
+    <meta property="og:title" content="{{ self.tool_title() }}">
+    <meta property="og:description" content="{{ self.tool_desc() }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Tragene Journal">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ self.tool_title() }}">
+    <meta name="twitter:description" content="{{ self.tool_desc() }}">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --accent: #26a69a;
+            --accent-hover: #2cc4b6;
+            --green: #00e676;
+            --gold: #ffb300;
+            --purple: #8b5cf6;
+            --blue: #4f8ef7;
+            --red: #ff5252;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #080c14;
+            color: #e8ecf4;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .tool-nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(8,12,20,0.95); backdrop-filter: blur(20px);
+            border-bottom: 1px solid #1e293b;
+            padding: 10px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .tool-nav .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem; font-weight: 700; color: #e8ecf4;
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .tool-nav .logo span { color: var(--accent); }
+        .tool-nav a { color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 500; }
+        .tool-nav a:hover { color: var(--accent); }
+
+        .tool-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 100px 20px 40px;
+        }
+
+        .tool-hero {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .tool-hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem; font-weight: 700;
+            color: #e8ecf4; margin-bottom: 8px;
+        }
+        .tool-hero h1 span { color: var(--accent); }
+        .tool-hero .badge {
+            display: inline-block; padding: 4px 12px;
+            background: rgba(0,230,118,0.1); color: #00e676;
+            border-radius: 20px; font-size: 0.7rem; font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .tool-hero p { color: #94a3b8; font-size: 0.9rem; }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .tool-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .tool-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0f1724;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            color: #e8ecf4;
+            font-size: 0.9rem;
+            font-family: 'JetBrains Mono', monospace;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(38,166,154,0.1);
+        }
+
+        .btn-calc {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent), #1de9b6);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .btn-calc:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(38,166,154,0.4);
+        }
+
+        .results-card {
+            background: #111827;
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 200px;
+        }
+        .results-card .placeholder {
+            color: #475569;
+            font-size: 0.9rem;
+        }
+        .result-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+        }
+        .result-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+        }
+        .result-secondary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #1e293b;
+        }
+        .result-secondary .rs-item {
+            text-align: center;
+        }
+        .result-secondary .rs-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #e8ecf4;
+        }
+        .result-secondary .rs-lbl {
+            font-size: 0.65rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .info-section {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .info-section h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #e8ecf4;
+            margin-bottom: 12px;
+        }
+        .info-section p, .info-section li {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            line-height: 1.7;
+        }
+        .info-section ul { padding-left: 20px; }
+        .info-section code {
+            background: #0f1724;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, rgba(38,166,154,0.08), rgba(139,92,246,0.04));
+            border: 1px solid rgba(38,166,154,0.2);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .cta-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .cta-card p { color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px; }
+        .btn-cta {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 28px; background: var(--accent); color: #fff;
+            border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .btn-cta:hover { background: var(--accent-hover); color: #fff; transform: translateY(-1px); }
+
+        .related-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .related-tool-link {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 14px 16px;
+            text-decoration: none;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .related-tool-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .related-tool-link i { color: var(--accent); }
+
+        .tool-footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 1px solid #1e293b;
+        }
+        .tool-footer p { font-size: 0.7rem; color: #64748b; }
+        .tool-footer a { color: var(--accent); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .tool-grid { grid-template-columns: 1fr; }
+            .tool-hero h1 { font-size: 1.5rem; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav class="tool-nav">
+    <a href="/" class="logo">📊 Tragene<span>Journal</span></a>
+    <div>
+        <a href="/trading-journal">Guide</a>
+        <a href="/register" style="margin-left:16px;padding:6px 14px;background:var(--accent);color:#fff;border-radius:6px;font-weight:600;">Start Free</a>
+    </div>
+</nav>
+
+<div class="tool-container">
+    
+    <!-- Hero -->
+    <div class="tool-hero">
+        <div class="badge">🆓 Free Tool · No Signup</div>
+        <h1>{% block tool_h1 %}Trading Calculator{% endblock %}</h1>
+        <p>{% block tool_subtitle %}Free online trading calculator. No registration required.{% endblock %}</p>
+    </div>
+    
+    <!-- Calculator + Results -->
+    <div class="tool-grid">
+        <div class="tool-card">
+            <h3>📐 {% block form_title %}Inputs{% endblock %}</h3>
+            {% block calculator_form %}{% endblock %}
+            <button class="btn-calc" onclick="calculate()">{% block calc_button_text %}Calculate{% endblock %}</button>
+        </div>
+        <div class="results-card" id="resultsCard">
+            <div class="placeholder" id="resultsPlaceholder">
+                <i class="bi bi-arrow-left" style="font-size:1.5rem;display:block;margin-bottom:8px;opacity:0.3;"></i>
+                Enter values and click Calculate
+            </div>
+            <div id="resultsContent" style="display:none;">
+                <div class="result-value" id="mainResult">—</div>
+                <div class="result-label" id="mainLabel">Result</div>
+                <div class="result-secondary" id="secondaryResults"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Info Section -->
+    {% block info_section %}
+    <div class="info-section">
+        <h3>📖 How It Works</h3>
+        <p>This calculator uses standard trading formulas to compute results. Enter your values and click Calculate to see the output.</p>
+    </div>
+    {% endblock %}
+    
+    <!-- CTA -->
+    <div class="cta-card">
+        <h3>🧠 Want AI to Do This Automatically?</h3>
+        <p>Tragene Journal's AI analyzes every trade, calculates risk, and gives you specific action items. Start free — no credit card required.</p>
+        <a href="/register" class="btn-cta">🚀 Try Tragene Journal — Free</a>
+    </div>
+    
+    <!-- Related Tools -->
+    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;margin-bottom:12px;color:#94a3b8;">🔗 Related Calculators</h3>
+    <div class="related-tools">
+        {% block related_tools %}
+        <a href="/tools/position-size-calculator" class="related-tool-link"><i class="bi bi-calculator"></i> Position Size</a>
+        <a href="/tools/risk-reward-calculator" class="related-tool-link"><i class="bi bi-calculator"></i> Risk Reward</a>
+        <a href="/tools/pip-calculator" class="related-tool-link"><i class="bi bi-calculator"></i> Pip Calculator</a>
+        <a href="/tools/lot-size-calculator" class="related-tool-link"><i class="bi bi-calculator"></i> Lot Size</a>
+        {% endblock %}
+    </div>
+    
+</div>
+
+<footer class="tool-footer">
+    <p>© {{ now.year }} <a href="/">Tragene Journal</a> · Free trading calculators · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+</footer>
+
+<script>
+function showResults(mainValue, mainLabel, secondaryData) {
+    document.getElementById('resultsPlaceholder').style.display = 'none';
+    document.getElementById('resultsContent').style.display = 'block';
+    document.getElementById('mainResult').textContent = mainValue;
+    document.getElementById('mainLabel').textContent = mainLabel;
+    
+    if (secondaryData && secondaryData.length > 0) {
+        let html = '';
+        secondaryData.forEach(item => {
+            html += `<div class="rs-item"><div class="rs-val">${item.value}</div><div class="rs-lbl">${item.label}</div></div>`;
+        });
+        document.getElementById('secondaryResults').innerHTML = html;
+    } else {
+        document.getElementById('secondaryResults').innerHTML = '';
+    }
+}
+
+function formatCurrency(val, currency) {
+    return currency + val.toFixed(2);
+}
+
+function formatNumber(val, decimals) {
+    return val.toFixed(decimals || 2);
+}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

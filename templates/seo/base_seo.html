@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block seo_title %}Tragene Journal - AI Trading Journal{% endblock %}</title>
+    <meta name="description" content="{% block seo_desc %}AI-Powered Trading Journal — Track, Analyze, Improve. Free crypto auto-sync, AI trade analysis, multi-account support.{% endblock %}">
+    <meta name="keywords" content="{% block seo_keywords %}trading journal, ai trading journal, crypto trading journal, forex journal{% endblock %}">
+    
+    <!-- Canonical URL -->
+    {% set canonical_url = request.url_root.rstrip('/') ~ request.path %}
+    <link rel="canonical" href="{{ canonical_url }}">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{{ self.seo_title() }}">
+    <meta property="og:description" content="{{ self.seo_desc() }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="Tragene Journal">
+    <meta property="og:image" content="{% block og_image %}{{ request.url_root.rstrip('/') }}/static/images/og-default.png{% endblock %}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="en_IN">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ self.seo_title() }}">
+    <meta name="twitter:description" content="{{ self.seo_desc() }}">
+    <meta name="twitter:image" content="{{ self.og_image() if self.og_image() else request.url_root.rstrip('/') ~ '/static/images/og-default.png' }}">
+    <meta name="twitter:site" content="@tragenejournal">
+    
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --accent: #26a69a;
+            --accent-hover: #2cc4b6;
+            --green: #00e676;
+            --gold: #ffb300;
+            --purple: #8b5cf6;
+            --blue: #4f8ef7;
+            --red: #ff5252;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #080c14;
+            --bg-card: #111827;
+            --bg-card-hover: #161e30;
+            --bg-input: #0f1724;
+            --border-color: #1e293b;
+            --text-primary: #e8ecf4;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navbar */
+        .seo-nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(8,12,20,0.9); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .seo-nav .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .seo-nav .logo span { color: var(--accent); }
+        .seo-nav .nav-links { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .seo-nav .nav-links a {
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 0.8rem; font-weight: 500; transition: color 0.2s;
+        }
+        .seo-nav .nav-links a:hover { color: var(--accent); }
+
+        .btn-nav-cta {
+            padding: 8px 18px; background: var(--accent); color: #fff;
+            border-radius: 8px; font-weight: 700; font-size: 0.8rem;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .btn-nav-cta:hover { background: var(--accent-hover); color: #fff; }
+
+        /* Hero */
+        .seo-hero {
+            padding: 120px 24px 80px;
+            text-align: center;
+            background: radial-gradient(ellipse at 50% 0%, rgba(38,166,154,0.08) 0%, transparent 60%);
+        }
+        .seo-hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 5vw, 3rem); font-weight: 700;
+            color: var(--text-primary); max-width: 800px; margin: 0 auto 16px;
+            line-height: 1.15;
+        }
+        .seo-hero h1 span { color: var(--accent); }
+        .seo-hero p {
+            font-size: 1.05rem; color: var(--text-secondary);
+            max-width: 600px; margin: 0 auto 28px; line-height: 1.6;
+        }
+
+        .btn-cta {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 32px; font-size: 0.95rem; font-weight: 700;
+            border-radius: 12px; text-decoration: none; transition: all 0.3s;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .btn-cta.primary {
+            background: linear-gradient(135deg, var(--accent), #1de9b6);
+            color: #000; box-shadow: 0 4px 20px rgba(38,166,154,0.3);
+        }
+        .btn-cta.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 35px rgba(38,166,154,0.5); color: #000; }
+        .btn-cta.secondary {
+            background: transparent; border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .btn-cta.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Sections */
+        .seo-section {
+            max-width: 1100px; margin: 0 auto; padding: 80px 24px;
+        }
+        .seo-section h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem; font-weight: 700; text-align: center;
+            margin-bottom: 12px; color: var(--text-primary);
+        }
+        .seo-section .section-subtitle {
+            text-align: center; color: var(--text-muted);
+            font-size: 0.9rem; margin-bottom: 48px;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .feature-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 24px; transition: all 0.25s;
+        }
+        .feature-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+        .feature-card .fc-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; margin-bottom: 14px;
+        }
+        .fc-icon.green { background: rgba(0,230,118,0.12); color: #00e676; }
+        .fc-icon.blue { background: rgba(79,142,247,0.12); color: #4f8ef7; }
+        .fc-icon.purple { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+        .fc-icon.gold { background: rgba(255,179,0,0.12); color: #ffb300; }
+        .feature-card h4 { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: var(--text-primary); }
+        .feature-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+
+        /* Problem/Solution */
+        .alt-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
+        }
+        .alt-row.reverse { direction: rtl; }
+        .alt-row.reverse > * { direction: ltr; }
+        .alt-text h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+        .alt-text p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; margin-bottom: 10px; }
+        .alt-text ul { list-style: none; padding: 0; }
+        .alt-text ul li {
+            padding: 4px 0; font-size: 0.85rem; color: var(--text-secondary);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .alt-text ul li::before { content: '✓'; color: #00e676; font-weight: 700; }
+        .alt-image {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 20px; text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+        .alt-image .mock-browser {
+            background: var(--bg-body); border-radius: 8px; padding: 16px;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            color: var(--text-muted); text-align: left;
+        }
+
+        /* FAQ */
+        .faq-list { max-width: 700px; margin: 0 auto; }
+        .faq-item {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 18px 20px; margin-bottom: 10px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .faq-item:hover { border-color: var(--accent); }
+        .faq-item h4 { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; justify-content: space-between; align-items: center; }
+        .faq-item .faq-answer { display: none; margin-top: 10px; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+        .faq-item.open .faq-answer { display: block; }
+        .faq-item.open h4 i { transform: rotate(180deg); }
+        .faq-item h4 i { transition: transform 0.2s; color: var(--accent); }
+
+        /* CTA Banner */
+        .cta-banner {
+            text-align: center; padding: 60px 24px;
+            background: linear-gradient(135deg, rgba(38,166,154,0.06), rgba(139,92,246,0.04));
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .cta-banner h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.6rem; font-weight: 700; margin-bottom: 8px;
+        }
+        .cta-banner p { color: var(--text-muted); margin-bottom: 24px; }
+
+        /* Footer */
+        .seo-footer {
+            padding: 40px 24px; text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
+        .seo-footer p { font-size: 0.75rem; color: var(--text-muted); }
+        .seo-footer a { color: var(--accent); text-decoration: none; }
+
+        @media (max-width: 768px) {
+            .alt-row { grid-template-columns: 1fr; }
+            .seo-nav .nav-links { display: none; }
+            .seo-section { padding: 50px 16px; }
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+    
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- 🏢 ORGANIZATION SCHEMA (Global) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Tragene Journal",
+      "url": "https://tragenejournal.com",
+      "logo": "https://tragenejournal.com/static/images/logo.png",
+      "description": "AI-Powered Trading Journal — Track, Analyze, Improve. Supports Forex, Crypto, and Indian Stock markets.",
+      "sameAs": [
+        "https://twitter.com/tragenejournal",
+        "https://www.instagram.com/tragenejournal",
+        "https://www.youtube.com/@tragenejournal"
+      ]
+    }
+    </script>
+    
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- 🌐 WEBSITE SCHEMA (Global) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Tragene Journal",
+      "url": "https://tragenejournal.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://tragenejournal.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- 🛠️ SOFTWARE APPLICATION SCHEMA (All SEO pages) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Tragene Journal",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "description": "{{ self.seo_desc() }}",
+      "url": "{{ canonical_url }}",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR",
+        "description": "Free plan with 2 trading accounts, crypto auto-sync, and limited AI tokens"
+      }
+    }
+    </script>
+    
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- 🍞 BREADCRUMB SCHEMA (All pages) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% block breadcrumb_schema %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://tragenejournal.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{ self.seo_title() }}",
+          "item": "{{ canonical_url }}"
+        }
+      ]
+    }
+    </script>
+    {% endblock %}
+    
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- 📄 FAQ SCHEMA (Override in pages with FAQs) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% block faq_schema %}{% endblock %}
+    
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- 📝 ARTICLE SCHEMA (Override in blog posts) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% block article_schema %}{% endblock %}
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="seo-nav">
+    <a href="/" class="logo">📊 Tragene<span>Journal</span></a>
+    <div class="nav-links">
+        <a href="/trading-journal">Guide</a>
+        <a href="/#features">Features</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/blog">Blog</a>
+        <a href="/about">About</a>
+    </div>
+    <a href="/register" class="btn-nav-cta">Start Free</a>
+</nav>
+
+{% block content %}{% endblock %}
+
+<!-- CTA Banner -->
+<div class="cta-banner">
+    <h2>Ready to Trade Smarter?</h2>
+    <p>Join thousands of traders using Tragene Journal. Start free, no credit card required.</p>
+    <a href="/register" class="btn-cta primary">🚀 Start Free Now</a>
+</div>
+
+<!-- Footer -->
+<footer class="seo-footer">
+    <p>© {{ now.year }} <a href="/">Tragene Journal</a>. All rights reserved. | <a href="/privacy">Privacy</a> | <a href="/terms">Terms</a> | <a href="/refund-policy">Refunds</a></p>
+</footer>
+
+<script>
+    // FAQ toggle
+    document.querySelectorAll('.faq-item').forEach(item => {
+        item.addEventListener('click', () => item.classList.toggle('open'));
+    });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

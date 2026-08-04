@@ -1,0 +1,56 @@
+﻿{% extends "tools/base_tool.html" %}
+{% block tool_title %}Win Rate Calculator - Free Trading Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free win rate calculator. Calculate your win percentage, loss percentage, and breakeven win rate. No signup required.{% endblock %}
+{% block tool_keywords %}win rate calculator, trading win rate, win loss ratio, breakeven calculator{% endblock %}
+{% block tool_h1 %}<span>Win Rate</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate your win rate and find your breakeven win percentage.{% endblock %}
+{% block form_title %}Trade Stats{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group">
+    <label>Total Trades</label>
+    <input type="number" id="totalTrades" placeholder="100" min="1">
+</div>
+<div class="form-group">
+    <label>Winning Trades</label>
+    <input type="number" id="winningTrades" placeholder="60" min="0">
+</div>
+<div class="form-group">
+    <label>Average Win ($)</label>
+    <input type="number" id="avgWin" placeholder="100" step="0.01" min="0">
+</div>
+<div class="form-group">
+    <label>Average Loss ($)</label>
+    <input type="number" id="avgLoss" placeholder="80" step="0.01" min="0">
+</div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>📖 How Win Rate Works</h3>
+    <p><code>Win Rate = (Wins / Total) × 100</code></p>
+    <p><code>Breakeven Win Rate = Avg Loss / (Avg Win + Avg Loss) × 100</code></p>
+    <p>You can have a 40% win rate and still be profitable if your winners are 2x your losers.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const total = parseInt(document.getElementById('totalTrades').value);
+    const wins = parseInt(document.getElementById('winningTrades').value);
+    const avgW = parseFloat(document.getElementById('avgWin').value);
+    const avgL = parseFloat(document.getElementById('avgLoss').value);
+    if (!total || isNaN(wins)) { alert('Please fill in all fields.'); return; }
+    const wr = (wins / total) * 100;
+    const losses = total - wins;
+    const beWR = avgW && avgL ? (avgL / (avgW + avgL)) * 100 : 0;
+    const totalPnl = (wins * avgW) - (losses * avgL);
+    showResults(wr.toFixed(1) + '%', 'Win Rate', [
+        {value: losses.toString(), label: 'Losing Trades'},
+        {value: beWR.toFixed(1) + '%', label: 'Breakeven WR'},
+        {value: '$' + totalPnl.toFixed(2), label: 'Total P&L'}
+    ]);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+﻿{% extends "tools/base_tool.html" %}
+{% block tool_title %}DCA Calculator - Dollar Cost Averaging Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free DCA (Dollar Cost Averaging) calculator. Calculate average entry price across multiple buys. No signup required.{% endblock %}
+{% block tool_keywords %}dca calculator, dollar cost averaging, average price calculator, crypto dca{% endblock %}
+{% block tool_h1 %}<span>DCA</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate your average entry price when buying at multiple price points.{% endblock %}
+{% block form_title %}Buy Entries{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group"><label>Investment 1 ($)</label><input type="number" id="inv1" placeholder="1000" step="0.01" min="0"></div>
+<div class="form-group"><label>Price 1 ($)</label><input type="number" id="price1" placeholder="100" step="0.01" min="0.01"></div>
+<div class="form-group"><label>Investment 2 ($)</label><input type="number" id="inv2" placeholder="1000" step="0.01" min="0"></div>
+<div class="form-group"><label>Price 2 ($)</label><input type="number" id="price2" placeholder="80" step="0.01" min="0.01"></div>
+<div class="form-group"><label>Investment 3 ($) <small style="color:#64748b;">(optional)</small></label><input type="number" id="inv3" placeholder="1000" step="0.01" min="0"></div>
+<div class="form-group"><label>Price 3 ($) <small style="color:#64748b;">(optional)</small></label><input type="number" id="price3" placeholder="90" step="0.01" min="0.01"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const entries = [];
+    for (let i = 1; i <= 3; i++) {
+        const inv = parseFloat(document.getElementById('inv' + i).value);
+        const price = parseFloat(document.getElementById('price' + i).value);
+        if (inv && price) entries.push({inv, price, coins: inv / price});
+    }
+    if (entries.length === 0) { alert('Enter at least one investment.'); return; }
+    const totalInv = entries.reduce((s, e) => s + e.inv, 0);
+    const totalCoins = entries.reduce((s, e) => s + e.coins, 0);
+    const avgPrice = totalInv / totalCoins;
+    const currentPrice = parseFloat(document.getElementById('price' + entries.length).value);
+    showResults('$' + avgPrice.toFixed(2), 'Average Entry Price', [
+        {value: totalCoins.toFixed(6), label: 'Total Coins'},
+        {value: '$' + totalInv.toFixed(2), label: 'Total Invested'},
+        {value: currentPrice ? (currentPrice > avgPrice ? '📈 In Profit' : '📉 In Loss') : '—', label: 'Status'}
+    ]);
+}
+</script>
+{% endblock %}

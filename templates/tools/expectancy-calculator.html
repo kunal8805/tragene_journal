@@ -1,0 +1,32 @@
+﻿{% extends "tools/base_tool.html" %}
+{% block tool_title %}Trading Expectancy Calculator - Free Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free trading expectancy calculator. Calculate your system's expected value per trade. No signup required.{% endblock %}
+{% block tool_keywords %}expectancy calculator, trading expectancy, expected value, trading system calculator{% endblock %}
+{% block tool_h1 %}<span>Expectancy</span> Calculator{% endblock %}
+{% block tool_subtitle %}Find out if your trading system has a positive expected value.{% endblock %}
+{% block form_title %}System Stats{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group"><label>Win Rate (%)</label><input type="number" id="winRate" placeholder="60" step="0.1" min="0" max="100" value="60"></div>
+<div class="form-group"><label>Average Win ($)</label><input type="number" id="avgWin" placeholder="100" step="0.01" min="0"></div>
+<div class="form-group"><label>Average Loss ($)</label><input type="number" id="avgLoss" placeholder="50" step="0.01" min="0"></div>
+<div class="form-group"><label>Total Trades</label><input type="number" id="totalTrades" placeholder="100" min="1" value="100"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const wr = parseFloat(document.getElementById('winRate').value) / 100;
+    const aw = parseFloat(document.getElementById('avgWin').value);
+    const al = parseFloat(document.getElementById('avgLoss').value);
+    const total = parseInt(document.getElementById('totalTrades').value);
+    if (!aw || !al) { alert('Please fill in all fields.'); return; }
+    const expectancy = (wr * aw) - ((1 - wr) * al);
+    const totalPnl = expectancy * total;
+    showResults('$' + expectancy.toFixed(2), 'Per Trade Expectancy', [
+        {value: '$' + totalPnl.toFixed(2), label: 'Expected over ' + total + ' trades'},
+        {value: expectancy > 0 ? '✅ Positive' : '❌ Negative', label: 'System Quality'}
+    ]);
+}
+</script>
+{% endblock %}

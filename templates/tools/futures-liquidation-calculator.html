@@ -1,0 +1,36 @@
+﻿{% extends "tools/base_tool.html" %}
+{% block tool_title %}Futures Liquidation Calculator - Free Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free futures liquidation calculator. Calculate your liquidation price for crypto futures trades. No signup required.{% endblock %}
+{% block tool_keywords %}liquidation calculator, futures liquidation, crypto liquidation price, leverage calculator{% endblock %}
+{% block tool_h1 %}<span>Futures Liquidation</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate the liquidation price for your leveraged futures position.{% endblock %}
+{% block form_title %}Position Details{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group"><label>Trade Type</label><select id="tradeType"><option value="long">Long</option><option value="short">Short</option></select></div>
+<div class="form-group"><label>Entry Price ($)</label><input type="number" id="entryPrice" placeholder="45000" step="0.01"></div>
+<div class="form-group"><label>Leverage</label><select id="leverage"><option value="2">2x</option><option value="5">5x</option><option value="10" selected>10x</option><option value="20">20x</option><option value="50">50x</option><option value="100">100x</option></select></div>
+<div class="form-group"><label>Maintenance Margin (%)</label><input type="number" id="maintMargin" placeholder="0.5" step="0.1" min="0.1" value="0.5"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const type = document.getElementById('tradeType').value;
+    const entry = parseFloat(document.getElementById('entryPrice').value);
+    const leverage = parseInt(document.getElementById('leverage').value);
+    const mm = parseFloat(document.getElementById('maintMargin').value) / 100;
+    if (!entry) { alert('Please fill in all fields.'); return; }
+    let liqPrice;
+    if (type === 'long') liqPrice = entry * (1 - 1 / leverage + mm);
+    else liqPrice = entry * (1 + 1 / leverage - mm);
+    const drop = Math.abs(entry - liqPrice);
+    const dropPct = (drop / entry) * 100;
+    showResults('$' + liqPrice.toFixed(2), 'Liquidation Price', [
+        {value: '$' + drop.toFixed(2) + ' (' + dropPct.toFixed(2) + '%)', label: 'Distance from Entry'},
+        {value: leverage + 'x', label: 'Leverage'},
+        {value: type === 'long' ? '🟢 Long' : '🔴 Short', label: 'Position'}
+    ]);
+}
+</script>
+{% endblock %}

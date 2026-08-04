@@ -1,0 +1,71 @@
+{% extends "tools/base_tool.html" %}
+{% block tool_title %}Lot Size Calculator - Free Forex Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free lot size calculator for forex traders. Convert between standard, mini, and micro lots. Calculate position value. No signup required.{% endblock %}
+{% block tool_keywords %}lot size calculator, forex lot calculator, standard lot, mini lot, micro lot{% endblock %}
+{% block tool_h1 %}<span>Lot Size</span> Calculator{% endblock %}
+{% block tool_subtitle %}Convert between lot types and calculate total position value.{% endblock %}
+{% block form_title %}Lot Details{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group">
+    <label>Number of Lots</label>
+    <input type="number" id="lotCount" placeholder="1.0" step="0.01" min="0.01" value="1.0">
+</div>
+<div class="form-group">
+    <label>Lot Type</label>
+    <select id="lotType">
+        <option value="standard">Standard Lot (100,000 units)</option>
+        <option value="mini">Mini Lot (10,000 units)</option>
+        <option value="micro">Micro Lot (1,000 units)</option>
+    </select>
+</div>
+<div class="form-group">
+    <label>Price per Unit ($)</label>
+    <input type="number" id="pricePerUnit" placeholder="1.0850" step="0.00001" value="1.0">
+</div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>📖 Lot Size Reference</h3>
+    <ul>
+        <li><strong>Standard Lot:</strong> 100,000 units. 1 pip ≈ $10</li>
+        <li><strong>Mini Lot:</strong> 10,000 units. 1 pip ≈ $1</li>
+        <li><strong>Micro Lot:</strong> 1,000 units. 1 pip ≈ $0.10</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const count = parseFloat(document.getElementById('lotCount').value);
+    const type = document.getElementById('lotType').value;
+    const price = parseFloat(document.getElementById('pricePerUnit').value);
+    
+    if (!count || !price) {
+        alert('Please fill in all fields.');
+        return;
+    }
+    
+    let units;
+    switch(type) {
+        case 'standard': units = 100000; break;
+        case 'mini': units = 10000; break;
+        case 'micro': units = 1000; break;
+    }
+    
+    const totalUnits = count * units;
+    const positionValue = totalUnits * price;
+    
+    showResults(
+        totalUnits.toLocaleString() + ' units',
+        'Total Units',
+        [
+            {value: '$' + positionValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}), label: 'Position Value'},
+            {value: count.toFixed(2), label: type.charAt(0).toUpperCase() + type.slice(1) + ' Lots'}
+        ]
+    );
+}
+</script>
+{% endblock %}
