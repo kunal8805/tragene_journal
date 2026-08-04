@@ -1,0 +1,108 @@
+{% extends "seo/base_seo.html" %}
+{% block seo_title %}Multi-Account Trading Journal | Manage All Accounts | Tragene Journal{% endblock %}
+{% block seo_desc %}One trading journal for all your accounts. Crypto, Forex, Futures, Indian Stocks — all in one place. AI analysis across every account.{% endblock %}
+{% block seo_keywords %}multi account trading journal, multiple trading accounts, trading journal for all markets, unified trading journal{% endblock %}
+
+{% block content %}
+
+<section class="seo-hero">
+    <h1>One Journal. <span>All Your Accounts.</span></h1>
+    <p>Crypto on Binance. Forex on MT5. Stocks on Zerodha. Futures on Bybit. Track everything in one place. AI analyzes across all accounts.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="/register" class="btn-cta primary">📂 Start Free — 2 Accounts</a>
+        <a href="#how" class="btn-cta secondary">How It Works ↓</a>
+    </div>
+</section>
+
+<section class="seo-section" id="how">
+    <h2>One Login, Every Market</h2>
+    <p class="section-subtitle">Stop juggling spreadsheets for each account.</p>
+    
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="fc-icon gold">₿</div>
+            <h4>Crypto Account</h4>
+            <p>Auto-sync from Binance, Bybit, OKX, KuCoin. Spot, futures, perpetual — all tracked separately.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon blue">💱</div>
+            <h4>Forex Account</h4>
+            <p>MT4/MT5 auto-sync. Track major pairs, gold, indices. Session and pair analysis per account.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon green">📈</div>
+            <h4>Indian Stocks Account</h4>
+            <p>NSE, BSE, MCX. F&O with expiry tracking. Brokerage and STT calculated. Net P&L in rupees.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon purple">📊</div>
+            <h4>Futures Account</h4>
+            <p>Crypto futures, index futures, commodity futures. Leverage tracking per account.</p>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <div class="alt-row">
+        <div class="alt-text">
+            <h3>Cross-Account AI Insights</h3>
+            <p>AI doesn't just analyze each account separately. It finds patterns across all your trading:</p>
+            <ul>
+                <li>"You perform better in forex than crypto — consider allocating more capital there"</li>
+                <li>"Your Indian stock trades have better risk management than your crypto trades"</li>
+                <li>"You overtrade on crypto during weekends — same pattern doesn't appear in forex"</li>
+            </ul>
+        </div>
+        <div class="alt-image">
+            <div class="mock-browser">
+                <div style="color:var(--accent);">📂 All Accounts</div>
+                <div>₿ Crypto: +$450</div>
+                <div>💱 Forex: +$5,800</div>
+                <div>📈 Indian Stocks: +₹14,945</div>
+                <div style="margin-top:8px;color:#ffb300;">🤖 AI Insight:</div>
+                <div>"Forex is your strongest market. Consider increasing position size there."</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <h2>Account Limits Per Plan</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="fc-icon green">🟢</div>
+            <h4>Free — 2 Accounts</h4>
+            <p>Perfect for getting started. Track one crypto and one forex account.</p>
+        </div>
+        <div class="feature-card" style="border-color:rgba(38,166,154,0.4);">
+            <div class="fc-icon blue">🔵</div>
+            <h4>Pro — 10 Accounts</h4>
+            <p>Most popular. Enough for multiple exchanges, MT4/MT5, and Indian markets.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon purple">👑</div>
+            <h4>Elite — Unlimited</h4>
+            <p>For professional traders managing multiple strategies across many accounts.</p>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <h2>FAQ</h2>
+    <div class="faq-list">
+        <div class="faq-item">
+            <h4>Can I switch between accounts easily? <i class="bi bi-chevron-down"></i></h4>
+            <div class="faq-answer">Yes. One-click account switching from the top bar. Each account has its own journal, analytics, and AI reports.</div>
+        </div>
+        <div class="faq-item">
+            <h4>Are accounts completely separate?</h4>
+            <div class="faq-answer">Yes. Each account has independent trades, analytics, and AI reports. Your crypto P&L doesn't mix with your forex P&L.</div>
+        </div>
+        <div class="faq-item">
+            <h4>Can I name my accounts?</h4>
+            <div class="faq-answer">Yes. Name them whatever you want — "Binance Spot", "FTMO Challenge", "Zerodha F&O", etc. Add broker names for easy identification.</div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "tools/base_tool.html" %}
+{% block tool_title %}Risk Reward Calculator - Free Trading Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free risk reward calculator. Calculate your risk:reward ratio, potential profit, and potential loss. No signup required.{% endblock %}
+{% block tool_keywords %}risk reward calculator, R:R calculator, risk reward ratio, trading risk calculator{% endblock %}
+{% block tool_h1 %}<span>Risk Reward</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate your risk:reward ratio and see if your trade setup is worth taking.{% endblock %}
+{% block form_title %}Trade Setup{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group">
+    <label>Entry Price</label>
+    <input type="number" id="entryPrice" placeholder="1.0850" step="0.00001">
+</div>
+<div class="form-group">
+    <label>Stop Loss Price</label>
+    <input type="number" id="stopLoss" placeholder="1.0800" step="0.00001">
+</div>
+<div class="form-group">
+    <label>Take Profit Price</label>
+    <input type="number" id="takeProfit" placeholder="1.0950" step="0.00001">
+</div>
+<div class="form-group">
+    <label>Position Size (lots)</label>
+    <input type="number" id="lotSize" placeholder="1.0" step="0.01" min="0.01" value="1.0">
+</div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>📖 How Risk Reward Works</h3>
+    <p>The risk:reward ratio tells you how much you stand to gain vs how much you could lose.</p>
+    <p><strong>Formula:</strong></p>
+    <p><code>Risk = |Entry - Stop Loss|</code></p>
+    <p><code>Reward = |Take Profit - Entry|</code></p>
+    <p><code>R:R Ratio = Reward / Risk</code></p>
+    <p>A ratio of 1:2 or higher is generally considered good (you stand to gain twice what you risk).</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const entry = parseFloat(document.getElementById('entryPrice').value);
+    const sl = parseFloat(document.getElementById('stopLoss').value);
+    const tp = parseFloat(document.getElementById('takeProfit').value);
+    const lots = parseFloat(document.getElementById('lotSize').value);
+    
+    if (!entry || !sl || !tp || !lots) {
+        alert('Please fill in all fields.');
+        return;
+    }
+    
+    const risk = Math.abs(entry - sl);
+    const reward = Math.abs(tp - entry);
+    const rr = reward / risk;
+    const riskAmount = risk * lots * 10;
+    const rewardAmount = reward * lots * 10;
+    
+    showResults(
+        '1:' + rr.toFixed(1),
+        'Risk:Reward Ratio',
+        [
+            {value: '$' + riskAmount.toFixed(2), label: 'Risk Amount'},
+            {value: '$' + rewardAmount.toFixed(2), label: 'Reward Amount'},
+            {value: rr >= 2 ? '✅ Good' : '⚠️ Poor', label: 'Quality'}
+        ]
+    );
+}
+</script>
+{% endblock %}

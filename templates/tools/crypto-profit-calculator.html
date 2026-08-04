@@ -1,0 +1,55 @@
+﻿{% extends "tools/base_tool.html" %}
+{% block tool_title %}Crypto Profit Calculator - Free Trading Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free crypto profit calculator. Calculate profit/loss for Bitcoin, Ethereum, and altcoin trades. No signup required.{% endblock %}
+{% block tool_keywords %}crypto profit calculator, bitcoin profit calculator, crypto pnl, crypto trade calculator{% endblock %}
+{% block tool_h1 %}<span>Crypto Profit</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate potential profit or loss for your cryptocurrency trades.{% endblock %}
+{% block form_title %}Trade Details{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group">
+    <label>Trade Type</label>
+    <select id="tradeType"><option value="buy">Buy (Long)</option><option value="sell">Sell (Short)</option></select>
+</div>
+<div class="form-group">
+    <label>Entry Price ($)</label>
+    <input type="number" id="entryPrice" placeholder="45000" step="0.01">
+</div>
+<div class="form-group">
+    <label>Exit Price ($)</label>
+    <input type="number" id="exitPrice" placeholder="48000" step="0.01">
+</div>
+<div class="form-group">
+    <label>Quantity (Coins)</label>
+    <input type="number" id="quantity" placeholder="1" step="0.001" min="0.001" value="1">
+</div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>📖 Crypto Profit Formula</h3>
+    <p><code>Buy P&L = (Exit - Entry) × Quantity</code></p>
+    <p><code>Sell P&L = (Entry - Exit) × Quantity</code></p>
+    <p>Works for spot, futures, and perpetual trades.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const type = document.getElementById('tradeType').value;
+    const entry = parseFloat(document.getElementById('entryPrice').value);
+    const exit = parseFloat(document.getElementById('exitPrice').value);
+    const qty = parseFloat(document.getElementById('quantity').value);
+    if (!entry || !exit || !qty) { alert('Please fill in all fields.'); return; }
+    let pnl;
+    if (type === 'buy') pnl = (exit - entry) * qty;
+    else pnl = (entry - exit) * qty;
+    const pct = ((type === 'buy' ? exit - entry : entry - exit) / entry) * 100;
+    showResults((pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2), pnl > 0 ? '🟢 Profit' : pnl < 0 ? '🔴 Loss' : '⚪ Breakeven', [
+        {value: pct.toFixed(2) + '%', label: 'Change %'},
+        {value: qty.toFixed(4) + ' coins', label: 'Quantity'}
+    ]);
+}
+</script>
+{% endblock %}

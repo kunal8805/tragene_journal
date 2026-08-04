@@ -1,0 +1,116 @@
+{% extends "seo/base_seo.html" %}
+{% block seo_title %}AI Trading Journal | AI-Powered Trade Analysis | Tragene Journal{% endblock %}
+{% block seo_desc %}AI trading journal that analyzes every trade. Get AI scores, strength/weakness detection, risk alerts, and personalized coaching. Smarter trading starts here.{% endblock %}
+{% block seo_keywords %}ai trading journal, ai trade analysis, ai trading coach, ai trade review, artificial intelligence trading{% endblock %}
+
+{% block content %}
+
+<section class="seo-hero">
+    <h1>An <span>AI Trading Journal</span> That Actually Thinks</h1>
+    <p>Not just a trade logger. AI reads every trade and tells you exactly what to fix — specific symbols, exact dollar amounts, real patterns.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="/register" class="btn-cta primary">🤖 Try AI Analysis — Free</a>
+        <a href="#demo" class="btn-cta secondary">See AI in Action ↓</a>
+    </div>
+</section>
+
+<section class="seo-section" id="demo">
+    <h2>What AI Analysis Looks Like</h2>
+    <p class="section-subtitle">Real AI output from a real trading session.</p>
+    
+    <div class="alt-row">
+        <div class="alt-text">
+            <h3>AI Report Example</h3>
+            <p>After analyzing 10 trades across Forex and Crypto:</p>
+            <ul>
+                <li><strong>Score: 9/10</strong> — "Strong performance with disciplined risk management"</li>
+                <li><strong>Best Trade:</strong> XAUUSD +$5,800 — "Perfect entry during London session"</li>
+                <li><strong>Pattern Found:</strong> "You perform 40% better in London vs Asian session"</li>
+                <li><strong>Risk Alert:</strong> "2 crypto trades had no stop loss — that's where your losses came from"</li>
+                <li><strong>Action Item:</strong> "Set SL on ALL crypto entries before opening. This alone could save $200+/month."</li>
+            </ul>
+        </div>
+        <div class="alt-image">
+            <div class="mock-browser">
+                <div style="color:#8b5cf6;">🤖 AI Report — 24 Jul 2026</div>
+                <div style="margin-top:8px;">📊 Score: 9/10</div>
+                <div style="color:#00e676;">✅ Strengths:</div>
+                <div>• 100% SL usage on forex</div>
+                <div>• XAUUSD +$5,800 best play</div>
+                <div style="color:#ffb300;margin-top:8px;">⚠️ Warnings:</div>
+                <div>• 2 crypto trades no SL</div>
+                <div style="color:var(--accent);margin-top:8px;">🎯 Actions:</div>
+                <div>• Set SL on every crypto entry</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <h2>AI Features That Make You a Better Trader</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="fc-icon purple">🧠</div>
+            <h4>AI Performance Score (1-10)</h4>
+            <p>Every analysis gets a score. Track your improvement over time. See if your changes are working.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon blue">🔍</div>
+            <h4>Pattern Detection</h4>
+            <p>AI spots patterns you'd miss: "You overtrade after 2 consecutive losses" or "Your win rate drops 30% in Asian session."</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon green">📝</div>
+            <h4>AI Diary Writer (Elite)</h4>
+            <p>Click one button. AI writes a detailed diary entry about today's trading — moods, mistakes, wins, and lessons.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon gold">🎯</div>
+            <h4>AI Coach (Elite)</h4>
+            <p>Chat with AI about your trades. Ask "Why am I losing on BTC?" Get answers based on your actual trade data.</p>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <div class="alt-row reverse">
+        <div class="alt-image">
+            <div class="mock-browser">
+                <div style="color:#8b5cf6;">💬 AI Coach Chat</div>
+                <div style="color:var(--text-primary);margin-top:8px;"><strong>You:</strong> Why do I keep losing on crypto?</div>
+                <div style="color:#8b5cf6;margin-top:8px;"><strong>AI:</strong> Looking at your last 8 crypto trades — 5 had no stop loss, losing $800 total. Your forex trades all have SL and are profitable. The fix is simple: always set SL on crypto entries before opening. Your BTC trades specifically average -$200 when no SL is set.</div>
+            </div>
+        </div>
+        <div class="alt-text">
+            <h3>AI Coach — Your Personal Trading Mentor</h3>
+            <p>Available on Elite plan. Chat with AI about:</p>
+            <ul>
+                <li>Specific trade analysis — "Review my last BTC trade"</li>
+                <li>Pattern questions — "Am I overtrading on weekends?"</li>
+                <li>Strategy advice — "Should I size up on XAUUSD?"</li>
+                <li>Performance review — "How was my trading this week?"</li>
+            </ul>
+            <p>AI answers based on YOUR actual data, not generic advice.</p>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <h2>FAQ</h2>
+    <div class="faq-list">
+        <div class="faq-item">
+            <h4>How is the AI different from ChatGPT? <i class="bi bi-chevron-down"></i></h4>
+            <div class="faq-answer">ChatGPT gives generic trading advice. Our AI analyzes YOUR actual trades — specific symbols, dates, dollar amounts. It knows your win rate on XAUUSD, not the market's average.</div>
+        </div>
+        <div class="faq-item">
+            <h4>Do I need to be technical to use AI features?</h4>
+            <div class="faq-answer">No. Click one button to generate an AI report. The AI writes in plain English. No coding, no prompts, no technical knowledge needed.</div>
+        </div>
+        <div class="faq-item">
+            <h4>Is AI available on the free plan?</h4>
+            <div class="faq-answer">Yes. Free users get limited AI tokens (resets monthly). Pro and Elite get unlimited AI. AI Coach and AI Diary Writer are Elite-only features.</div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

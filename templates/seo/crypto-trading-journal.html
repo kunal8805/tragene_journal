@@ -1,0 +1,115 @@
+{% extends "seo/base_seo.html" %}
+{% block seo_title %}Crypto Trading Journal with Free Auto Sync | Tragene Journal{% endblock %}
+{% block seo_desc %}Free crypto trading journal with auto-sync for Binance, Bybit, OKX, KuCoin. AI-powered trade analysis. Track your crypto trades automatically.{% endblock %}
+{% block seo_keywords %}crypto trading journal, free crypto sync, binance journal, crypto trade tracker, crypto pnl tracker, auto sync crypto{% endblock %}
+
+{% block content %}
+
+<section class="seo-hero">
+    <h1>The <span>Free Crypto Trading Journal</span> with Auto-Sync</h1>
+    <p>Connect Binance, Bybit, OKX, or KuCoin. Your trades sync automatically. AI analyzes every trade. No manual entry needed.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="/register" class="btn-cta primary">₿ Start Free — Connect Exchange</a>
+        <a href="#exchanges" class="btn-cta secondary">Supported Exchanges ↓</a>
+    </div>
+</section>
+
+<section class="seo-section" id="exchanges">
+    <h2>Supported Exchanges</h2>
+    <p class="section-subtitle">Free auto-sync available on ALL plans — including the free plan.</p>
+    
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="fc-icon gold" style="font-size:2rem;">₿</div>
+            <h4>Binance</h4>
+            <p>Spot, Futures, and Perpetual trades. Connect via API key (read-only). Your funds stay secure.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon blue" style="font-size:2rem;">🔷</div>
+            <h4>Bybit</h4>
+            <p>Auto-import spot and derivatives trades. API key connection. Real-time sync.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon green" style="font-size:2rem;">🟢</div>
+            <h4>OKX</h4>
+            <p>Connect your OKX account. Trades flow in automatically. Supports spot, futures, perpetual.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon purple" style="font-size:2rem;">🟣</div>
+            <h4>KuCoin</h4>
+            <p>Free sync for KuCoin traders. API-based, read-only connection for maximum security.</p>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <h2>Why Crypto Traders Need a Journal</h2>
+    <div class="alt-row">
+        <div class="alt-text">
+            <h3>Crypto Is Volatile. Track Everything.</h3>
+            <p>You're trading 24/7 across multiple exchanges. Without a journal:</p>
+            <ul>
+                <li>You don't know which coin is actually profitable</li>
+                <li>You can't see if you're overtrading during certain hours</li>
+                <li>You have no record of your risk management discipline</li>
+                <li>Tax reporting becomes a nightmare</li>
+            </ul>
+            <p>Tragene Journal auto-syncs your trades, calculates P&L, and gives you AI-powered insights. <strong>Know exactly what's working.</strong></p>
+        </div>
+        <div class="alt-image">
+            <div class="mock-browser">
+                <div style="color:#ffb300;">₿ Crypto Account</div>
+                <div>BTCUSD: +$1,200</div>
+                <div style="color:#00e676;">ETHUSD: +$450</div>
+                <div style="color:#ff5252;">DOGEUSD: -$200</div>
+                <div style="margin-top:8px;">📊 AI Score: 8/10</div>
+                <div>⚠️ 1 trade had no stop loss</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <h2>How Auto-Sync Works</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="fc-icon blue">1️⃣</div>
+            <h4>Create API Key</h4>
+            <p>Generate a read-only API key from your exchange. No withdrawal permissions needed. Your funds are 100% safe.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon green">2️⃣</div>
+            <h4>Connect in 30 Seconds</h4>
+            <p>Paste your API key and secret into Tragene Journal. We encrypt everything. Connection takes under a minute.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon purple">3️⃣</div>
+            <h4>Trades Auto-Sync</h4>
+            <p>New trades appear automatically. AI analyzes them. Check your dashboard anytime for updated stats and insights.</p>
+        </div>
+    </div>
+</section>
+
+<section class="seo-section">
+    <h2>FAQ for Crypto Traders</h2>
+    <div class="faq-list">
+        <div class="faq-item">
+            <h4>Is the API connection secure? <i class="bi bi-chevron-down"></i></h4>
+            <div class="faq-answer">Yes. We only need read-only API permissions. We cannot trade, withdraw, or move your funds. Your API keys are encrypted at rest.</div>
+        </div>
+        <div class="faq-item">
+            <h4>Which exchanges do you support?</h4>
+            <div class="faq-answer">Currently: Binance, Bybit, OKX, and KuCoin. More exchanges are being added. You can also manually add trades for any exchange or use CSV import.</div>
+        </div>
+        <div class="faq-item">
+            <h4>Is crypto sync really free?</h4>
+            <div class="faq-answer">Yes. Crypto auto-sync is free on ALL plans — including the free plan. MT4/MT5 sync requires a paid plan.</div>
+        </div>
+        <div class="faq-item">
+            <h4>Can I track spot and futures separately?</h4>
+            <div class="faq-answer">Yes. You can create separate trading accounts for spot, futures, and perpetual trades. Each account has its own analytics and AI reports.</div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

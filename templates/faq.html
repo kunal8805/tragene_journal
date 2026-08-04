@@ -412,7 +412,7 @@
     <h1>Frequently Asked Questions</h1>
     <p class="subhead">
       Everything you need to know about TRAGENE Journal.
-      <a href="#">Contact us</a> if you need more help.
+      <a href="/contact">Contact us</a> if you need more help.
     </p>
     <div class="gradient-divider"></div>
   </div>
@@ -437,6 +437,9 @@
     <button data-category="privacy">Privacy</button>
     <button data-category="support">Support</button>
     <button data-category="legal">Legal</button>
+    <button data-category="india">🇮🇳 India</button>
+    <button data-category="crypto">₿ Crypto</button>
+    <button data-category="excel">📊 vs Excel</button>
   </div>
 
   <!-- FAQ CONTAINER -->
@@ -451,7 +454,12 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>What is TRAGENE Journal?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">TRAGENE Journal is an AI-powered Tragene Journal designed to help traders automatically import their trades, analyze performance, monitor statistics, identify mistakes, and improve their trading through detailed analytics and AI-generated insights.</div>
+        <div class="faq-answer hidden">TRAGENE Journal is an AI-powered trading journal designed to help traders automatically import their trades, analyze performance, monitor statistics, identify mistakes, and improve their trading through detailed analytics and AI-generated insights. It supports Forex, Crypto, and Indian Stock markets.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Is TRAGENE Journal really free?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. The free plan includes unlimited manual journaling, free crypto auto-sync, standard analytics, and limited AI tokens — forever. No credit card required to start. Upgrade to Pro (₹399/mo) or Elite (₹799/mo) for unlimited AI and advanced features.</div>
       </div>
 
       <div class="faq-item">
@@ -468,6 +476,11 @@
         <button class="faq-question"><span>Is TRAGENE Journal suitable for beginners?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
         <div class="faq-answer hidden">Yes. Whether you're a beginner or an experienced trader, TRAGENE Journal helps you understand your trading performance and build better trading habits.</div>
       </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>How many trading accounts can I have?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Free plan: 2 accounts. Pro plan (₹399/mo): 10 accounts. Elite plan (₹799/mo): Unlimited accounts. Each account can track a different market, broker, or strategy.</div>
+      </div>
     </div>
 
     <!-- ========== TRADING PLATFORMS ========== -->
@@ -479,27 +492,32 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>Which trading platforms are supported?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Currently, TRAGENE Journal supports <strong>MetaTrader 5 (MT5)</strong>. Additional platforms may be supported in future updates.</div>
+        <div class="faq-answer hidden">TRAGENE Journal supports <strong>MetaTrader 5 (MT5)</strong>, <strong>MetaTrader 4 (MT4)</strong>, and crypto exchanges including <strong>Binance, Bybit, OKX, and KuCoin</strong>. Indian stock traders can use CSV import from Zerodha, Upstox, Groww, and others.</div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question"><span>Does TRAGENE Journal support MT4?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Not at the moment. Support for MT4 may be added in the future.</div>
+        <div class="faq-answer hidden">Yes. MT4 auto-sync is available on Pro and Elite plans. Connect via your investor (read-only) password.</div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question"><span>How does trade synchronization work?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Trades are automatically synchronized from your connected MT5 trading account. Once connected, your trading history is imported into your journal where it is processed into charts, reports, analytics, and AI insights.</div>
+        <div class="faq-answer hidden">Trades are automatically synchronized from your connected MT5/MT4 account or crypto exchange. Once connected, your trading history is imported into your journal where it is processed into charts, reports, analytics, and AI insights.</div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question"><span>Is trade synchronization automatic?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Yes. Supported accounts can synchronize automatically after being connected.</div>
+        <div class="faq-answer hidden">Yes. Supported accounts can synchronize automatically after being connected. Crypto sync runs every few minutes.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Is crypto auto-sync really free?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes! Crypto auto-sync is free on ALL plans — including the free plan. Connect Binance, Bybit, OKX, or KuCoin and your trades sync automatically.</div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question"><span>What credentials are required?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">For supported MT5 accounts, you will generally need:<ul><li>Trading Account Number</li><li>Investor (Read-Only) Password</li><li>Broker Server Name</li></ul></div>
+        <div class="faq-answer hidden">For MT5/MT4: Trading Account Number, Investor (Read-Only) Password, Broker Server Name. For crypto exchanges: API Key and Secret (read-only permissions).</div>
       </div>
 
       <div class="faq-item">
@@ -509,7 +527,7 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>Can TRAGENE Journal place trades?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">No. TRAGENE Journal cannot:<ul><li>Open trades</li><li>Close trades</li><li>Modify trades</li><li>Withdraw funds</li><li>Deposit funds</li></ul>It only analyzes trading information.</div>
+        <div class="faq-answer hidden">No. TRAGENE Journal cannot open, close, or modify trades. It cannot withdraw or deposit funds. It only analyzes trading information.</div>
       </div>
     </div>
 
@@ -522,7 +540,7 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>Is my trading account safe?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Yes. TRAGENE Journal is designed to access trading information for analytics purposes only. We implement security measures to protect your account information.</div>
+        <div class="faq-answer hidden">Yes. We use read-only API keys and investor passwords. We cannot trade, withdraw, or move your funds. All credentials are encrypted at rest.</div>
       </div>
 
       <div class="faq-item">
@@ -550,7 +568,17 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>What does the AI analyze?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">The AI may analyze:<ul class="columns-2"><li>Trade history</li><li>Win rate</li><li>Risk management</li><li>Drawdown</li><li>Journal notes</li><li>Trading behavior</li><li>Performance trends</li><li>Trading psychology patterns</li><li>Overall statistics</li></ul></div>
+        <div class="faq-answer hidden">The AI analyzes: trade history, win rate, risk management, drawdown, journal notes, trading behavior, performance trends, emotional patterns (from diary), session performance, symbol performance, and overall statistics.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>How is the AI different from ChatGPT?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">ChatGPT gives generic trading advice. Our AI analyzes YOUR actual trades — specific symbols, dates, dollar amounts. It knows your win rate on XAUUSD, not the market's average. It tells you "3 of your 5 crypto losses had no stop loss" — not "use stop losses."</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Is AI available on the free plan?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Free users get limited AI tokens (resets monthly). Pro and Elite get unlimited AI. AI Coach and AI Diary Writer are Elite-only features.</div>
       </div>
 
       <div class="faq-item">
@@ -560,7 +588,12 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>Does AI give financial advice?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">No. The AI provides analytical observations and educational insights only.</div>
+        <div class="faq-answer hidden">No. The AI provides analytical observations and educational insights only — not investment recommendations.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Do I need to be technical to use AI features?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">No. Click one button to generate an AI report. The AI writes in plain English. No coding, no prompts, no technical knowledge needed.</div>
       </div>
     </div>
 
@@ -573,12 +606,17 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>What subscription plans are available?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">TRAGENE Journal offers multiple subscription plans. Current plans, pricing, and included features are always displayed on:<ul><li>Homepage</li><li>Pricing Section</li><li>User Dashboard</li></ul></div>
+        <div class="faq-answer hidden">TRAGENE Journal offers three plans:<ul><li><strong>Free</strong> — ₹0 forever. 2 accounts, limited AI, crypto sync.</li><li><strong>Pro</strong> — ₹399/month. 10 accounts, unlimited AI, MT4/MT5 sync, ad-free.</li><li><strong>Elite</strong> — ₹799/month. Unlimited accounts, AI Coach, Goals Planner, AI Diary Writer, advanced AI model.</li></ul></div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question"><span>How do I purchase a subscription?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">You can purchase a subscription by:<ol><li>Create an account.</li><li>Log in.</li><li>Open the Pricing page or Dashboard.</li><li>Select your preferred plan.</li><li>Complete the payment.</li><li>Your subscription will be activated automatically after successful payment.</li></ol></div>
+        <div class="faq-answer hidden">Create an account → Go to Subscription page → Select your plan → Pay via UPI, Net Banking, or Card → Your subscription activates automatically.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Can I pay via UPI?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. We use Cashfree for payments — supports UPI (Google Pay, PhonePe, Paytm), Net Banking, and all major cards. All prices are in INR.</div>
       </div>
 
       <div class="faq-item">
@@ -587,8 +625,18 @@
       </div>
 
       <div class="faq-item">
+        <button class="faq-question"><span>Can I switch plans anytime?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Upgrade or downgrade anytime. Your data stays intact. If you downgrade, you keep access until the billing period ends.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Are there any hidden fees?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">No. The price you see is what you pay. A 2% payment gateway fee is included in the total. No surprise charges.</div>
+      </div>
+
+      <div class="faq-item">
         <button class="faq-question"><span>Can I get a refund?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Generally, subscriptions are non-refundable. Refunds are only considered in limited situations involving verified technical or billing issues caused directly by TRAGENE Journal. Please refer to our <a href="#">Refund Policy</a> for complete details.</div>
+        <div class="faq-answer hidden">Generally, subscriptions are non-refundable. Refunds are only considered in limited situations involving verified technical or billing issues caused directly by TRAGENE Journal. Please refer to our <a href="/refund-policy">Refund Policy</a> for complete details.</div>
       </div>
     </div>
 
@@ -606,7 +654,12 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>What happens when my subscription expires?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Your premium features will no longer be available. You can reactivate them at any time by purchasing a new subscription.</div>
+        <div class="faq-answer hidden">Your premium features will no longer be available. Your data is preserved. You can reactivate premium features at any time by purchasing a new subscription.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Can I import my existing trades?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Free users can import CSV files once per week. Pro and Elite users get unlimited CSV imports. You can also auto-sync from supported platforms.</div>
       </div>
     </div>
 
@@ -619,12 +672,17 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>What analytics are available?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Depending on your subscription, the dashboard may include:<ul class="columns-2"><li>Win Rate</li><li>Profit &amp; Loss</li><li>Drawdown</li><li>Risk Metrics</li><li>Performance Charts</li><li>Trading Calendar</li><li>Trading Statistics</li><li>AI Insights</li><li>Journal Entries</li><li>Performance Reports</li></ul></div>
+        <div class="faq-answer hidden">Depending on your subscription, the dashboard may include: Win Rate, Profit & Loss, Drawdown, Risk Metrics, Equity Curve, Performance Charts, Trading Calendar, Session Analysis, Symbol Breakdown, AI Insights, Journal Entries, and Performance Reports.</div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question"><span>Can I add notes to trades?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Yes. You can record personal observations, mistakes, emotions, and trading plans for future review.</div>
+        <div class="faq-answer hidden">Yes. You can record personal observations, mistakes, emotions, screenshots, and trading plans for future review.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Can I export my data?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Export your trades as CSV or PDF anytime. Share with mentors, keep backups, or run your own analysis.</div>
       </div>
     </div>
 
@@ -637,12 +695,101 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>Which browsers are supported?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">TRAGENE Journal supports the latest versions of modern browsers, including:<ul><li>Google Chrome</li><li>Microsoft Edge</li><li>Mozilla Firefox</li><li>Safari</li></ul></div>
+        <div class="faq-answer hidden">TRAGENE Journal supports Google Chrome, Microsoft Edge, Mozilla Firefox, and Safari. Works on desktop and mobile browsers.</div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question"><span>Why aren't my trades syncing?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Common reasons include:<ul><li>Incorrect account number</li><li>Incorrect Investor Password</li><li>Incorrect broker server</li><li>Temporary broker connection issues</li><li>Network interruptions</li></ul>Verify your credentials and try again. If the issue persists, contact support.</div>
+        <div class="faq-answer hidden">Common reasons: incorrect account number, incorrect investor password, incorrect broker server, temporary broker connection issues, or network interruptions. Verify your credentials and try again.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Does it work on mobile?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. TRAGENE Journal is fully responsive. Log trades, check AI reports, and view analytics from any device. No app install needed.</div>
+      </div>
+    </div>
+
+    <!-- ========== INDIA ========== -->
+    <div class="faq-category" data-category="india">
+      <div class="category-header">
+        <div class="accent-line" style="background:linear-gradient(to bottom,#ff9933,#138808);"></div>
+        <h2>🇮🇳 For Indian Traders</h2>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Can I track Indian stocks and F&O?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Track NSE, BSE, and MCX trades. F&O trades with expiry dates, strike prices, and CE/PE options. Brokerage, STT, and other charges are tracked separately. Net P&L shown in rupees.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Does it support Zerodha import?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Export your tradebook as CSV from Zerodha, Upstox, Groww, Angel One, or any broker — then import into TRAGENE Journal. Direct broker sync is on our roadmap.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Is pricing in INR?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. All plans are priced in Indian Rupees. Free: ₹0. Pro: ₹399/month. Elite: ₹799/month. Pay via UPI, Net Banking, or Cards.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Does it auto-calculate brokerage and taxes?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">You enter brokerage, STT, GST, and other charges manually. The journal shows gross P&L and net P&L after all charges. We plan to add broker API integration in the future.</div>
+      </div>
+    </div>
+
+    <!-- ========== CRYPTO ========== -->
+    <div class="faq-category" data-category="crypto">
+      <div class="category-header">
+        <div class="accent-line" style="background:linear-gradient(to bottom,#f7931a,#f2a900);"></div>
+        <h2>₿ Crypto Trading</h2>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Which crypto exchanges are supported?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Binance, Bybit, OKX, and KuCoin. More exchanges are being added. You can also manually add trades for any exchange or use CSV import.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Is the API connection secure?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. We only need read-only API permissions. We cannot trade, withdraw, or move your funds. Your API keys are encrypted at rest.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Can I track spot and futures separately?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Create separate trading accounts for spot, futures, and perpetual trades. Each account has its own analytics and AI reports.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Is crypto sync really free?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Crypto auto-sync is free on ALL plans — including the free plan. MT4/MT5 sync requires a paid plan.</div>
+      </div>
+    </div>
+
+    <!-- ========== VS EXCEL ========== -->
+    <div class="faq-category" data-category="excel">
+      <div class="category-header">
+        <div class="accent-line" style="background:linear-gradient(to bottom,#22c55e,#10b981);"></div>
+        <h2>📊 Trading Journal vs Excel</h2>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Is it really worth switching from Excel?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">If you trade more than 3-5 times per week: absolutely. Manual entry takes 5-10 minutes per trade. At 5 trades/day, that's 13+ hours/month. Auto-sync saves all that time. Plus AI analysis catches patterns Excel never will.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Can I import my Excel trades?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Export your Excel sheet as CSV and import it into TRAGENE Journal. Your entire trade history transfers in one upload.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>Can I still export to Excel if needed?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Yes. Export your trades as CSV anytime. Keep backups, share with mentors, or run your own analysis in Excel too.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question"><span>What can Tragene do that Excel can't?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
+        <div class="faq-answer hidden">Auto-sync trades, AI analysis with specific feedback, visual equity curves and drawdown charts, session heatmaps, win/loss streak detection, risk management alerts, and multi-account support — all automatic. Excel requires manual formulas for everything.</div>
       </div>
     </div>
 
@@ -660,7 +807,7 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>Why do you collect trading data?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Your trading data is required to provide:<ul><li>Analytics</li><li>Reports</li><li>Charts</li><li>AI Analysis</li><li>Trading Statistics</li><li>Journal Features</li></ul></div>
+        <div class="faq-answer hidden">Your trading data is required to provide analytics, reports, charts, AI analysis, trading statistics, and journal features. It's only used for your own analysis.</div>
       </div>
     </div>
 
@@ -673,12 +820,12 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>How can I contact support?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">You can contact us through the official support methods listed on our website.</div>
+        <div class="faq-answer hidden">You can contact us through the <a href="/contact">Contact page</a> or from the Help & Support section in your dashboard.</div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question"><span>I found a bug. What should I do?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Please report bugs with:<ul><li>A description of the issue</li><li>Screenshots (if available)</li><li>Steps to reproduce</li><li>Your registered email address</li></ul>This helps us investigate and resolve issues more quickly.</div>
+        <div class="faq-answer hidden">Please report bugs with a description, screenshots (if available), steps to reproduce, and your registered email address. This helps us resolve issues quickly.</div>
       </div>
     </div>
 
@@ -696,7 +843,7 @@
 
       <div class="faq-item">
         <button class="faq-question"><span>Where can I read your legal policies?</span><span class="icon-wrap"><i class="fas fa-chevron-down"></i></span></button>
-        <div class="faq-answer hidden">Our legal documents are available on the website, including:<ul><li><a href="#">Terms &amp; Conditions</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Refund Policy</a></li></ul>Please review them before using the Service.</div>
+        <div class="faq-answer hidden">Our legal documents are available on the website: <a href="/terms">Terms & Conditions</a>, <a href="/privacy">Privacy Policy</a>, <a href="/refund-policy">Refund Policy</a>. Please review them before using the Service.</div>
       </div>
     </div>
 
@@ -713,14 +860,13 @@
   <div class="cta-card">
     <h3>Still Have Questions?</h3>
     <p>We're here to help. Reach out to our support team.</p>
-    <a href="#" class="btn"><i class="fas fa-envelope"></i> Contact Support</a>
+    <a href="/contact" class="btn"><i class="fas fa-envelope"></i> Contact Support</a>
   </div>
 
 </div>
 
 <script>
   (function() {
-    // ---- Toggle FAQ answers (accordion style) ----
     const questions = document.querySelectorAll('.faq-question');
     questions.forEach(btn => {
       btn.addEventListener('click', function(e) {
@@ -728,8 +874,6 @@
         const answer = this.nextElementSibling;
         const iconWrap = this.querySelector('.icon-wrap');
         const isOpen = !answer.classList.contains('hidden');
-
-        // close all other answers in the same category (accordion)
         const category = this.closest('.faq-category');
         if (category) {
           category.querySelectorAll('.faq-answer').forEach(a => {
@@ -740,14 +884,11 @@
             }
           });
         }
-
-        // toggle current
         answer.classList.toggle('hidden');
         if (iconWrap) iconWrap.classList.toggle('open');
       });
     });
 
-    // ---- Filter pills ----
     const pills = document.querySelectorAll('.filter-pills button');
     const categories = document.querySelectorAll('.faq-category');
     const searchInput = document.getElementById('faqSearch');
@@ -761,14 +902,11 @@
           cat.style.display = cat.dataset.category === category ? 'block' : 'none';
         }
       });
-      // re-apply search if there's a search term
       if (searchInput.value.trim() !== '') {
         applySearch(searchInput.value.trim().toLowerCase());
       } else {
-        // if no search, ensure noResults is hidden and all items visible
         document.querySelectorAll('.faq-item').forEach(item => item.style.display = 'block');
         noResults.classList.add('hidden');
-        // hide empty categories (if any)
         categories.forEach(cat => {
           if (cat.style.display !== 'none') {
             const visibleItems = cat.querySelectorAll('.faq-item');
@@ -784,12 +922,9 @@
         this.classList.add('active');
         const cat = this.dataset.category;
         filterByCategory(cat);
-        // clear search input when filter changes
         searchInput.value = '';
-        // re-run to reset item visibility
         document.querySelectorAll('.faq-item').forEach(item => item.style.display = 'block');
         noResults.classList.add('hidden');
-        // but we need to respect filter + no search
         categories.forEach(catEl => {
           if (cat !== 'all' && catEl.dataset.category !== cat) {
             catEl.style.display = 'none';
@@ -800,11 +935,9 @@
       });
     });
 
-    // ---- Search ----
     function applySearch(term) {
       let visibleCount = 0;
       const items = document.querySelectorAll('.faq-item');
-
       items.forEach(item => {
         const question = item.querySelector('.faq-question span')?.textContent?.toLowerCase() || '';
         const answer = item.querySelector('.faq-answer')?.textContent?.toLowerCase() || '';
@@ -817,14 +950,11 @@
           if (match) visibleCount++;
         }
       });
-
-      // hide categories with no visible items
       categories.forEach(cat => {
         const visibleItems = cat.querySelectorAll('.faq-item[style*="block"]');
         if (visibleItems.length === 0 && term !== '') {
           cat.style.display = 'none';
         } else {
-          // but if category is hidden by filter, keep it hidden
           const activePill = document.querySelector('.filter-pills .active');
           if (activePill) {
             const activeCat = activePill.dataset.category;
@@ -836,7 +966,6 @@
           }
         }
       });
-
       if (visibleCount === 0 && term !== '') {
         noResults.classList.remove('hidden');
       } else {
@@ -846,20 +975,16 @@
 
     searchInput.addEventListener('input', function() {
       const term = this.value.trim().toLowerCase();
-      // reset filter pills to 'all' when searching
       pills.forEach(p => p.classList.remove('active'));
       const allPill = document.querySelector('.filter-pills button[data-category="all"]');
       if (allPill) allPill.classList.add('active');
-      // show all categories first
       categories.forEach(cat => cat.style.display = 'block');
       applySearch(term);
     });
 
-    // ---- initial state: all visible ----
     categories.forEach(cat => cat.style.display = 'block');
     document.querySelectorAll('.faq-item').forEach(item => item.style.display = 'block');
     noResults.classList.add('hidden');
-
   })();
 </script>
 </body>

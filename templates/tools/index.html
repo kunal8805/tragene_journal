@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Trading Calculators & Tools - Tragene Journal</title>
+    <meta name="description" content="15 free trading calculators. Position size, risk reward, pip calculator, lot size, drawdown, DCA, compounding, and more. No signup required.">
+    <meta name="keywords" content="trading calculators, free trading tools, position size calculator, pip calculator, risk reward calculator, forex calculator, crypto calculator">
+    <link rel="canonical" href="https://tragenejournal.com/tools">
+    
+    <meta property="og:title" content="Free Trading Calculators & Tools - Tragene Journal">
+    <meta property="og:description" content="15 free trading calculators. No signup required.">
+    <meta property="og:url" content="https://tragenejournal.com/tools">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Tragene Journal">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Free Trading Calculators & Tools - Tragene Journal">
+    <meta name="twitter:description" content="15 free trading calculators. No signup required.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --accent: #26a69a;
+            --accent-hover: #2cc4b6;
+            --green: #00e676;
+            --gold: #ffb300;
+            --purple: #8b5cf6;
+            --blue: #4f8ef7;
+            --red: #ff5252;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #080c14;
+            color: #e8ecf4;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(8,12,20,0.95); backdrop-filter: blur(20px);
+            border-bottom: 1px solid #1e293b;
+            padding: 10px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem; font-weight: 700; color: #e8ecf4;
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .nav .logo span { color: var(--accent); }
+        .nav a { color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 500; }
+        .nav a:hover { color: var(--accent); }
+        .nav .btn-cta {
+            padding: 6px 14px; background: var(--accent); color: #fff;
+            border-radius: 6px; font-weight: 600; margin-left: 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 100px 20px 40px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .hero .badge {
+            display: inline-block; padding: 6px 16px;
+            background: rgba(0,230,118,0.1); color: #00e676;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.4rem; font-weight: 700;
+            color: #e8ecf4; margin-bottom: 10px;
+        }
+        .hero h1 span { color: var(--accent); }
+        .hero p {
+            color: #94a3b8; font-size: 0.95rem;
+            max-width: 550px; margin: 0 auto;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 50px;
+        }
+        .stat-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-card .stat-val {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem; font-weight: 700;
+            color: var(--accent);
+        }
+        .stat-card .stat-lbl {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem; font-weight: 700;
+            color: #e8ecf4; margin: 40px 0 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .section-title i { color: var(--accent); }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .tool-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 14px;
+            padding: 22px;
+            text-decoration: none;
+            transition: all 0.25s;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+        .tool-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .tool-card .tc-icon {
+            width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; flex-shrink: 0;
+        }
+        .tc-icon.green { background: rgba(0,230,118,0.12); color: #00e676; }
+        .tc-icon.blue { background: rgba(79,142,247,0.12); color: #4f8ef7; }
+        .tc-icon.purple { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+        .tc-icon.gold { background: rgba(255,179,0,0.12); color: #ffb300; }
+        .tc-icon.red { background: rgba(255,82,82,0.12); color: #ff5252; }
+        .tc-icon.teal { background: rgba(38,166,154,0.12); color: #26a69a; }
+
+        .tool-card .tc-info h4 {
+            font-size: 0.9rem; font-weight: 700;
+            color: #e8ecf4; margin-bottom: 4px;
+        }
+        .tool-card .tc-info p {
+            font-size: 0.75rem; color: #64748b;
+            line-height: 1.5; margin: 0;
+        }
+        .tool-card .tc-arrow {
+            color: #64748b; font-size: 0.8rem;
+            flex-shrink: 0; margin-top: 4px;
+            transition: all 0.2s;
+        }
+        .tool-card:hover .tc-arrow {
+            color: var(--accent);
+            transform: translateX(3px);
+        }
+
+        .cta-banner {
+            background: linear-gradient(135deg, rgba(38,166,154,0.08), rgba(139,92,246,0.04));
+            border: 1px solid rgba(38,166,154,0.2);
+            border-radius: 16px; padding: 32px;
+            text-align: center; margin: 40px 0;
+        }
+        .cta-banner h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem; font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .cta-banner p { color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px; }
+        .cta-banner .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 28px; background: var(--accent); color: #fff;
+            border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .cta-banner .btn:hover { background: var(--accent-hover); color: #fff; transform: translateY(-1px); }
+
+        .footer {
+            text-align: center; padding: 30px 20px;
+            border-top: 1px solid #1e293b;
+        }
+        .footer p { font-size: 0.7rem; color: #64748b; }
+        .footer a { color: var(--accent); text-decoration: none; }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 1.6rem; }
+            .tools-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="/" class="logo">📊 Tragene<span>Journal</span></a>
+    <div>
+        <a href="/trading-journal">Guide</a>
+        <a href="/blog">Blog</a>
+        <a href="/register" class="btn-cta">Start Free</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="badge">🧮 15 Free Tools · No Signup Required</div>
+        <h1>Free <span>Trading Calculators</span> & Tools</h1>
+        <p>Professional-grade trading calculators. Position sizing, risk management, profit calculation, and more — all free, no registration needed.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-val">15</div>
+            <div class="stat-lbl">Free Calculators</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val">5</div>
+            <div class="stat-lbl">Categories</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val">0</div>
+            <div class="stat-lbl">Signup Required</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val">100%</div>
+            <div class="stat-lbl">Free Forever</div>
+        </div>
+    </div>
+
+    <!-- Position Sizing Tools -->
+    <div class="section-title"><i class="bi bi-bullseye"></i> Position Sizing & Risk</div>
+    <div class="tools-grid">
+        <a href="/tools/position-size-calculator" class="tool-card">
+            <div class="tc-icon green"><i class="bi bi-bullseye"></i></div>
+            <div class="tc-info">
+                <h4>Position Size Calculator</h4>
+                <p>Calculate the correct lot size based on account balance, risk %, and stop loss distance.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/risk-reward-calculator" class="tool-card">
+            <div class="tc-icon gold"><i class="bi bi-graph-up"></i></div>
+            <div class="tc-info">
+                <h4>Risk Reward Calculator</h4>
+                <p>Calculate your risk:reward ratio and see if your trade setup is worth taking.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/lot-size-calculator" class="tool-card">
+            <div class="tc-icon blue"><i class="bi bi-grid-3x3"></i></div>
+            <div class="tc-info">
+                <h4>Lot Size Calculator</h4>
+                <p>Convert between standard, mini, and micro lots. Calculate total position value.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/risk-of-ruin-calculator" class="tool-card">
+            <div class="tc-icon red"><i class="bi bi-exclamation-triangle"></i></div>
+            <div class="tc-info">
+                <h4>Risk of Ruin Calculator</h4>
+                <p>Calculate the probability of losing your entire trading account.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+    </div>
+
+    <!-- Profit & Loss Tools -->
+    <div class="section-title"><i class="bi bi-cash-stack"></i> Profit & Loss</div>
+    <div class="tools-grid">
+        <a href="/tools/pip-calculator" class="tool-card">
+            <div class="tc-icon teal"><i class="bi bi-calculator"></i></div>
+            <div class="tc-info">
+                <h4>Pip Calculator</h4>
+                <p>Calculate pip value and profit/loss in pips for any currency pair type.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/forex-profit-calculator" class="tool-card">
+            <div class="tc-icon green"><i class="bi bi-currency-exchange"></i></div>
+            <div class="tc-info">
+                <h4>Forex Profit Calculator</h4>
+                <p>Calculate potential profit or loss for any forex trade. Supports all pair types.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/crypto-profit-calculator" class="tool-card">
+            <div class="tc-icon gold"><i class="bi bi-currency-bitcoin"></i></div>
+            <div class="tc-info">
+                <h4>Crypto Profit Calculator</h4>
+                <p>Calculate profit/loss for Bitcoin, Ethereum, and altcoin trades.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/expectancy-calculator" class="tool-card">
+            <div class="tc-icon purple"><i class="bi bi-bar-chart"></i></div>
+            <div class="tc-info">
+                <h4>Trading Expectancy Calculator</h4>
+                <p>Find out if your trading system has a positive expected value per trade.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+    </div>
+
+    <!-- Account & Performance -->
+    <div class="section-title"><i class="bi bi-speedometer2"></i> Account & Performance</div>
+    <div class="tools-grid">
+        <a href="/tools/drawdown-calculator" class="tool-card">
+            <div class="tc-icon red"><i class="bi bi-arrow-down-circle"></i></div>
+            <div class="tc-info">
+                <h4>Drawdown Calculator</h4>
+                <p>Calculate maximum drawdown and recovery needed to get back to peak equity.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/win-rate-calculator" class="tool-card">
+            <div class="tc-icon blue"><i class="bi bi-trophy"></i></div>
+            <div class="tc-info">
+                <h4>Win Rate Calculator</h4>
+                <p>Calculate your win percentage and find your breakeven win rate.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/compounding-calculator" class="tool-card">
+            <div class="tc-icon green"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="tc-info">
+                <h4>Compounding Calculator</h4>
+                <p>See how compound growth can multiply your trading account over time.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/goal-calculator" class="tool-card">
+            <div class="tc-icon gold"><i class="bi bi-flag"></i></div>
+            <div class="tc-info">
+                <h4>Trading Goal Calculator</h4>
+                <p>Find out how many trades you need to reach your profit target.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+    </div>
+
+    <!-- Crypto & Advanced -->
+    <div class="section-title"><i class="bi bi-rocket-takeoff"></i> Crypto & Advanced</div>
+    <div class="tools-grid">
+        <a href="/tools/dca-calculator" class="tool-card">
+            <div class="tc-icon purple"><i class="bi bi-layers"></i></div>
+            <div class="tc-info">
+                <h4>DCA Calculator</h4>
+                <p>Calculate average entry price when dollar-cost averaging across multiple buys.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/futures-liquidation-calculator" class="tool-card">
+            <div class="tc-icon red"><i class="bi bi-lightning-charge"></i></div>
+            <div class="tc-info">
+                <h4>Futures Liquidation Calculator</h4>
+                <p>Calculate liquidation price for leveraged crypto futures positions.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+        <a href="/tools/ai-trade-review" class="tool-card">
+            <div class="tc-icon teal"><i class="bi bi-robot"></i></div>
+            <div class="tc-info">
+                <h4>AI Trade Review Tool</h4>
+                <p>Validate your trade setup against 5 key risk management rules instantly.</p>
+            </div>
+            <span class="tc-arrow">→</span>
+        </a>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-banner">
+        <h3>🧠 Want AI to Do This Automatically?</h3>
+        <p>Tragene Journal's AI analyzes every trade, calculates risk, and gives you specific action items. All calculators are built into the platform.</p>
+        <a href="/register" class="btn">🚀 Try Tragene Journal — Free</a>
+    </div>
+
+</div>
+
+<footer class="footer">
+    <p>© 2026 <a href="/">Tragene Journal</a> · Free Trading Calculators · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+</footer>
+
+</body>
+</html>

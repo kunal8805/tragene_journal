@@ -1,0 +1,81 @@
+{% extends "tools/base_tool.html" %}
+{% block tool_title %}Pip Calculator - Free Forex Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free pip calculator for forex traders. Calculate pip value for any currency pair. Supports standard, JPY, gold, and indices. No signup required.{% endblock %}
+{% block tool_keywords %}pip calculator, pip value calculator, forex pip calculator, pip profit calculator{% endblock %}
+{% block tool_h1 %}<span>Pip</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate pip value and profit/loss in pips for any currency pair.{% endblock %}
+{% block form_title %}Trade Details{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group">
+    <label>Currency Pair Type</label>
+    <select id="pairType">
+        <option value="standard">Standard (EURUSD, GBPUSD)</option>
+        <option value="jpy">JPY Pair (USDJPY, GBPJPY)</option>
+        <option value="gold">Gold / XAUUSD</option>
+        <option value="index">Index (US30, NAS100)</option>
+    </select>
+</div>
+<div class="form-group">
+    <label>Entry Price</label>
+    <input type="number" id="entryPrice" placeholder="1.0850" step="0.00001">
+</div>
+<div class="form-group">
+    <label>Exit Price</label>
+    <input type="number" id="exitPrice" placeholder="1.0900" step="0.00001">
+</div>
+<div class="form-group">
+    <label>Position Size (lots)</label>
+    <input type="number" id="lotSize" placeholder="1.0" step="0.01" min="0.01" value="1.0">
+</div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>📖 How Pips Work</h3>
+    <p>A pip is the smallest price movement in forex trading.</p>
+    <ul>
+        <li><strong>Standard pairs (EURUSD):</strong> 0.0001 = 1 pip</li>
+        <li><strong>JPY pairs (USDJPY):</strong> 0.01 = 1 pip</li>
+        <li><strong>Gold (XAUUSD):</strong> 0.01 = 1 pip</li>
+        <li><strong>Indices (US30):</strong> 1.00 = 1 pip</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const pairType = document.getElementById('pairType').value;
+    const entry = parseFloat(document.getElementById('entryPrice').value);
+    const exit = parseFloat(document.getElementById('exitPrice').value);
+    const lots = parseFloat(document.getElementById('lotSize').value);
+    
+    if (!entry || !exit || !lots) {
+        alert('Please fill in all fields.');
+        return;
+    }
+    
+    let pipMultiplier, pipValue;
+    switch(pairType) {
+        case 'standard': pipMultiplier = 10000; pipValue = 10; break;
+        case 'jpy': pipMultiplier = 100; pipValue = 9; break;
+        case 'gold': pipMultiplier = 100; pipValue = 10; break;
+        case 'index': pipMultiplier = 1; pipValue = 10; break;
+    }
+    
+    const pips = Math.abs(exit - entry) * pipMultiplier;
+    const pnl = pips * lots * pipValue;
+    
+    showResults(
+        pips.toFixed(1) + ' pips',
+        'Price Movement',
+        [
+            {value: '$' + pnl.toFixed(2), label: 'P&L'},
+            {value: '$' + pipValue.toFixed(2), label: 'Per Pip/Lot'},
+            {value: lots.toFixed(2) + ' lots', label: 'Position Size'}
+        ]
+    );
+}
+</script>
+{% endblock %}

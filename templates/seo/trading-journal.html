@@ -1,0 +1,647 @@
+{% extends "seo/base_seo.html" %}
+{% block seo_title %}The Ultimate Trading Journal — AI-Powered, Multi-Market, Free | Tragene Journal{% endblock %}
+{% block seo_desc %}The complete guide to trading journals. AI-powered analysis, free crypto auto-sync, MT4/MT5 support, multi-account tracking. Free plan available at TrageneJournal.com. Start today.{% endblock %}
+{% block seo_keywords %}trading journal, ai trading journal, best trading journal, free trading journal, crypto trading journal, forex trading journal, trading tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Table of Contents Sidebar */
+    .pillar-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .toc-sidebar {
+        position: sticky;
+        top: 100px;
+        align-self: start;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+    
+    .toc-sidebar h4 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+    }
+    
+    .toc-sidebar a {
+        display: block;
+        padding: 6px 0;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-left: 2px solid transparent;
+        padding-left: 12px;
+        transition: all 0.2s;
+    }
+    
+    .toc-sidebar a:hover,
+    .toc-sidebar a.active {
+        color: var(--accent);
+        border-left-color: var(--accent);
+    }
+    
+    /* Reading Progress Bar */
+    .reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), #1de9b6);
+        z-index: 1001;
+        transition: width 0.1s linear;
+    }
+    
+    /* Pillar Content */
+    .pillar-content h2 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 40px 0 16px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .pillar-content h2:first-of-type {
+        border-top: none;
+        margin-top: 0;
+    }
+    
+    .pillar-content h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 24px 0 12px;
+    }
+    
+    .pillar-content p {
+        font-size: 0.92rem;
+        color: var(--text-secondary);
+        line-height: 1.8;
+        margin-bottom: 16px;
+    }
+    
+    .pillar-content ul {
+        padding-left: 20px;
+        margin-bottom: 16px;
+    }
+    
+    .pillar-content ul li {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.7;
+        margin-bottom: 8px;
+    }
+    
+    .pillar-content a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 500;
+        border-bottom: 1px dotted rgba(38,166,154,0.3);
+    }
+    
+    .pillar-content a:hover {
+        border-bottom-color: var(--accent);
+    }
+    
+    /* Info Box */
+    .info-box {
+        background: rgba(38,166,154,0.05);
+        border: 1px solid rgba(38,166,154,0.15);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+    }
+    
+    .info-box h4 {
+        color: var(--accent);
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .info-box p {
+        margin-bottom: 0;
+        font-size: 0.85rem;
+    }
+    
+    /* Stats Grid */
+    .pillar-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin: 24px 0;
+    }
+    
+    .pillar-stat {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .pillar-stat .ps-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--accent);
+    }
+    
+    .pillar-stat .ps-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    /* CTA Inline */
+    .cta-inline {
+        background: linear-gradient(135deg, rgba(38,166,154,0.08), rgba(139,92,246,0.04));
+        border: 1px solid rgba(38,166,154,0.2);
+        border-radius: 16px;
+        padding: 28px 32px;
+        text-align: center;
+        margin: 32px 0;
+    }
+    
+    .cta-inline h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.2rem;
+        margin-bottom: 8px;
+    }
+    
+    .cta-inline p {
+        color: var(--text-muted);
+        margin-bottom: 16px;
+    }
+    
+    .cta-inline .btn-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 28px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        border-radius: 10px;
+        text-decoration: none;
+        background: var(--accent);
+        color: #fff;
+        transition: all 0.2s;
+    }
+    
+    .cta-inline .btn-cta:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        color: #fff;
+    }
+    
+    /* Comparison Table */
+    .compare-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 24px 0;
+        font-size: 0.85rem;
+    }
+    
+    .compare-table th {
+        background: var(--bg-card);
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 700;
+        color: var(--text-primary);
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .compare-table td {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-secondary);
+    }
+    
+    .compare-table tr:hover td {
+        background: rgba(38,166,154,0.03);
+    }
+    
+    .check-green { color: #00e676; font-weight: 700; }
+    .cross-red { color: #ff5252; }
+    
+    @media (max-width: 900px) {
+        .pillar-layout {
+            grid-template-columns: 1fr;
+        }
+        .toc-sidebar {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Reading Progress Bar -->
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- Hero -->
+<section class="seo-hero" style="padding-bottom:60px;">
+    <h1>The Ultimate <span>Trading Journal</span><br>AI-Powered, Multi-Market, Free to Start</h1>
+    <p>Track every trade across Forex, Crypto, and Indian Stocks. AI analyzes your performance. Auto-sync from MT5, Binance, and more. Start free at <strong>TrageneJournal.com</strong>.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="https://tragenejournal.com/register" class="btn-cta primary">🚀 Start Free — No Credit Card</a>
+        <a href="#toc" class="btn-cta secondary">Read the Guide ↓</a>
+    </div>
+</section>
+
+<!-- Pillar Layout -->
+<div class="pillar-layout" id="toc">
+    
+    <!-- Table of Contents Sidebar -->
+    <aside class="toc-sidebar">
+        <h4>📑 On This Page</h4>
+        <a href="#what-is">What Is a Trading Journal?</a>
+        <a href="#why-tragene">Why Tragene Journal?</a>
+        <a href="#platforms">Platform Integrations</a>
+        <a href="#ai-features">AI Features</a>
+        <a href="#vs-alternatives">vs Alternatives</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#who-for">Who Is This For?</a>
+        <a href="#getting-started">Getting Started</a>
+        <a href="#faq-section">FAQ</a>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="pillar-content">
+        
+        <!-- Stats -->
+        <div class="pillar-stats">
+            <div class="pillar-stat">
+                <div class="ps-value">3</div>
+                <div class="ps-label">Markets Supported</div>
+            </div>
+            <div class="pillar-stat">
+                <div class="ps-value">5+</div>
+                <div class="ps-label">Exchange Integrations</div>
+            </div>
+            <div class="pillar-stat">
+                <div class="ps-value">₹0</div>
+                <div class="ps-label">Free Plan Available</div>
+            </div>
+            <div class="pillar-stat">
+                <div class="ps-value">AI</div>
+                <div class="ps-label">Powered Analysis</div>
+            </div>
+        </div>
+        
+        <!-- WHAT IS A TRADING JOURNAL -->
+        <h2 id="what-is">What Is a Trading Journal?</h2>
+        <p>A trading journal is more than a logbook. It's your personal performance database — recording every entry, exit, profit, loss, and the reasoning behind each trade. Professional traders don't guess what's working. They <strong>know</strong>, because their journal tells them.</p>
+        
+        <p>Without a journal, you're trading on memory. And memory is unreliable. You might remember the big win on gold last week, but forget the three small losses on EURUSD that erased half of it. A proper trading journal shows you the <strong>complete picture</strong>.</p>
+        
+        <div class="info-box">
+            <h4>📊 Did You Know?</h4>
+            <p>Studies show that traders who maintain a detailed journal improve their win rate by 15-25% within 3 months. The act of recording forces you to justify every trade — and that alone filters out bad setups.</p>
+        </div>
+        
+        <p>But a spreadsheet isn't enough anymore. Modern trading journals like <strong>Tragene Journal</strong> (available at <a href="https://tragenejournal.com">TrageneJournal.com</a>) use AI to analyze your patterns, auto-sync trades from your broker, and give you <strong>specific, actionable feedback</strong> — not just numbers in a grid.</p>
+        
+        <!-- WHY TRAGENE JOURNAL -->
+        <h2 id="why-tragene">Why Tragene Journal?</h2>
+        <p>Tragene Journal isn't just another trade logger. It's an <strong>AI-powered trading command center</strong> built for traders who want to improve — not just record. Here's what sets it apart:</p>
+        
+        <h3>🤖 <a href="https://tragenejournal.com/ai-trading-journal">AI-Powered Analysis</a></h3>
+        <p>Every trade you log gets analyzed by AI. It doesn't just calculate your win rate — it tells you <em>why</em> you're winning or losing. Real example from a Tragene Journal user: <em>"3 of your 5 crypto losses had no stop loss, costing $800. Your forex trades all have SL set and are profitable. Fix: always set SL on crypto entries."</em></p>
+        
+        <h3>🌐 <a href="https://tragenejournal.com/multi-account-trading-journal">Multi-Market, Multi-Account</a></h3>
+        <p>Trade forex on MT5, crypto on Binance, and Indian stocks on Zerodha? One login. All your accounts, organized separately. Switch between them with one click. Each account gets independent analytics and AI reports.</p>
+        
+        <h3>₿ <a href="https://tragenejournal.com/crypto-trading-journal">Free Crypto Auto-Sync</a></h3>
+        <p>Connect Binance, Bybit, OKX, or KuCoin. Your trades sync automatically — no manual entry. And unlike competitors who charge extra for this, <strong>crypto auto-sync is free on all plans</strong>.</p>
+        
+        <h3>🇮🇳 <a href="https://tragenejournal.com/best-trading-journal-india">Built for Indian Traders</a></h3>
+        <p>UPI payments. INR pricing. NSE, BSE, MCX support. F&O tracking with expiry dates and strike prices. Brokerage and STT calculated separately. Net P&L in rupees. Not a dollar product awkwardly converted to INR — built for India from day one.</p>
+        
+        <h3>🆓 <a href="https://tragenejournal.com/best-free-ai-trading-journal">Free Plan Available</a></h3>
+        <p>Start with 2 trading accounts, unlimited manual journaling, free crypto sync, and limited AI tokens — all for ₹0. No credit card required. Upgrade to Pro (₹399/mo) or Elite (₹799/mo) when you're ready for unlimited AI and advanced features.</p>
+        
+        <h3>💰 <a href="https://tragenejournal.com/affordable-trading-journal">Affordable Pricing</a></h3>
+        <p>Pro plan at ₹399/month includes unlimited AI tokens, MT4/MT5 auto-sync, 10 trading accounts, and ad-free experience. Elite at ₹799/month adds AI Coach, Goals Planner, and AI Diary Writer. Compare that to competitors charging $30-50/month for similar features.</p>
+        
+        <div class="cta-inline">
+            <h3>Ready to Trade Smarter?</h3>
+            <p>Join thousands of traders using Tragene Journal. Start free today.</p>
+            <a href="https://tragenejournal.com/register" class="btn-cta">🚀 Start Free at TrageneJournal.com</a>
+        </div>
+        
+        <!-- PLATFORM INTEGRATIONS -->
+        <h2 id="platforms">Platform Integrations</h2>
+        <p>Tragene Journal connects directly to your trading platforms. No manual CSV exports. No copy-pasting. Just connect once and trades flow in automatically.</p>
+        
+        <h3>📊 <a href="https://tragenejournal.com/mt5-trading-journal">MetaTrader 5 (MT5)</a></h3>
+        <p>Connect via investor password (read-only). Trades sync automatically. Supports all MT5 brokers. Available on Pro and Elite plans.</p>
+        
+        <h3>📊 <a href="https://tragenejournal.com/mt4-trading-journal">MetaTrader 4 (MT4)</a></h3>
+        <p>Millions of traders still use MT4. Tragene Journal supports MT4 auto-sync on Pro and Elite plans. Connect once, forget about manual logging.</p>
+        
+        <h3>₿ <a href="https://tragenejournal.com/crypto-trading-journal">Crypto Exchanges</a></h3>
+        <p>Binance, Bybit, OKX, KuCoin — all supported. API-based connection (read-only). Spot, futures, perpetual — tracked separately. <strong>Free on ALL plans.</strong></p>
+        
+        <h3>💱 <a href="https://tragenejournal.com/forex-trading-journal">Forex Trading</a></h3>
+        <p>30+ forex pairs pre-loaded. Automatic pip calculation for JPY pairs, gold, indices. Session tracking (Asian, London, New York). AI analyzes which sessions are most profitable for you.</p>
+        
+        <!-- AI FEATURES -->
+        <h2 id="ai-features">AI Features That Make You Better</h2>
+        <p>Tragene Journal's AI doesn't give generic advice. It reads <strong>your</strong> trades — specific symbols, exact dollar amounts, real dates — and tells you exactly what to fix.</p>
+        
+        <h3>📊 AI Performance Score (1-10)</h3>
+        <p>Every analysis gets a score. Track your improvement over time. See if the changes you're making are actually working.</p>
+        
+        <h3>🔍 Pattern Detection</h3>
+        <p>AI spots patterns you'd never catch manually: <em>"You overtrade after 2 consecutive losses"</em> or <em>"Your win rate drops 30% during the Asian session."</em></p>
+        
+        <h3>📝 AI Diary Writer (Elite)</h3>
+        <p>Click one button. AI writes a detailed diary entry about today's trading — moods, mistakes, wins, lessons learned. No more blank diary pages.</p>
+        
+        <h3>🧠 AI Coach (Elite)</h3>
+        <p>Chat with AI about your specific trades. Ask <em>"Why am I losing on BTC?"</em> and get answers based on your actual trade data — not generic market commentary.</p>
+        
+        <p>Learn more on our <a href="https://tragenejournal.com/ai-trading-journal">AI Trading Journal page</a>.</p>
+        
+        <!-- VS ALTERNATIVES -->
+        <h2 id="vs-alternatives">Trading Journal vs Alternatives</h2>
+        
+        <h3>📊 <a href="https://tragenejournal.com/trading-journal-vs-excel">Trading Journal vs Excel</a></h3>
+        <p>Excel works for 10 trades. At 100+ trades across multiple markets, it becomes a time sink. Manual entry takes 5-10 minutes per trade. At 5 trades/day, that's 13+ hours/month just logging data. Tragene Journal auto-syncs everything. Plus, Excel can't tell you <em>why</em> you're losing — AI can.</p>
+        
+        <h3>vs Other Trading Journals</h3>
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Tragene Journal</th>
+                    <th>Other Journals</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>AI Analysis</td>
+                    <td class="check-green">✅ Built-in</td>
+                    <td>❌ Rare or paid add-on</td>
+                </tr>
+                <tr>
+                    <td>Crypto Auto-Sync</td>
+                    <td class="check-green">✅ Free on all plans</td>
+                    <td>❌ Often paid or unavailable</td>
+                </tr>
+                <tr>
+                    <td>Indian Market Support</td>
+                    <td class="check-green">✅ NSE, MCX, F&O</td>
+                    <td>❌ Rarely supported</td>
+                </tr>
+                <tr>
+                    <td>Multi-Account</td>
+                    <td class="check-green">✅ Up to unlimited</td>
+                    <td>⚠️ Limited or single</td>
+                </tr>
+                <tr>
+                    <td>Pricing (Pro)</td>
+                    <td class="check-green">₹399/mo</td>
+                    <td>$15-50/mo</td>
+                </tr>
+                <tr>
+                    <td>Free Plan</td>
+                    <td class="check-green">✅ Yes, forever</td>
+                    <td>⚠️ Trial only</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- PRICING -->
+        <h2 id="pricing">Plans for Every Trader</h2>
+        <p>From free to premium — all with AI included. See full details on our <a href="https://tragenejournal.com/affordable-trading-journal">pricing page</a>.</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="fc-icon green">🟢</div>
+                <h4>Free — ₹0 Forever</h4>
+                <p>2 accounts · Limited AI · CSV 1/week · Crypto sync · Standard analytics</p>
+            </div>
+            <div class="feature-card" style="border-color:rgba(38,166,154,0.5);border-width:2px;">
+                <div class="fc-icon blue">🔵</div>
+                <h4>Pro — ₹399/mo</h4>
+                <p>10 accounts · Unlimited AI · MT4/MT5 sync · Unlimited CSV · Ad-free</p>
+            </div>
+            <div class="feature-card">
+                <div class="fc-icon purple">👑</div>
+                <h4>Elite — ₹799/mo</h4>
+                <p>Unlimited accounts · AI Coach · Goals Planner · AI Diary Writer · Advanced AI</p>
+            </div>
+        </div>
+        
+        <div class="cta-inline">
+            <h3>Start Free, Upgrade When Ready</h3>
+            <p>No credit card required for the free plan. Cancel anytime.</p>
+            <a href="https://tragenejournal.com/register" class="btn-cta">🚀 Start Free at TrageneJournal.com</a>
+        </div>
+        
+        <!-- WHO IS THIS FOR -->
+        <h2 id="who-for">Who Is Tragene Journal For?</h2>
+        
+        <h3>💱 Forex Traders</h3>
+        <p>If you trade currency pairs on MT4 or MT5, Tragene Journal auto-syncs your trades, calculates pips correctly, and shows you which sessions and pairs are most profitable. <a href="https://tragenejournal.com/forex-trading-journal">Learn more →</a></p>
+        
+        <h3>₿ Crypto Traders</h3>
+        <p>Free auto-sync from Binance, Bybit, OKX, KuCoin. Track spot and futures separately. AI catches missing stop losses that are bleeding your portfolio. <a href="https://tragenejournal.com/crypto-trading-journal">Learn more →</a></p>
+        
+        <h3>🇮🇳 Indian Stock Traders</h3>
+        <p>NSE, BSE, MCX. F&O with expiry tracking. Brokerage and STT calculated. Net P&L in rupees. UPI payments. <a href="https://tragenejournal.com/best-trading-journal-india">Learn more →</a></p>
+        
+        <h3>🏆 Prop Firm Traders</h3>
+        <p>Taking an FTMO or funded challenge? Track your challenge account separately. AI helps you stay within drawdown limits and spot rule violations before they happen.</p>
+        
+        <h3>📊 Multi-Strategy Traders</h3>
+        <p>Running multiple strategies? Create separate accounts for each. Compare performance side by side. AI analyzes cross-account patterns. <a href="https://tragenejournal.com/multi-account-trading-journal">Learn more →</a></p>
+        
+        <!-- GETTING STARTED -->
+        <h2 id="getting-started">Getting Started in 3 Steps</h2>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="fc-icon blue">1️⃣</div>
+                <h4>Create Your Free Account</h4>
+                <p>Go to <a href="https://tragenejournal.com">TrageneJournal.com</a> and sign up. No credit card needed. Takes 30 seconds.</p>
+            </div>
+            <div class="feature-card">
+                <div class="fc-icon green">2️⃣</div>
+                <h4>Connect Your Trading Platform</h4>
+                <p>Link your MT5, MT4, or crypto exchange. Trades sync automatically. Or add trades manually — unlimited on all plans.</p>
+            </div>
+            <div class="feature-card">
+                <div class="fc-icon purple">3️⃣</div>
+                <h4>Let AI Analyze Your Trading</h4>
+                <p>Click "Generate Report." AI reviews your trades and gives you a score, strengths, weaknesses, and specific action items.</p>
+            </div>
+        </div>
+        
+        <!-- FAQ -->
+        <h2 id="faq-section">Frequently Asked Questions</h2>
+        
+        <div class="faq-list">
+            <div class="faq-item">
+                <h4>What is Tragene Journal? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Tragene Journal is an AI-powered trading journal available at <a href="https://tragenejournal.com">TrageneJournal.com</a>. It helps traders automatically import trades, analyze performance, and improve through AI-generated insights. Supports Forex, Crypto, and Indian Stock markets.</div>
+            </div>
+            <div class="faq-item">
+                <h4>Is Tragene Journal free? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Yes. The free plan includes unlimited manual journaling, free crypto auto-sync, 2 trading accounts, and limited AI tokens — forever. No credit card required. <a href="https://tragenejournal.com/best-free-ai-trading-journal">Learn more about the free plan →</a></div>
+            </div>
+            <div class="faq-item">
+                <h4>Which platforms does it support? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">MT5, MT4, Binance, Bybit, OKX, KuCoin. Indian brokers via CSV import (Zerodha, Upstox, Groww, etc.). More integrations are being added regularly.</div>
+            </div>
+            <div class="faq-item">
+                <h4>How does the AI work? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Our AI analyzes YOUR actual trades — specific symbols, dates, dollar amounts. It identifies patterns, scores your performance, and gives specific action items. Unlike ChatGPT, it knows your personal trading data. <a href="https://tragenejournal.com/ai-trading-journal">Learn more →</a></div>
+            </div>
+            <div class="faq-item">
+                <h4>Can I track multiple accounts? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Yes. Free plan: 2 accounts. Pro (₹399/mo): 10 accounts. Elite (₹799/mo): unlimited. Each account has independent analytics. <a href="https://tragenejournal.com/multi-account-trading-journal">Learn more →</a></div>
+            </div>
+            <div class="faq-item">
+                <h4>Is it suitable for Indian traders? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Absolutely. UPI payments, INR pricing, NSE/BSE/MCX support, F&O tracking, brokerage/STT calculation. Built with Indian traders in mind. <a href="https://tragenejournal.com/best-trading-journal-india">Learn more →</a></div>
+            </div>
+            <div class="faq-item">
+                <h4>How is it better than Excel? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Auto-sync saves 13+ hours/month of manual entry. AI catches patterns Excel never will. Built-in charts, risk metrics, and session analysis. <a href="https://tragenejournal.com/trading-journal-vs-excel">Full comparison →</a></div>
+            </div>
+            <div class="faq-item">
+                <h4>Can I import my existing trades? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Yes. CSV import on all plans. Free users can import once per week. Pro and Elite get unlimited imports.</div>
+            </div>
+            <div class="faq-item">
+                <h4>Is my data secure? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Yes. Read-only API connections. Encrypted credentials. Your trading data is private and never shared or sold.</div>
+            </div>
+            <div class="faq-item">
+                <h4>How do I get started? <i class="bi bi-chevron-down"></i></h4>
+                <div class="faq-answer">Go to <a href="https://tragenejournal.com">TrageneJournal.com</a>, create a free account, connect your trading platform, and let AI analyze your first trades. Setup takes under 2 minutes.</div>
+            </div>
+        </div>
+        
+        <!-- Final CTA -->
+        <div class="cta-inline" style="margin-top:40px;">
+            <h3>Ready to Become a Better Trader?</h3>
+            <p>Join thousands of traders who track, analyze, and improve with Tragene Journal. Start free — no credit card required.</p>
+            <a href="https://tragenejournal.com/register" class="btn-cta">🚀 Start Free at TrageneJournal.com</a>
+            <p style="font-size:0.75rem;margin-top:12px;color:var(--text-muted);">Also available: <a href="https://tragenejournal.com/best-free-ai-trading-journal">Free Plan Details</a> · <a href="https://tragenejournal.com/affordable-trading-journal">Pricing</a> · <a href="https://tragenejournal.com/tools">Free Trading Tools</a> · <a href="https://tragenejournal.com/faq">FAQ</a></p>
+        </div>
+        
+    </main>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Reading Progress Bar
+    window.addEventListener('scroll', function() {
+        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const progress = (scrollTop / scrollHeight) * 100;
+        document.getElementById('readingProgress').style.width = progress + '%';
+    });
+    
+    // FAQ Toggle
+    document.querySelectorAll('.faq-item').forEach(item => {
+        item.addEventListener('click', () => item.classList.toggle('open'));
+    });
+    
+    // Active TOC link on scroll
+    const sections = document.querySelectorAll('h2[id]');
+    const tocLinks = document.querySelectorAll('.toc-sidebar a');
+    
+    window.addEventListener('scroll', function() {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 120;
+            if (scrollY >= sectionTop) {
+                current = section.getAttribute('id');
+            }
+        });
+        
+        tocLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    });
+</script>
+
+<!-- FAQ Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Tragene Journal?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Tragene Journal is an AI-powered trading journal available at TrageneJournal.com. It helps traders automatically import trades, analyze performance, and improve through AI-generated insights."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Tragene Journal free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. The free plan includes unlimited manual journaling, free crypto auto-sync, 2 trading accounts, and limited AI tokens — forever. No credit card required."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which platforms does it support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "MT5, MT4, Binance, Bybit, OKX, KuCoin. Indian brokers via CSV import (Zerodha, Upstox, Groww, etc.)."
+      }
+    }
+  ]
+}
+</script>
+
+<!-- Breadcrumb Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://tragenejournal.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Trading Journal Guide",
+      "item": "https://tragenejournal.com/trading-journal"
+    }
+  ]
+}
+</script>
+{% endblock %}

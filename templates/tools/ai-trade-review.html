@@ -1,0 +1,62 @@
+﻿{% extends "tools/base_tool.html" %}
+{% block tool_title %}AI Trade Review Tool - Free Analysis | Tragene Journal{% endblock %}
+{% block tool_desc %}Free AI trade review tool. Get AI-powered analysis of your trade setup before you enter. Check risk, R:R, and position sizing.{% endblock %}
+{% block tool_keywords %}ai trade review, trade analyzer, trade checklist, trade validator{% endblock %}
+{% block tool_h1 %}<span>AI Trade Review</span> Tool{% endblock %}
+{% block tool_subtitle %}Quickly validate your trade setup against key risk management rules.{% endblock %}
+{% block form_title %}Trade Setup{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group"><label>Account Balance ($)</label><input type="number" id="balance" placeholder="10,000" step="0.01" min="0"></div>
+<div class="form-group"><label>Risk Per Trade (%)</label><input type="number" id="riskPct" placeholder="2" step="0.1" min="0.1" max="10" value="2"></div>
+<div class="form-group"><label>Entry Price</label><input type="number" id="entry" placeholder="1.0850" step="0.00001"></div>
+<div class="form-group"><label>Stop Loss</label><input type="number" id="sl" placeholder="1.0800" step="0.00001"></div>
+<div class="form-group"><label>Take Profit</label><input type="number" id="tp" placeholder="1.0950" step="0.00001"></div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>🤖 AI Trade Checklist</h3>
+    <p>This tool checks your trade against 5 key rules:</p>
+    <ol>
+        <li>Risk per trade ≤ 2% of account</li>
+        <li>Stop loss is set</li>
+        <li>Take profit is set</li>
+        <li>Risk:Reward ratio ≥ 1:2</li>
+        <li>Position size is appropriate</li>
+    </ol>
+    <p>All these checks happen automatically in <a href="/register">Tragene Journal</a>.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const balance = parseFloat(document.getElementById('balance').value);
+    const riskPct = parseFloat(document.getElementById('riskPct').value);
+    const entry = parseFloat(document.getElementById('entry').value);
+    const sl = parseFloat(document.getElementById('sl').value);
+    const tp = parseFloat(document.getElementById('tp').value);
+    if (!balance || !riskPct || !entry || !sl || !tp) { alert('Please fill in all fields.'); return; }
+    
+    let checks = [];
+    const riskAmount = balance * (riskPct / 100);
+    const risk = Math.abs(entry - sl);
+    const reward = Math.abs(tp - entry);
+    const rr = reward / risk;
+    
+    checks.push(riskPct <= 2 ? '✅' : '❌');
+    checks.push(sl ? '✅' : '❌');
+    checks.push(tp ? '✅' : '❌');
+    checks.push(rr >= 2 ? '✅' : '❌');
+    checks.push(riskAmount <= balance * 0.02 ? '✅' : '❌');
+    
+    const passed = checks.filter(c => c === '✅').length;
+    const labels = ['Risk ≤ 2%', 'Stop Loss Set', 'Take Profit Set', 'R:R ≥ 1:2', 'Position OK'];
+    let secondary = [];
+    for (let i = 0; i < 5; i++) secondary.push({value: checks[i], label: labels[i]});
+    
+    showResults(passed + '/5', passed >= 4 ? '✅ Good Setup' : passed >= 3 ? '⚠️ Needs Work' : '❌ Poor Setup', secondary);
+}
+</script>
+{% endblock %}

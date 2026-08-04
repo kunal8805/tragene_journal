@@ -1,0 +1,81 @@
+{% extends "tools/base_tool.html" %}
+{% block tool_title %}Position Size Calculator - Free Forex Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free position size calculator for forex traders. Calculate the correct lot size based on account balance, risk percentage, and stop loss. No signup required.{% endblock %}
+{% block tool_keywords %}position size calculator, forex position size, lot size calculator, risk per trade calculator{% endblock %}
+{% block tool_h1 %}<span>Position Size</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate the correct position size based on your account balance, risk tolerance, and stop loss distance.{% endblock %}
+{% block form_title %}Trade Parameters{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group">
+    <label>Account Balance ($)</label>
+    <input type="number" id="accountBalance" placeholder="10,000" step="0.01" min="0">
+</div>
+<div class="form-group">
+    <label>Risk Percentage (%)</label>
+    <input type="number" id="riskPercent" placeholder="2" step="0.1" min="0" max="100" value="2">
+</div>
+<div class="form-group">
+    <label>Stop Loss (pips)</label>
+    <input type="number" id="stopLoss" placeholder="50" step="0.1" min="0.1">
+</div>
+<div class="form-group">
+    <label>Currency Pair</label>
+    <select id="pairType">
+        <option value="standard">Standard (EURUSD, GBPUSD)</option>
+        <option value="jpy">JPY Pair (USDJPY, GBPJPY)</option>
+        <option value="gold">Gold/XAUUSD</option>
+        <option value="index">Index (US30, NAS100)</option>
+    </select>
+</div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>📖 How Position Sizing Works</h3>
+    <p>Position sizing determines how many lots you should trade based on your risk tolerance.</p>
+    <p><strong>Formula:</strong></p>
+    <p><code>Risk Amount = Account Balance × Risk %</code></p>
+    <p><code>Position Size (lots) = Risk Amount / (Stop Loss × Pip Value)</code></p>
+    <p>Where pip value depends on the currency pair type.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const balance = parseFloat(document.getElementById('accountBalance').value);
+    const riskPct = parseFloat(document.getElementById('riskPercent').value);
+    const sl = parseFloat(document.getElementById('stopLoss').value);
+    const pairType = document.getElementById('pairType').value;
+    
+    if (!balance || !riskPct || !sl) {
+        alert('Please fill in all fields.');
+        return;
+    }
+    
+    const riskAmount = balance * (riskPct / 100);
+    
+    let pipValue;
+    switch(pairType) {
+        case 'standard': pipValue = 10; break;
+        case 'jpy': pipValue = 9; break;
+        case 'gold': pipValue = 10; break;
+        case 'index': pipValue = 10; break;
+        default: pipValue = 10;
+    }
+    
+    const positionSize = riskAmount / (sl * pipValue);
+    
+    showResults(
+        positionSize.toFixed(2) + ' lots',
+        'Position Size',
+        [
+            {value: '$' + riskAmount.toFixed(2), label: 'Risk Amount'},
+            {value: sl + ' pips', label: 'Stop Loss'},
+            {value: riskPct + '%', label: 'Risk %'}
+        ]
+    );
+}
+</script>
+{% endblock %}

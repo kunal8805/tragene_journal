@@ -1,0 +1,92 @@
+{% extends "tools/base_tool.html" %}
+{% block tool_title %}Forex Profit Calculator - Free Trading Tool | Tragene Journal{% endblock %}
+{% block tool_desc %}Free forex profit calculator. Calculate potential profit or loss for any trade. Supports all pair types. No signup required.{% endblock %}
+{% block tool_keywords %}forex profit calculator, forex pnl calculator, forex trade calculator, forex profit loss{% endblock %}
+{% block tool_h1 %}<span>Forex Profit</span> Calculator{% endblock %}
+{% block tool_subtitle %}Calculate your potential profit or loss for any forex trade.{% endblock %}
+{% block form_title %}Trade Setup{% endblock %}
+
+{% block calculator_form %}
+<div class="form-group">
+    <label>Currency Pair Type</label>
+    <select id="pairType">
+        <option value="standard">Standard (EURUSD, GBPUSD)</option>
+        <option value="jpy">JPY Pair (USDJPY, GBPJPY)</option>
+        <option value="gold">Gold / XAUUSD</option>
+        <option value="index">Index (US30, NAS100)</option>
+    </select>
+</div>
+<div class="form-group">
+    <label>Trade Type</label>
+    <select id="tradeType">
+        <option value="buy">Buy (Long)</option>
+        <option value="sell">Sell (Short)</option>
+    </select>
+</div>
+<div class="form-group">
+    <label>Entry Price</label>
+    <input type="number" id="entryPrice" placeholder="1.0850" step="0.00001">
+</div>
+<div class="form-group">
+    <label>Exit Price</label>
+    <input type="number" id="exitPrice" placeholder="1.0900" step="0.00001">
+</div>
+<div class="form-group">
+    <label>Position Size (lots)</label>
+    <input type="number" id="lotSize" placeholder="1.0" step="0.01" min="0.01" value="1.0">
+</div>
+{% endblock %}
+
+{% block info_section %}
+<div class="info-section">
+    <h3>📖 How Profit/Loss is Calculated</h3>
+    <p><code>Pip Movement = |Exit - Entry| × Pip Multiplier</code></p>
+    <p><code>P&L = Pip Movement × Lot Size × Pip Value</code></p>
+    <p>Buy trades profit when price goes up. Sell trades profit when price goes down.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculate() {
+    const pairType = document.getElementById('pairType').value;
+    const tradeType = document.getElementById('tradeType').value;
+    const entry = parseFloat(document.getElementById('entryPrice').value);
+    const exit = parseFloat(document.getElementById('exitPrice').value);
+    const lots = parseFloat(document.getElementById('lotSize').value);
+    
+    if (!entry || !exit || !lots) {
+        alert('Please fill in all fields.');
+        return;
+    }
+    
+    let pipMultiplier, pipValue;
+    switch(pairType) {
+        case 'standard': pipMultiplier = 10000; pipValue = 10; break;
+        case 'jpy': pipMultiplier = 100; pipValue = 9; break;
+        case 'gold': pipMultiplier = 100; pipValue = 10; break;
+        case 'index': pipMultiplier = 1; pipValue = 10; break;
+    }
+    
+    let movement;
+    if (tradeType === 'buy') {
+        movement = exit - entry;
+    } else {
+        movement = entry - exit;
+    }
+    
+    const pips = movement * pipMultiplier;
+    const pnl = pips * lots * pipValue;
+    const isWin = pnl > 0;
+    
+    showResults(
+        (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2),
+        isWin ? '🟢 Profit' : pnl < 0 ? '🔴 Loss' : '⚪ Breakeven',
+        [
+            {value: pips.toFixed(1), label: 'Pips'},
+            {value: lots.toFixed(2) + ' lots', label: 'Position Size'}
+        ]
+    );
+}
+</script>
+{% endblock %}
