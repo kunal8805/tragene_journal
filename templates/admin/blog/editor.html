@@ -33,6 +33,18 @@
         border-color: var(--accent);
         box-shadow: 0 0 0 2px rgba(79, 142, 247, 0.25);
     }
+    
+    /* 🆕 Gold/Yellow Form Labels */
+    .form-label-gold {
+        color: #ffb300;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+        display: block;
+    }
+    
     .seo-preview {
         background: #fff;
         padding: 16px;
@@ -43,9 +55,62 @@
     .seo-url { color: #006621; font-size: 14px; display: block; margin-bottom: 2px;}
     .seo-desc { color: #545454; font-size: 13px; line-height: 1.4; display: block;}
     
-    .CodeMirror {
+    /* ===== Fix SimpleMDE/CodeMirror to match dark/light theme ===== */
+
+    /* Toolbar (bold/italic/heading icons bar) */
+    .editor-toolbar {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+    }
+    .editor-toolbar a {
+        color: var(--text-primary) !important;
+    }
+    .editor-toolbar a:hover,
+    .editor-toolbar a.active {
+        background: var(--sidebar-hover);
         border-color: var(--border-color);
-        border-radius: 8px;
+    }
+    .editor-toolbar i.separator {
+        border-left: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+    }
+
+    /* Editor body */
+    .CodeMirror {
+        background: var(--bg-input) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--border-color);
+        border-radius: 0 0 8px 8px;
+        height: 400px;
+    }
+    .CodeMirror-scroll {
+        max-height: 400px;
+        overflow-y: auto !important;
+    }
+    .CodeMirror-cursor {
+        border-left: 1px solid var(--text-primary) !important;
+    }
+    .CodeMirror-selected {
+        background: rgba(38,166,154,0.25) !important;
+    }
+    .CodeMirror-focused .CodeMirror-selected {
+        background: rgba(38,166,154,0.35) !important;
+    }
+    .CodeMirror-placeholder {
+        color: var(--text-muted) !important;
+    }
+
+    /* Preview mode */
+    .editor-preview,
+    .editor-preview-side {
+        background: var(--bg-input) !important;
+        color: var(--text-primary) !important;
+    }
+    .editor-preview h1, .editor-preview h2, .editor-preview h3,
+    .editor-preview-side h1, .editor-preview-side h2, .editor-preview-side h3 {
+        color: var(--text-primary) !important;
     }
 </style>
 {% endblock %}
@@ -78,14 +143,14 @@
         <div class="card-dark">
             <h5 class="text-light mb-3"><i class="bi bi-gear"></i> Publishing</h5>
             <div class="mb-3">
-                <label class="form-label text-muted">Status</label>
+                <label class="form-label-gold">Status</label>
                 <select name="status" class="form-select form-control-dark">
                     <option value="draft" {% if blog and blog.status == 'draft' %}selected{% endif %}>Draft</option>
                     <option value="published" {% if blog and blog.status == 'published' %}selected{% endif %}>Published</option>
                 </select>
             </div>
             <div class="mb-3">
-                <label class="form-label text-muted">URL Slug</label>
+                <label class="form-label-gold">URL Slug</label>
                 <input type="text" name="slug" id="slugInput" class="form-control form-control-dark" placeholder="auto-generated-slug" value="{{ blog.slug if blog else '' }}">
             </div>
         </div>
@@ -93,11 +158,11 @@
         <div class="card-dark">
             <h5 class="text-light mb-3"><i class="bi bi-search"></i> SEO Metadata</h5>
             <div class="mb-3">
-                <label class="form-label text-muted">Meta Title</label>
+                <label class="form-label-gold">Meta Title</label>
                 <input type="text" name="meta_title" id="metaTitle" class="form-control form-control-dark" value="{{ blog.meta_title if blog else '' }}">
             </div>
             <div class="mb-3">
-                <label class="form-label text-muted">Meta Description</label>
+                <label class="form-label-gold">Meta Description</label>
                 <textarea name="meta_description" id="metaDesc" class="form-control form-control-dark" rows="3">{{ blog.meta_description if blog else '' }}</textarea>
             </div>
             
@@ -120,7 +185,6 @@
 <script>
     var simplemde = new SimpleMDE({ element: document.getElementById("markdownEditor") });
     
-    // Auto-generate slug and update preview
     const titleInput = document.getElementById('titleInput');
     const slugInput = document.getElementById('slugInput');
     const metaTitle = document.getElementById('metaTitle');

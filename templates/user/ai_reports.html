@@ -619,31 +619,31 @@
     
     <!-- ── Token Bar ── -->
     <div class="token-bar">
-        <div class="token-info">
-            <div class="token-icon">🪙</div>
-            <div class="token-text">
-                <h6>AI Tokens</h6>
-                <span>{% if current_user.subscription_tier in ['pro', 'elite', 'enterprise'] %}Unlimited access{% else %}Resets monthly{% endif %}</span>
-            </div>
+    <div class="token-info">
+        <div class="token-icon">🪙</div>
+        <div class="token-text">
+            <h6>AI Tokens</h6>
+            <span>{% if current_user.subscription_tier in ['pro', 'elite'] %}Unlimited access{% else %}Resets monthly{% endif %}</span>
         </div>
-        
-        {% if current_user.subscription_tier in ['pro', 'elite', 'enterprise'] %}
-            <div class="token-progress">
-                <div class="token-progress-fill" style="width:100%; background:linear-gradient(90deg, #00e676, #26a69a);"></div>
-            </div>
-            <div class="token-amount" style="color:#00e676;">
-                🚀 Unlimited
-            </div>
-        {% else %}
-            <div class="token-progress">
-                {% set pct = (tokens_used / token_limit * 100) if token_limit > 0 else 0 %}
-                <div class="token-progress-fill" style="width:{{ pct }}%; background:{{ '#00e676' if pct < 50 else '#ffb300' if pct < 80 else '#ff5252' }};"></div>
-            </div>
-            <div class="token-amount" style="color:{{ '#00e676' if tokens_remaining > token_limit * 0.3 else '#ffb300' if tokens_remaining > 0 else '#ff5252' }};">
-                {{ '{:,}'.format(tokens_remaining) }} / {{ '{:,}'.format(token_limit) }}
-            </div>
-        {% endif %}
     </div>
+    
+    {% if current_user.subscription_tier in ['pro', 'elite'] %}
+        <div class="token-progress">
+            <div class="token-progress-fill" style="width:100%; background:linear-gradient(90deg, #00e676, #26a69a);"></div>
+        </div>
+        <div class="token-amount" style="color:#00e676;">
+            🚀 Unlimited
+        </div>
+    {% else %}
+        <div class="token-progress">
+            {% set pct = (tokens_used / token_limit * 100) if token_limit > 0 else 0 %}
+            <div class="token-progress-fill" style="width:{{ pct }}%; background:{{ '#00e676' if pct < 50 else '#ffb300' if pct < 80 else '#ff5252' }};"></div>
+        </div>
+        <div class="token-amount" style="color:{{ '#00e676' if tokens_remaining > token_limit * 0.3 else '#ffb300' if tokens_remaining > 0 else '#ff5252' }};">
+            {{ '{:,}'.format(tokens_remaining) }} / {{ '{:,}'.format(token_limit) }}
+        </div>
+    {% endif %}
+</div>
     
     <!-- ── Free Plan Limit ── -->
     {% if current_user.subscription_tier == 'free' and weekly_limit %}
