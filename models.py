@@ -94,7 +94,7 @@ class User(UserMixin, db.Model):
         return self.username
     
     def get_max_accounts(self):
-        tier_limits = {'free': 2, 'basic': 5, 'pro': 10, 'enterprise': 999}
+        tier_limits = {'free': 2, 'pro': 10, 'elite': 999}
         return tier_limits.get(self.subscription_tier, 2)
     
     def get_account_count(self):
@@ -133,7 +133,7 @@ class User(UserMixin, db.Model):
         return None
     
     def can_upload_csv(self):
-        if self.subscription_tier in ['basic', 'pro', 'enterprise']:
+        if self.subscription_tier in ['pro', 'elite']:
             return True, None
         if self.last_csv_import is None:
             return True, None
@@ -143,7 +143,7 @@ class User(UserMixin, db.Model):
         return False, 7 - days_since
     
     def csv_upload_label(self):
-        if self.subscription_tier in ['basic', 'pro', 'enterprise']:
+        if self.subscription_tier in ['pro', 'elite']:
             return "Upload CSV", True
         can, days = self.can_upload_csv()
         if can:
@@ -157,7 +157,7 @@ class User(UserMixin, db.Model):
         plan_default = AIPlanDefaults.query.filter_by(plan_tier=self.subscription_tier, is_active=True).first()
         if plan_default:
             return plan_default.monthly_tokens
-        tier_limits = {'free': 2000, 'basic': 20000, 'pro': 50000, 'enterprise': 150000}
+        tier_limits = {'free': 2000, 'pro': 50000, 'elite': 150000}
         return tier_limits.get(self.subscription_tier, 2000)
     
     def get_used_tokens(self):
@@ -200,10 +200,10 @@ class User(UserMixin, db.Model):
         return override.is_banned if override else False
     
     def can_access_coach(self):
-        return self.subscription_tier in ['enterprise', 'elite']
-    
+        return self.subscription_tier in ['elite']
+
     def can_access_goals(self):
-        return self.subscription_tier in ['enterprise', 'elite']
+        return self.subscription_tier in ['elite']
 
 
 class Trade(db.Model):
