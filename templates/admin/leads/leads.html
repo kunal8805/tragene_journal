@@ -1,0 +1,533 @@
+{% extends "base_admin.html" %}
+{% block title %}Lead CRM - Admin{% endblock %}
+{% block page_title %}📋 Lead CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .crm-container { max-width: 1400px; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px 18px;
+        cursor: pointer;
+        transition: all 0.25s;
+        position: relative;
+    }
+    .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .stat-card.active { border-color: var(--accent); background: rgba(38,166,154,0.06); }
+    .stat-card .stat-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        display: inline-block; margin-right: 6px;
+    }
+    .stat-card .stat-label {
+        font-size: 0.68rem; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--text-muted);
+        font-weight: 600; margin-bottom: 4px;
+    }
+    .stat-card .stat-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.6rem; font-weight: 700; color: var(--text-primary);
+    }
+    .stat-card .delete-status {
+        position: absolute; top: 8px; right: 8px;
+        width: 20px; height: 20px; border-radius: 50%;
+        background: rgba(255,82,82,0.1); color: #ff5252;
+        border: none; cursor: pointer; display: none;
+        align-items: center; justify-content: center;
+        font-size: 0.6rem; transition: all 0.2s;
+    }
+    .stat-card:hover .delete-status { display: flex; }
+    .stat-card .delete-status:hover { background: rgba(255,82,82,0.25); }
+
+    .toolbar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .toolbar .search-input {
+        flex: 1; min-width: 200px;
+        padding: 9px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        outline: none;
+        transition: all 0.2s;
+    }
+    .toolbar .search-input:focus { border-color: var(--accent); }
+    .toolbar select {
+        padding: 9px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.78rem;
+        cursor: pointer;
+        outline: none;
+    }
+    .btn-create-status {
+        padding: 9px 16px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.78rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .btn-create-status:hover { background: var(--accent-hover); }
+
+    .table-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .crm-table { width: 100%; border-collapse: collapse; }
+    .crm-table th {
+        padding: 12px 14px; text-align: left;
+        font-size: 0.66rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--border-color);
+        background: var(--bg-body);
+        white-space: nowrap;
+    }
+    .crm-table td {
+        padding: 11px 14px; font-size: 0.8rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+    .crm-table tr:hover td { background: var(--sidebar-hover); }
+    .crm-table tr:last-child td { border-bottom: none; }
+
+    .lead-name {
+        color: var(--text-primary); font-weight: 600;
+        text-decoration: none; transition: color 0.2s;
+    }
+    .lead-name:hover { color: var(--accent); }
+    .lead-email { color: var(--text-secondary); text-decoration: none; }
+    .lead-email:hover { color: var(--accent); }
+
+    .status-badge {
+        display: inline-block; padding: 3px 10px;
+        border-radius: 20px; font-size: 0.68rem; font-weight: 600;
+    }
+
+    .action-btn {
+        padding: 5px 9px; border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: transparent; color: var(--text-secondary);
+        cursor: pointer; font-size: 0.7rem; transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .action-btn.wa { color: #22c55e; border-color: rgba(34,197,94,0.3); }
+    .action-btn.wa:hover { background: rgba(34,197,94,0.1); border-color: #22c55e; }
+    .action-btn.call { color: #3b82f6; border-color: rgba(59,130,246,0.3); }
+    .action-btn.call:hover { background: rgba(59,130,246,0.1); border-color: #3b82f6; }
+
+    .pagination {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 16px; border-top: 1px solid var(--border-color);
+        font-size: 0.72rem; color: var(--text-muted);
+    }
+    .pagination button {
+        padding: 6px 12px; background: var(--bg-input);
+        border: 1px solid var(--border-color); border-radius: 6px;
+        color: var(--text-primary); cursor: pointer; font-size: 0.72rem;
+        transition: all 0.2s;
+    }
+    .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .empty-state {
+        text-align: center; padding: 50px 20px; color: var(--text-muted);
+    }
+    .empty-state i { font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 10px; }
+
+    /* Quick status select in table */
+    .quick-status-select {
+        padding: 4px 8px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 0.68rem;
+        cursor: pointer;
+        max-width: 120px;
+        outline: none;
+    }
+    .quick-status-select:focus { border-color: var(--accent); }
+
+    /* Modal */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.65); z-index: 1050;
+        align-items: center; justify-content: center; padding: 20px;
+        backdrop-filter: blur(3px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 16px; width: 100%; max-width: 420px; padding: 24px;
+    }
+    .modal-box h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 0.9rem; margin-bottom: 16px;
+        color: var(--text-primary);
+    }
+    .modal-box input[type="text"] {
+        width: 100%; padding: 10px 14px;
+        background: var(--bg-input); border: 1px solid var(--border-color);
+        border-radius: 10px; color: var(--text-primary); font-size: 0.82rem;
+        outline: none; margin-bottom: 12px;
+    }
+    .modal-box input[type="text"]:focus { border-color: var(--accent); }
+    .modal-box input[type="color"] {
+        width: 50px; height: 35px; border-radius: 6px;
+        border: 1px solid var(--border-color); cursor: pointer; margin-bottom: 12px;
+    }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-modal {
+        padding: 8px 18px; border-radius: 8px;
+        font-weight: 600; font-size: 0.78rem; cursor: pointer; border: none;
+    }
+    .btn-modal.cancel {
+        background: var(--bg-input); color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+    .btn-modal.save { background: var(--accent); color: #fff; }
+    .btn-modal.save:hover { background: var(--accent-hover); }
+
+    .note-modal-box {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 16px; width: 100%; max-width: 500px; padding: 24px;
+    }
+    .note-modal-box textarea {
+        width: 100%; padding: 10px 14px;
+        background: var(--bg-input); border: 1px solid var(--border-color);
+        border-radius: 10px; color: var(--text-primary); font-size: 0.82rem;
+        outline: none; resize: vertical; min-height: 100px; margin-bottom: 12px;
+    }
+    .note-modal-box textarea:focus { border-color: var(--accent); }
+
+    @media (max-width: 768px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="crm-container">
+    <div id="toastContainer" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="text-center py-3" style="grid-column:1/-1;color:var(--text-muted);">Loading...</div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search by name, email, or phone..." oninput="handleSearch()">
+        <select id="statusFilter" onchange="filterLeads()">
+            <option value="all">All Leads</option>
+            <option value="none">Unassigned Only</option>
+        </select>
+        <button class="btn-create-status" onclick="openStatusModal()"><i class="bi bi-plus-lg"></i> Create Status</button>
+        <span id="resultsCount" style="font-size:0.72rem;color:var(--text-muted);"></span>
+    </div>
+
+    <!-- Bulk Bar -->
+    <div id="bulkBar" style="display:none;background:var(--accent);border-radius:10px;padding:10px 16px;margin-bottom:16px;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span id="selectedCount" style="color:#fff;font-weight:600;font-size:0.8rem;">0 selected</span>
+        <select id="bulkStatusSelect" onchange="bulkChangeStatus(this.value)" style="padding:6px 10px;background:#fff;color:var(--accent);border:none;border-radius:6px;font-weight:600;font-size:0.72rem;cursor:pointer;">
+            <option value="">Move To...</option>
+        </select>
+        <button onclick="bulkAddNote()" style="padding:6px 14px;background:#fff;color:var(--accent);border:none;border-radius:6px;font-weight:600;font-size:0.72rem;cursor:pointer;">+ Add Note</button>
+        <button onclick="clearSelection()" style="padding:6px 14px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:6px;font-size:0.72rem;cursor:pointer;margin-left:auto;">Clear</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <div style="overflow-x:auto;">
+            <table class="crm-table" id="leadsTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="masterCheckbox" onchange="toggleAll()" style="width:14px;height:14px;"></th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Plan</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsTableBody">
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination" id="paginationBar"></div>
+    </div>
+</div>
+
+<!-- Status Modal -->
+<div class="modal-overlay" id="statusModal">
+    <div class="modal-box">
+        <h5 id="statusModalTitle">Create Status</h5>
+        <input type="hidden" id="editStatusId">
+        <input type="text" id="statusName" placeholder="Status name (e.g., VIP, Hot Lead)">
+        <div><label style="font-size:0.72rem;color:var(--text-muted);margin-right:8px;">Color:</label><input type="color" id="statusColor" value="#4F46E5"></div>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeStatusModal()">Cancel</button>
+            <button class="btn-modal save" onclick="saveStatus()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Note Modal -->
+<div class="modal-overlay" id="noteModal">
+    <div class="note-modal-box">
+        <h5 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.9rem;margin-bottom:12px;color:var(--text-primary);">📝 Add Note</h5>
+        <textarea id="noteContent" placeholder="Enter note..."></textarea>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeNoteModal()">Cancel</button>
+            <button class="btn-modal save" onclick="saveNote()">Save Note</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Note Modal -->
+<div class="modal-overlay" id="bulkNoteModal">
+    <div class="note-modal-box">
+        <h5 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.9rem;margin-bottom:12px;color:var(--text-primary);">📝 Add Note to Selected</h5>
+        <textarea id="bulkNoteContent" placeholder="Enter note..."></textarea>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeBulkNoteModal()">Cancel</button>
+            <button class="btn-modal save" onclick="saveBulkNote()">Save</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1, searchQuery = '', selectedStatus = 'all', selectedLeads = new Set(), allStatuses = [], searchTimer = null, currentNoteUserId = null;
+
+function showToast(msg, type='success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.style.cssText = `padding:10px 18px;border-radius:10px;font-size:0.78rem;font-weight:600;color:#fff;animation:slideIn 0.3s ease;background:${type==='success'?'var(--accent)':'#ff5252'};`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+async function loadStatuses() {
+    try {
+        const r = await fetch('/admin/leads/api/statuses');
+        const d = await r.json();
+        if (d.success) {
+            allStatuses = d.statuses || [];
+            const sf = document.getElementById('statusFilter');
+            sf.innerHTML = '<option value="all">All Leads</option><option value="none">Unassigned Only</option>';
+            allStatuses.forEach(s => {
+                sf.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+            });
+            
+            // Populate bulk status select
+            const bs = document.getElementById('bulkStatusSelect');
+            bs.innerHTML = '<option value="">Move To...</option>';
+            allStatuses.forEach(s => {
+                bs.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            });
+            
+            loadStats();
+        }
+    } catch(e) {
+        console.error('Status load error:', e);
+        document.getElementById('statsGrid').innerHTML = '<div class="text-center py-3" style="grid-column:1/-1;color:var(--text-muted);font-size:0.8rem;">Error loading statuses.</div>';
+    }
+}
+
+async function loadStats() {
+    try {
+        const r = await fetch('/admin/leads/api/stats');
+        const d = await r.json();
+        const grid = document.getElementById('statsGrid');
+        
+        const defaults = ['New Lead','Verified','Interested','Call Follow-up','WhatsApp Follow-up','Email Follow-up','Purchased','Dead Lead'];
+        const customStatuses = allStatuses.filter(s => !defaults.includes(s.name));
+        
+        if (customStatuses.length === 0) {
+            grid.innerHTML = `<div class="text-center py-3" style="grid-column:1/-1;color:var(--text-muted);font-size:0.8rem;">No custom statuses yet. Click "Create Status" to add pipeline stages.</div>`;
+            return;
+        }
+        
+        let h = '';
+        customStatuses.forEach(s => {
+            const count = d[s.name] || 0;
+            h += `<div class="stat-card ${selectedStatus===s.name?'active':''}" onclick="selectStatus('${s.name}')">
+                <span class="stat-label"><span class="stat-dot" style="background:${s.color};"></span>${s.name}</span>
+                <span class="stat-value">${count}</span>
+                <button class="delete-status" onclick="event.stopPropagation();deleteStatus(${s.id},'${s.name}')">✕</button>
+            </div>`;
+        });
+        grid.innerHTML = h;
+    } catch(e) {
+        console.error('Stats load error:', e);
+        document.getElementById('statsGrid').innerHTML = '<div class="text-center py-3" style="grid-column:1/-1;color:var(--text-muted);font-size:0.8rem;">Error loading stats.</div>';
+    }
+}
+
+async function loadLeads() {
+    const tbody = document.getElementById('leadsTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
+    
+    try {
+        const params = new URLSearchParams({ page: currentPage, search: searchQuery, status: selectedStatus });
+        const r = await fetch('/admin/leads/api/list?' + params);
+        const d = await r.json();
+        
+        document.getElementById('resultsCount').textContent = (d.total||0) + ' leads';
+        
+        if (!d.leads || d.leads.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="bi bi-people"></i><p>No leads found</p></div></td></tr>';
+            updatePagination(0, 1);
+            return;
+        }
+        
+        let h = '';
+        d.leads.forEach(l => {
+            const sb = `<span class="status-badge" style="background:${l.status_color}20;color:${l.status_color};">${l.status_name}</span>`;
+            const planBadge = l.subscription_tier !== 'free' ? `<span class="status-badge" style="background:rgba(255,179,0,0.12);color:#ffb300;">${l.subscription_tier.toUpperCase()}</span>` : '<span class="status-badge" style="background:rgba(100,116,139,0.12);color:#64748b;">FREE</span>';
+            const phone = l.phone || 'N/A';
+            
+            h += `<tr>
+                <td><input type="checkbox" class="lead-checkbox" value="${l.id}" onchange="toggleSelect(${l.id},this)" style="width:14px;height:14px;"></td>
+                <td><a href="/admin/leads/${l.id}" class="lead-name">${esc(l.name)}</a></td>
+                <td><a href="/admin/leads/${l.id}" class="lead-email">${esc(l.email)}</a></td>
+                <td>${esc(phone)}</td>
+                <td>${planBadge}</td>
+                <td>${sb}</td>
+                <td>
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+                        <a href="/admin/leads/${l.id}" class="action-btn"><i class="bi bi-eye"></i></a>
+                        ${l.phone ? `<a href="tel:${l.phone}" class="action-btn call"><i class="bi bi-telephone"></i></a>` : ''}
+                        ${l.phone ? `<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,'')}" target="_blank" class="action-btn wa"><i class="bi bi-whatsapp"></i></a>` : ''}
+                        <button onclick="openNoteModal(${l.id})" class="action-btn"><i class="bi bi-sticky-note"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+        
+        tbody.innerHTML = h;
+        updatePagination(d.total, d.pages);
+    } catch(e) {
+        console.error('Leads load error:', e);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Error loading leads.</td></tr>';
+    }
+}
+
+function updatePagination(total, pages) {
+    const bar = document.getElementById('paginationBar');
+    if (pages <= 1) { bar.innerHTML = `<span>${total} leads</span>`; return; }
+    bar.innerHTML = `<span>Page ${currentPage} of ${pages} · ${total} leads</span>
+        <div style="display:flex;gap:6px;">
+            <button onclick="goToPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← Prev</button>
+            <button onclick="goToPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>Next →</button>
+        </div>`;
+}
+
+function handleSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { searchQuery = document.getElementById('searchInput').value.trim(); currentPage = 1; loadLeads(); }, 300);
+}
+function filterLeads() { selectedStatus = document.getElementById('statusFilter').value; currentPage = 1; loadLeads(); loadStats(); }
+function selectStatus(name) { selectedStatus = name; document.getElementById('statusFilter').value = name; currentPage = 1; loadLeads(); loadStats(); }
+function goToPage(p) { currentPage = p; loadLeads(); }
+function toggleSelect(id, cb) { cb.checked ? selectedLeads.add(id) : selectedLeads.delete(id); updateBulkBar(); }
+function toggleAll() { const m = document.getElementById('masterCheckbox'); document.querySelectorAll('.lead-checkbox').forEach(cb => { cb.checked = m.checked; m.checked ? selectedLeads.add(parseInt(cb.value)) : selectedLeads.delete(parseInt(cb.value)); }); updateBulkBar(); }
+function updateBulkBar() { const b = document.getElementById('bulkBar'); if (selectedLeads.size > 0) { b.style.display = 'flex'; document.getElementById('selectedCount').textContent = selectedLeads.size + ' selected'; } else { b.style.display = 'none'; } }
+function clearSelection() { selectedLeads.clear(); document.querySelectorAll('.lead-checkbox').forEach(cb => cb.checked = false); document.getElementById('masterCheckbox').checked = false; updateBulkBar(); }
+
+async function bulkChangeStatus(statusId) {
+    if (!statusId || selectedLeads.size === 0) return;
+    await fetch('/admin/leads/api/bulk-action', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'move_status', lead_ids:Array.from(selectedLeads), status_id: parseInt(statusId)})
+    });
+    document.getElementById('bulkStatusSelect').value = '';
+    clearSelection();
+    loadLeads();
+    loadStats();
+    showToast('Status updated for all selected');
+}
+
+function openStatusModal() {
+    document.getElementById('statusModalTitle').textContent = 'Create Status';
+    document.getElementById('editStatusId').value = '';
+    document.getElementById('statusName').value = '';
+    document.getElementById('statusColor').value = '#4F46E5';
+    document.getElementById('statusModal').classList.add('show');
+}
+function closeStatusModal() { document.getElementById('statusModal').classList.remove('show'); }
+async function saveStatus() {
+    const name = document.getElementById('statusName').value.trim();
+    const color = document.getElementById('statusColor').value;
+    if (!name) { showToast('Name required', 'error'); return; }
+    const r = await fetch('/admin/leads/api/statuses/custom', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,color})});
+    const d = await r.json();
+    if (d.success) { closeStatusModal(); loadStatuses(); showToast('Status created'); } else { showToast(d.error || 'Error', 'error'); }
+}
+async function deleteStatus(id, name) {
+    if (!confirm(`Delete status "${name}"?`)) return;
+    const r = await fetch('/admin/leads/api/statuses/'+id, {method:'DELETE'});
+    const d = await r.json();
+    if (d.success) { loadStatuses(); loadLeads(); showToast('Status deleted'); } else { showToast(d.error, 'error'); }
+}
+
+function openNoteModal(uid) { currentNoteUserId = uid; document.getElementById('noteContent').value = ''; document.getElementById('noteModal').classList.add('show'); }
+function closeNoteModal() { document.getElementById('noteModal').classList.remove('show'); }
+async function saveNote() {
+    const content = document.getElementById('noteContent').value.trim();
+    if (!content || !currentNoteUserId) return;
+    await fetch('/admin/leads/api/'+currentNoteUserId+'/notes', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});
+    closeNoteModal(); showToast('Note saved');
+}
+function bulkAddNote() { document.getElementById('bulkNoteContent').value = ''; document.getElementById('bulkNoteModal').classList.add('show'); }
+function closeBulkNoteModal() { document.getElementById('bulkNoteModal').classList.remove('show'); }
+async function saveBulkNote() {
+    const content = document.getElementById('bulkNoteContent').value.trim();
+    if (!content || selectedLeads.size===0) return;
+    await fetch('/admin/leads/api/bulk-action', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add_note',lead_ids:Array.from(selectedLeads),note:content})});
+    closeBulkNoteModal(); clearSelection(); showToast('Note added to all');
+}
+
+function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+document.addEventListener('keydown', e => { if (e.key==='Escape') { closeStatusModal(); closeNoteModal(); closeBulkNoteModal(); } });
+document.addEventListener('DOMContentLoaded', () => { loadStatuses(); loadLeads(); });
+</script>
+{% endblock %}

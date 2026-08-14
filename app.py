@@ -22,7 +22,7 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
     
-    from models import User, Trade, ImportHistory, DayNote, TradingAccount, Category, Tag, Blog, SEOSettings, PageMetadata, Redirect, NewsletterSubscriber, MediaLibrary, ContactMessage, Coupon, CouponUsage, CouponUser
+    from models import User, Trade, ImportHistory, DayNote, TradingAccount, Category, Tag, Blog, SEOSettings, PageMetadata, Redirect, NewsletterSubscriber, MediaLibrary, ContactMessage, Coupon, CouponUsage, CouponUser, LeadStatus, LeadNote, LeadFollowUp, Influencer, InfluencerCampaign, seed_lead_statuses
     
     @login_manager.user_loader
     def load_user(user_id):
@@ -38,6 +38,7 @@ def create_app():
     from seo_routes import seo_bp
     from moderator_routes import moderator_bp
     from coupon_routes import coupon_bp
+    from lead_routes import lead_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
@@ -49,6 +50,7 @@ def create_app():
     app.register_blueprint(seo_bp)
     app.register_blueprint(moderator_bp)
     app.register_blueprint(coupon_bp)
+    app.register_blueprint(lead_bp)
     
     with app.app_context():
         db_path = os.path.join(basedir, 'trading_journal.db')
@@ -58,12 +60,14 @@ def create_app():
             seed_template_rules()
             seed_ai_plan_defaults()
             seed_moderator_permissions()
+            seed_lead_statuses()
             print("✅ Database created with all tables!")
         else:
             db.create_all()
             seed_template_rules()
             seed_ai_plan_defaults()
             seed_moderator_permissions()
+            seed_lead_statuses()
             migrate_existing_data()
 
     @app.context_processor
