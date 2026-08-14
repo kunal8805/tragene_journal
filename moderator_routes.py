@@ -134,6 +134,10 @@ def seed_default_permissions():
         ('Sync Manager', 'sync', 'View Sync', 'View sync connections', 'read'),
         ('Sync Manager', 'sync.stop', 'Manage Sync', 'Stop/start user sync', 'manage'),
         ('Moderators', 'moderators', 'Manage Moderators', 'Add/edit/delete moderators', 'manage'),
+        ('CRM', 'leads', 'View Leads', 'Access Lead CRM', 'read'),
+        ('CRM', 'leads.edit', 'Edit Leads', 'Add notes and change lead status', 'write'),
+        ('CRM', 'influencers', 'View Influencers', 'Access Influencer CRM', 'read'),
+        ('CRM', 'influencers.edit', 'Edit Influencers', 'Add notes and manage influencers', 'write'),
     ]
     
     for section, key, label, desc, cat in defaults:

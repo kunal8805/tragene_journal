@@ -1,0 +1,542 @@
+{% extends "base_admin.html" %}
+{% block title %}Influencer CRM - Admin{% endblock %}
+{% block page_title %}📢 Influencer CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .crm-container { max-width: 1400px; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: all 0.25s;
+    }
+    .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .stat-card.active { border-color: var(--accent); background: rgba(38,166,154,0.06); }
+    .stat-card .stat-label {
+        font-size: 0.65rem; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--text-muted);
+        font-weight: 600; margin-bottom: 3px;
+    }
+    .stat-card .stat-value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.4rem; font-weight: 700; color: var(--text-primary);
+    }
+    .stat-card.total .stat-value { color: var(--accent); }
+    .stat-card.agreed .stat-value { color: #00c853; }
+    .stat-card.declined .stat-value { color: #ff5252; }
+    .stat-card.responded .stat-value { color: #ffb300; }
+
+    .toolbar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .toolbar input {
+        flex: 1; min-width: 180px;
+        padding: 9px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 0.8rem; outline: none;
+    }
+    .toolbar input:focus { border-color: var(--accent); }
+    .toolbar select {
+        padding: 9px 14px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary); font-size: 0.78rem;
+        cursor: pointer; outline: none;
+    }
+    .btn-primary {
+        padding: 9px 16px; background: var(--accent); color: #fff;
+        border: none; border-radius: 10px; font-weight: 600;
+        font-size: 0.78rem; cursor: pointer; white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-import {
+        padding: 9px 16px; background: rgba(139,92,246,0.12); color: #8b5cf6;
+        border: 1px solid rgba(139,92,246,0.3); border-radius: 10px;
+        font-weight: 600; font-size: 0.78rem; cursor: pointer;
+        white-space: nowrap; transition: all 0.2s;
+    }
+    .btn-import:hover { background: rgba(139,92,246,0.2); }
+
+    .table-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .crm-table { width: 100%; border-collapse: collapse; }
+    .crm-table th {
+        padding: 12px 14px; text-align: left;
+        font-size: 0.66rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--border-color);
+        background: var(--bg-body); white-space: nowrap;
+    }
+    .crm-table td {
+        padding: 11px 14px; font-size: 0.78rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary); vertical-align: middle;
+    }
+    .crm-table tr:hover td { background: var(--sidebar-hover); }
+    .crm-table tr:last-child td { border-bottom: none; }
+
+    .inf-name { color: var(--text-primary); font-weight: 600; text-decoration: none; }
+    .inf-name:hover { color: var(--accent); }
+
+    .platform-badge {
+        display: inline-block; padding: 3px 8px;
+        border-radius: 6px; font-size: 0.62rem; font-weight: 700;
+        text-transform: uppercase;
+    }
+    .platform-badge.youtube { background: rgba(255,82,82,0.12); color: #ff5252; }
+    .platform-badge.instagram { background: rgba(236,72,153,0.12); color: #ec4899; }
+    .platform-badge.twitter { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .platform-badge.telegram { background: rgba(34,197,94,0.12); color: #22c55e; }
+    .platform-badge.discord { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    .platform-badge.other { background: rgba(100,116,139,0.12); color: #64748b; }
+
+    .response-badge {
+        display: inline-block; padding: 3px 10px;
+        border-radius: 20px; font-size: 0.66rem; font-weight: 600;
+    }
+    .response-badge.not_contacted { background: rgba(100,116,139,0.12); color: #64748b; }
+    .response-badge.contacted { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .response-badge.responded { background: rgba(255,179,0,0.12); color: #ffb300; }
+    .response-badge.negotiating { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    .response-badge.agreed { background: rgba(0,200,83,0.12); color: #00c853; }
+    .response-badge.declined { background: rgba(255,82,82,0.12); color: #ff5252; }
+
+    .action-btn {
+        padding: 5px 8px; border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: transparent; color: var(--text-secondary);
+        cursor: pointer; font-size: 0.68rem; transition: all 0.2s;
+        text-decoration: none; display: inline-flex; align-items: center;
+    }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .action-btn.wa { color: #22c55e; border-color: rgba(34,197,94,0.3); }
+    .action-btn.wa:hover { background: rgba(34,197,94,0.1); border-color: #22c55e; }
+
+    .pagination {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 16px; border-top: 1px solid var(--border-color);
+        font-size: 0.72rem; color: var(--text-muted);
+    }
+    .pagination button {
+        padding: 6px 12px; background: var(--bg-input);
+        border: 1px solid var(--border-color); border-radius: 6px;
+        color: var(--text-primary); cursor: pointer; font-size: 0.72rem;
+    }
+    .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .empty-state { text-align: center; padding: 50px; color: var(--text-muted); }
+    .empty-state i { font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 10px; }
+
+    /* Modal */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.65); z-index: 1050;
+        align-items: center; justify-content: center; padding: 20px;
+        backdrop-filter: blur(3px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 16px; width: 100%; max-width: 500px;
+        padding: 24px; max-height: 85vh; overflow-y: auto;
+    }
+    .modal-box h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 0.9rem; margin-bottom: 16px;
+        color: var(--text-primary);
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label {
+        display: block; font-size: 0.7rem; font-weight: 600;
+        color: var(--text-muted); margin-bottom: 4px;
+    }
+    .form-group input, .form-group select {
+        width: 100%; padding: 9px 12px;
+        background: var(--bg-input); border: 1px solid var(--border-color);
+        border-radius: 8px; color: var(--text-primary); font-size: 0.8rem;
+        outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    .btn-modal {
+        padding: 8px 18px; border-radius: 8px;
+        font-weight: 600; font-size: 0.78rem; cursor: pointer; border: none;
+    }
+    .btn-modal.cancel { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .btn-modal.save { background: var(--accent); color: #fff; }
+
+    .csv-preview {
+        background: var(--bg-body); border: 1px solid var(--border-color);
+        border-radius: 8px; padding: 12px; margin-top: 8px;
+        max-height: 180px; overflow-y: auto; font-size: 0.7rem;
+    }
+    .csv-preview table { width: 100%; border-collapse: collapse; }
+    .csv-preview th, .csv-preview td {
+        padding: 4px 8px; border-bottom: 1px solid var(--border-color);
+        text-align: left; white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="crm-container">
+    <div id="toastContainer" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card total" onclick="filterResponse('all')" id="statAll">
+            <div class="stat-label">Total</div>
+            <div class="stat-value">{{ total }}</div>
+        </div>
+        <div class="stat-card" onclick="filterResponse('not_contacted')" id="statNotContacted">
+            <div class="stat-label">Not Contacted</div>
+            <div class="stat-value">{{ not_contacted }}</div>
+        </div>
+        <div class="stat-card" onclick="filterResponse('contacted')" id="statContacted">
+            <div class="stat-label">Contacted</div>
+            <div class="stat-value">{{ contacted }}</div>
+        </div>
+        <div class="stat-card responded" onclick="filterResponse('responded')" id="statResponded">
+            <div class="stat-label">Responded</div>
+            <div class="stat-value">{{ responded }}</div>
+        </div>
+        <div class="stat-card agreed" onclick="filterResponse('agreed')" id="statAgreed">
+            <div class="stat-label">Agreed</div>
+            <div class="stat-value">{{ agreed }}</div>
+        </div>
+        <div class="stat-card declined" onclick="filterResponse('declined')" id="statDeclined">
+            <div class="stat-label">Declined</div>
+            <div class="stat-value">{{ declined }}</div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="🔍 Search influencer by name, email, phone..." oninput="handleSearch()">
+        <select id="responseFilter" onchange="filterLeads()">
+            <option value="all">All Responses</option>
+            <option value="not_contacted">Not Contacted</option>
+            <option value="contacted">Contacted</option>
+            <option value="responded">Responded</option>
+            <option value="negotiating">Negotiating</option>
+            <option value="agreed">Agreed</option>
+            <option value="declined">Declined</option>
+        </select>
+        <button class="btn-primary" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> Add Influencer</button>
+        <button class="btn-import" onclick="openImportModal()"><i class="bi bi-upload"></i> Import CSV</button>
+        <span id="resultsCount" style="font-size:0.72rem;color:var(--text-muted);"></span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <div style="overflow-x:auto;">
+            <table class="crm-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Contact</th>
+                        <th>Platform</th>
+                        <th>Followers</th>
+                        <th>Niche</th>
+                        <th>Response</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="influencerTableBody">
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination" id="paginationBar"></div>
+    </div>
+</div>
+
+<!-- Add Influencer Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal-box">
+        <h5>➕ Add Influencer</h5>
+        <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="addName" placeholder="Full name">
+        </div>
+        <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="addEmail" placeholder="email@example.com">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="text" id="addPhone" placeholder="9876543210">
+            </div>
+            <div class="form-group">
+                <label>Platform</label>
+                <select id="addPlatform">
+                    <option value="">Select</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="twitter">Twitter/X</option>
+                    <option value="telegram">Telegram</option>
+                    <option value="discord">Discord</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Social Handle</label>
+                <input type="text" id="addHandle" placeholder="@username">
+            </div>
+            <div class="form-group">
+                <label>Followers</label>
+                <input type="number" id="addFollowers" placeholder="50000">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Niche</label>
+            <select id="addNiche">
+                <option value="">Select</option>
+                <option value="forex">Forex</option>
+                <option value="crypto">Crypto</option>
+                <option value="stocks">Indian Stocks</option>
+                <option value="options">Options</option>
+                <option value="general">General Trading</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeAddModal()">Cancel</button>
+            <button class="btn-modal save" onclick="saveInfluencer()">Add</button>
+        </div>
+    </div>
+</div>
+
+<!-- Import CSV Modal -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal-box">
+        <h5>📥 Import Influencers from CSV</h5>
+        <p style="font-size:0.72rem;color:var(--text-muted);margin-bottom:12px;">
+            CSV format: <code>name,email,phone,platform,follower_count,niche,social_handle</code><br>
+            Empty fields will be set as NULL.
+        </p>
+        <input type="file" id="csvFile" accept=".csv" onchange="previewCSV()" style="width:100%;padding:8px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.75rem;">
+        <div id="csvPreview" class="csv-preview" style="display:none;"></div>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeImportModal()">Cancel</button>
+            <button class="btn-modal save" onclick="importCSV()">Import</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1, searchQuery = '', selectedResponse = 'all', searchTimer = null, csvFileData = null;
+
+function showToast(msg, type='success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.style.cssText = `padding:10px 18px;border-radius:10px;font-size:0.78rem;font-weight:600;color:#fff;animation:slideIn 0.3s ease;background:${type==='success'?'var(--accent)':'#ff5252'};`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 4000);
+}
+
+async function loadInfluencers() {
+    const tbody = document.getElementById('influencerTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
+    
+    const params = new URLSearchParams({ page: currentPage, search: searchQuery, response: selectedResponse });
+    const r = await fetch('/admin/influencers/api/list?' + params);
+    const d = await r.json();
+    
+    document.getElementById('resultsCount').textContent = (d.total||0) + ' influencers';
+    
+    if (!d.influencers || d.influencers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="bi bi-megaphone"></i><p>No influencers found. Click "Add Influencer" or "Import CSV".</p></div></td></tr>';
+        updatePagination(0, 1);
+        return;
+    }
+    
+    let h = '';
+    d.influencers.forEach(inf => {
+        const platformBadge = inf.platform ? `<span class="platform-badge ${inf.platform}">${inf.platform}</span>` : '<span style="color:var(--text-muted);">—</span>';
+        const respBadge = `<span class="response-badge ${inf.response_status}">${inf.response_status.replace('_',' ').toUpperCase()}</span>`;
+        const followers = inf.follower_count ? inf.follower_count.toLocaleString('en-IN') : '—';
+        
+        h += `<tr>
+            <td><a href="/admin/influencers/${inf.id}" class="inf-name">${esc(inf.name)}</a></td>
+            <td>
+                <div style="font-size:0.75rem;">${esc(inf.email)}</div>
+                <div style="font-size:0.68rem;color:var(--text-muted);">${esc(inf.phone || '')}</div>
+            </td>
+            <td>${platformBadge}</td>
+            <td>${followers}</td>
+            <td>${inf.niche ? esc(inf.niche) : '—'}</td>
+            <td>${respBadge}</td>
+            <td>
+                <div style="display:flex;gap:4px;">
+                    <a href="/admin/influencers/${inf.id}" class="action-btn" title="View"><i class="bi bi-eye"></i></a>
+                    ${inf.phone ? `<a href="https://wa.me/${inf.phone.replace(/[^0-9]/g,'')}" target="_blank" class="action-btn wa" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>` : ''}
+                </div>
+            </td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = h;
+    updatePagination(d.total, d.pages);
+}
+
+function updatePagination(total, pages) {
+    const bar = document.getElementById('paginationBar');
+    if (pages <= 1) { bar.innerHTML = `<span>${total} influencers</span>`; return; }
+    bar.innerHTML = `<span>Page ${currentPage} of ${pages} · ${total} influencers</span>
+        <div style="display:flex;gap:6px;">
+            <button onclick="goToPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← Prev</button>
+            <button onclick="goToPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>Next →</button>
+        </div>`;
+}
+
+function handleSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { searchQuery = document.getElementById('searchInput').value.trim(); currentPage = 1; loadInfluencers(); }, 300);
+}
+function filterLeads() { selectedResponse = document.getElementById('responseFilter').value; currentPage = 1; loadInfluencers(); }
+function filterResponse(r) { selectedResponse = r; document.getElementById('responseFilter').value = r; currentPage = 1; loadInfluencers();
+    document.querySelectorAll('.stat-card').forEach(s => s.classList.remove('active'));
+    const map = {all:'statAll',not_contacted:'statNotContacted',contacted:'statContacted',responded:'statResponded',agreed:'statAgreed',declined:'statDeclined'};
+    if (map[r]) document.getElementById(map[r]).classList.add('active');
+}
+function goToPage(p) { currentPage = p; loadInfluencers(); }
+
+// Add Modal
+function openAddModal() { document.getElementById('addModal').classList.add('show'); }
+function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
+
+async function saveInfluencer() {
+    const name = document.getElementById('addName').value.trim();
+    const email = document.getElementById('addEmail').value.trim();
+    if (!name || !email) { showToast('Name and email required', 'error'); return; }
+    
+    const data = {
+        name, email,
+        phone: document.getElementById('addPhone').value.trim(),
+        platform: document.getElementById('addPlatform').value,
+        social_handle: document.getElementById('addHandle').value.trim(),
+        follower_count: document.getElementById('addFollowers').value,
+        niche: document.getElementById('addNiche').value
+    };
+    
+    const r = await fetch('/admin/influencers/add', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+    });
+    const d = await r.json();
+    if (d.success) {
+        closeAddModal(); loadInfluencers(); showToast('Influencer added!');
+        // Reset form
+        ['addName','addEmail','addPhone','addHandle','addFollowers'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('addPlatform').value = '';
+        document.getElementById('addNiche').value = '';
+    } else {
+        showToast(d.error || 'Error', 'error');
+    }
+}
+
+// Import Modal
+function openImportModal() {
+    document.getElementById('importModal').classList.add('show');
+    document.getElementById('csvFile').value = '';
+    document.getElementById('csvPreview').style.display = 'none';
+    csvFileData = null;
+}
+function closeImportModal() { document.getElementById('importModal').classList.remove('show'); }
+
+function previewCSV() {
+    const file = document.getElementById('csvFile').files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(l => l.trim());
+        if (lines.length < 2) { showToast('CSV needs header + data rows', 'error'); return; }
+        
+        const headers = lines[0].split(',').map(h => h.trim());
+        const previewRows = lines.slice(1, 6); // First 5 data rows
+        
+        let html = '<table><thead><tr>' + headers.map(h => `<th>${esc(h)}</th>`).join('') + '</tr></thead><tbody>';
+        previewRows.forEach(row => {
+            const cols = row.split(',');
+            html += '<tr>' + cols.map(c => `<td>${esc(c.trim() || 'NULL')}</td>`).join('') + '</tr>';
+        });
+        html += '</tbody></table>';
+        html += `<p style="margin-top:8px;font-size:0.68rem;color:var(--text-muted);">Previewing first ${previewRows.length} of ${lines.length - 1} rows</p>`;
+        
+        document.getElementById('csvPreview').innerHTML = html;
+        document.getElementById('csvPreview').style.display = 'block';
+        csvFileData = file;
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+async function importCSV() {
+    if (!csvFileData) { showToast('Select a CSV file first', 'error'); return; }
+    
+    const fd = new FormData();
+    fd.append('csv_file', csvFileData);
+    
+    const r = await fetch('/admin/influencers/import-csv', {
+        method:'POST', body: fd
+    });
+    const d = await r.json();
+    
+    if (d.success) {
+        closeImportModal(); loadInfluencers();
+        showToast(`✅ ${d.added} added, ${d.skipped} skipped, ${d.failed} failed`);
+    } else {
+        showToast(d.error || 'Import failed', 'error');
+    }
+}
+
+function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+document.addEventListener('keydown', e => { if (e.key==='Escape') { closeAddModal(); closeImportModal(); } });
+document.addEventListener('DOMContentLoaded', loadInfluencers);
+</script>
+{% endblock %}

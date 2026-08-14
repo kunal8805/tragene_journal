@@ -69,6 +69,8 @@ class User(UserMixin, db.Model):
     last_analyzed_date = db.Column(db.Date, nullable=True)
     email_verified = db.Column(db.Boolean, default=False)
     email_verified_at = db.Column(db.DateTime, nullable=True)
+    lead_status_id = db.Column(db.Integer, db.ForeignKey('lead_statuses.id'), nullable=True)
+    lead_status = db.relationship('LeadStatus', backref='users_with_status', foreign_keys=[lead_status_id])
     
     trades = db.relationship('Trade', backref='trader', lazy=True, foreign_keys='Trade.user_id')
     imports = db.relationship('ImportHistory', backref='importer', lazy=True, foreign_keys='ImportHistory.user_id')
@@ -1470,3 +1472,182 @@ def check_purchase_blocked(user, plan_tier=None):
     
     return False, None
 
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 📋 LEAD CRM SYSTEM
+# ═══════════════════════════════════════════════════════════
+
+class LeadStatus(db.Model):
+    """Custom status categories for leads and influencers"""
+    __tablename__ = 'lead_statuses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    color = db.Column(db.String(20), default='#4F46E5')  # Hex color for badge
+    is_default = db.Column(db.Boolean, default=False)  # System default vs custom
+    is_active = db.Column(db.Boolean, default=True)
+    sort_order = db.Column(db.Integer, default=0)
+    created_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    creator = db.relationship('User', backref='created_lead_statuses', foreign_keys=[created_by_admin_id])
+    
+    def __repr__(self):
+        return f'<LeadStatus {self.name}>'
+
+
+class LeadNote(db.Model):
+    """Notes for both user leads and influencers"""
+    __tablename__ = 'lead_notes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    lead_type = db.Column(db.String(20), nullable=False)  # 'user' or 'influencer'
+    lead_id = db.Column(db.Integer, nullable=False)  # user.id or influencer.id
+    content = db.Column(db.Text, nullable=False)
+    created_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    creator = db.relationship('User', backref='created_lead_notes', foreign_keys=[created_by_admin_id])
+    
+    def __repr__(self):
+        return f'<LeadNote {self.lead_type}:{self.lead_id}>'
+
+
+class LeadFollowUp(db.Model):
+    """Scheduled follow-ups for leads and influencers"""
+    __tablename__ = 'lead_followups'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    lead_type = db.Column(db.String(20), nullable=False)  # 'user' or 'influencer'
+    lead_id = db.Column(db.Integer, nullable=False)
+    followup_date = db.Column(db.DateTime, nullable=False)
+    followup_type = db.Column(db.String(20), default='call')  # call, whatsapp, email
+    notes = db.Column(db.Text, nullable=True)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    created_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    creator = db.relationship('User', backref='created_followups', foreign_keys=[created_by_admin_id])
+    
+    def __repr__(self):
+        return f'<LeadFollowUp {self.lead_type}:{self.lead_id}>'
+
+
+class Influencer(db.Model):
+    """Influencer CRM - track collaborators"""
+    __tablename__ = 'influencers'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    phone = db.Column(db.String(20), nullable=True)
+    
+    # Social details
+    platform = db.Column(db.String(30), nullable=True)  # youtube, instagram, twitter, telegram, discord, other
+    social_handle = db.Column(db.String(100), nullable=True)  # @username
+    follower_count = db.Column(db.Integer, nullable=True)
+    niche = db.Column(db.String(50), nullable=True)  # forex, crypto, stocks, options, general
+    
+    # Status tracking
+    status_id = db.Column(db.Integer, db.ForeignKey('lead_statuses.id'), nullable=True)  # Lead status category
+    response_status = db.Column(db.String(30), default='not_contacted')  # not_contacted, contacted, responded, negotiating, agreed, declined
+    
+    # Source
+    source = db.Column(db.String(20), default='manual')  # manual, csv_import
+    
+    # Quick info
+    tags = db.Column(db.String(200), nullable=True)  # comma-separated
+    notes = db.Column(db.Text, nullable=True)  # Quick summary note
+    last_contacted_at = db.Column(db.DateTime, nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    status = db.relationship('LeadStatus', backref='influencers', foreign_keys=[status_id])
+    
+    def get_notes(self):
+        """Get all notes for this influencer"""
+        return LeadNote.query.filter_by(lead_type='influencer', lead_id=self.id).order_by(LeadNote.created_at.desc()).all()
+    
+    def get_followups(self):
+        """Get all follow-ups for this influencer"""
+        return LeadFollowUp.query.filter_by(lead_type='influencer', lead_id=self.id).order_by(LeadFollowUp.followup_date.desc()).all()
+    
+    def __repr__(self):
+        return f'<Influencer {self.name}>'
+
+
+class InfluencerCampaign(db.Model):
+    """Track influencer coupon campaigns"""
+    __tablename__ = 'influencer_campaigns'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    influencer_id = db.Column(db.Integer, db.ForeignKey('influencers.id'), nullable=False)
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=True)
+    
+    campaign_name = db.Column(db.String(150), nullable=True)
+    status = db.Column(db.String(20), default='active')  # active, completed, paused
+    
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ended_at = db.Column(db.DateTime, nullable=True)
+    
+    notes = db.Column(db.Text, nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    influencer = db.relationship('Influencer', backref='campaigns', foreign_keys=[influencer_id])
+    coupon = db.relationship('Coupon', backref='campaigns', foreign_keys=[coupon_id])
+    
+    def get_total_uses(self):
+        """Get total coupon uses for this campaign"""
+        if not self.coupon_id:
+            return 0
+        from sqlalchemy import func
+        return db.session.query(func.count(CouponUsage.id)).filter_by(coupon_id=self.coupon_id).scalar() or 0
+    
+    def get_total_revenue(self):
+        """Get total revenue generated by this campaign"""
+        if not self.coupon_id:
+            return 0
+        from sqlalchemy import func
+        return db.session.query(func.sum(CouponUsage.final_amount)).filter_by(coupon_id=self.coupon_id).scalar() or 0
+    
+    def get_total_discount(self):
+        """Get total discount given"""
+        if not self.coupon_id:
+            return 0
+        from sqlalchemy import func
+        return db.session.query(func.sum(CouponUsage.discount_applied)).filter_by(coupon_id=self.coupon_id).scalar() or 0
+    
+    def __repr__(self):
+        return f'<InfluencerCampaign influencer={self.influencer_id}>'
+
+
+# ═══════════════════════════════════════════════════════════
+# 🔧 SEED DEFAULT LEAD STATUSES
+# ═══════════════════════════════════════════════════════════
+
+def seed_lead_statuses():
+    """Seed default lead status categories"""
+    defaults = [
+        {'name': 'New Lead', 'color': '#6B7280', 'is_default': True, 'sort_order': 1},
+        {'name': 'Verified', 'color': '#10B981', 'is_default': True, 'sort_order': 2},
+        {'name': 'Interested', 'color': '#F59E0B', 'is_default': True, 'sort_order': 3},
+        {'name': 'Call Follow-up', 'color': '#3B82F6', 'is_default': True, 'sort_order': 4},
+        {'name': 'WhatsApp Follow-up', 'color': '#22C55E', 'is_default': True, 'sort_order': 5},
+        {'name': 'Email Follow-up', 'color': '#8B5CF6', 'is_default': True, 'sort_order': 6},
+        {'name': 'Purchased', 'color': '#06B6D4', 'is_default': True, 'sort_order': 7},
+        {'name': 'Dead Lead', 'color': '#EF4444', 'is_default': True, 'sort_order': 8},
+    ]
+    
+    for d in defaults:
+        if not LeadStatus.query.filter_by(name=d['name'], is_default=True).first():
+            db.session.add(LeadStatus(**d))
+    
+    db.session.commit()
+    print("✅ Lead statuses seeded!")

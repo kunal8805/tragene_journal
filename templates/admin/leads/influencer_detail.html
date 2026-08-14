@@ -1,0 +1,461 @@
+{% extends "base_admin.html" %}
+{% block title %}Influencer Detail - Admin{% endblock %}
+{% block page_title %}📢 Influencer Detail{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container { max-width: 1200px; }
+
+    .back-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: var(--text-muted); text-decoration: none;
+        font-size: 0.8rem; font-weight: 600; margin-bottom: 16px;
+        transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .detail-grid {
+        display: grid; grid-template-columns: 1fr 2fr; gap: 20px;
+    }
+
+    .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .card h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.75rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--text-muted); margin-bottom: 14px;
+        display: flex; align-items: center; gap: 8px;
+    }
+
+    .inf-header-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        display: flex; align-items: center; gap: 16px;
+        flex-wrap: wrap;
+    }
+    .inf-avatar {
+        width: 56px; height: 56px; border-radius: 16px;
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; font-weight: 700; color: #fff;
+        flex-shrink: 0;
+    }
+    .inf-info h4 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.1rem; font-weight: 700;
+        color: var(--text-primary); margin: 0 0 4px;
+    }
+    .inf-info p {
+        font-size: 0.8rem; color: var(--text-muted);
+        margin: 0 0 4px;
+    }
+    .inf-actions {
+        margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .btn-action {
+        padding: 7px 12px; border-radius: 8px;
+        font-size: 0.7rem; font-weight: 600;
+        text-decoration: none; border: 1px solid var(--border-color);
+        color: var(--text-secondary); background: transparent;
+        cursor: pointer; transition: all 0.2s;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn-action:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-action.wa { color: #22c55e; border-color: rgba(34,197,94,0.3); }
+    .btn-action.wa:hover { background: rgba(34,197,94,0.1); border-color: #22c55e; }
+    .btn-action.call { color: #3b82f6; border-color: rgba(59,130,246,0.3); }
+    .btn-action.call:hover { background: rgba(59,130,246,0.1); border-color: #3b82f6; }
+
+    .info-row {
+        display: flex; justify-content: space-between;
+        padding: 8px 0; border-bottom: 1px solid var(--border-color);
+        font-size: 0.8rem;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .lbl { color: var(--text-muted); }
+    .info-row .val { font-weight: 600; color: var(--text-primary); }
+
+    .response-badge {
+        display: inline-block; padding: 4px 12px;
+        border-radius: 20px; font-size: 0.7rem; font-weight: 600;
+    }
+    .response-badge.not_contacted { background: rgba(100,116,139,0.12); color: #64748b; }
+    .response-badge.contacted { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .response-badge.responded { background: rgba(255,179,0,0.12); color: #ffb300; }
+    .response-badge.negotiating { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    .response-badge.agreed { background: rgba(0,200,83,0.12); color: #00c853; }
+    .response-badge.declined { background: rgba(255,82,82,0.12); color: #ff5252; }
+
+    .form-control {
+        width: 100%; padding: 9px 12px;
+        background: var(--bg-input); border: 1px solid var(--border-color);
+        border-radius: 8px; color: var(--text-primary); font-size: 0.78rem;
+        outline: none; transition: all 0.2s;
+    }
+    .form-control:focus { border-color: var(--accent); }
+
+    textarea.form-control {
+        resize: vertical; min-height: 70px;
+    }
+
+    .btn-save {
+        padding: 9px 20px; background: var(--accent); color: #fff;
+        border: none; border-radius: 8px; font-weight: 700;
+        font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-save:hover { background: var(--accent-hover); }
+
+    .note-item {
+        border-left: 2px solid #8b5cf6;
+        padding: 10px 14px; margin-bottom: 10px;
+        background: var(--bg-body); border-radius: 0 10px 10px 0;
+    }
+    .note-item .note-header {
+        display: flex; justify-content: space-between;
+        font-size: 0.68rem; color: var(--text-muted); margin-bottom: 4px;
+    }
+    .note-item .note-content {
+        font-size: 0.8rem; color: var(--text-primary);
+        white-space: pre-wrap; line-height: 1.5;
+    }
+
+    .campaign-item {
+        padding: 12px 14px; margin-bottom: 10px;
+        background: var(--bg-body); border: 1px solid var(--border-color);
+        border-radius: 10px;
+    }
+    .campaign-item .campaign-header {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 0.78rem; font-weight: 600; margin-bottom: 6px;
+    }
+    .campaign-stats {
+        display: grid; grid-template-columns: repeat(3, 1fr);
+        gap: 8px; font-size: 0.7rem;
+    }
+    .campaign-stat {
+        background: var(--bg-card); padding: 8px; border-radius: 6px;
+        text-align: center;
+    }
+    .campaign-stat .cs-val {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 0.9rem; color: var(--accent);
+    }
+    .campaign-stat .cs-lbl {
+        font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;
+    }
+
+    @media (max-width: 900px) {
+        .detail-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-container">
+    <div id="toastContainer" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+    <a href="/admin/influencers" class="back-link"><i class="bi bi-arrow-left"></i> Back to Influencers</a>
+
+    <!-- Influencer Header -->
+    <div class="inf-header-card">
+        <div class="inf-avatar">{{ influencer.name[0]|upper }}</div>
+        <div class="inf-info">
+            <h4>{{ influencer.name }}</h4>
+            <p><i class="bi bi-envelope"></i> {{ influencer.email }}</p>
+            <p><i class="bi bi-telephone"></i> {{ influencer.phone or 'No phone' }}</p>
+        </div>
+        <div class="inf-actions">
+            {% if influencer.phone %}
+            <a href="tel:{{ influencer.phone }}" class="btn-action call"><i class="bi bi-telephone"></i> Call</a>
+            <a href="https://wa.me/{{ influencer.phone|replace('+','')|replace(' ','') }}" target="_blank" class="btn-action wa"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+            {% endif %}
+            <a href="mailto:{{ influencer.email }}" class="btn-action"><i class="bi bi-envelope"></i> Email</a>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <!-- Left Column -->
+        <div>
+            <!-- Response Status Card -->
+            <div class="card">
+                <h3><i class="bi bi-chat-dots"></i> Response Status</h3>
+                <div style="margin-bottom:10px;">
+                    <span class="response-badge {{ influencer.response_status }}">
+                        {{ influencer.response_status.replace('_',' ').upper() }}
+                    </span>
+                </div>
+                <select id="responseStatusSelect" class="form-control" onchange="updateResponseStatus()">
+                    <option value="not_contacted" {% if influencer.response_status == 'not_contacted' %}selected{% endif %}>Not Contacted</option>
+                    <option value="contacted" {% if influencer.response_status == 'contacted' %}selected{% endif %}>Contacted</option>
+                    <option value="responded" {% if influencer.response_status == 'responded' %}selected{% endif %}>Responded</option>
+                    <option value="negotiating" {% if influencer.response_status == 'negotiating' %}selected{% endif %}>Negotiating</option>
+                    <option value="agreed" {% if influencer.response_status == 'agreed' %}selected{% endif %}>Agreed</option>
+                    <option value="declined" {% if influencer.response_status == 'declined' %}selected{% endif %}>Declined</option>
+                </select>
+            </div>
+
+            <!-- Lead Status Card -->
+            <div class="card">
+                <h3><i class="bi bi-tag"></i> Lead Status</h3>
+                {% if influencer.status %}
+                <div style="margin-bottom:10px;">
+                    <span class="response-badge" style="background:{{ influencer.status.color }}20;color:{{ influencer.status.color }};">{{ influencer.status.name }}</span>
+                </div>
+                {% endif %}
+                <select id="leadStatusSelect" class="form-control" onchange="updateLeadStatus()">
+                    <option value="">Change Status...</option>
+                    {% for s in all_statuses %}
+                    <option value="{{ s.id }}" {% if influencer.status_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Influencer Info Card -->
+            <div class="card">
+                <h3><i class="bi bi-person"></i> Influencer Info</h3>
+                <div class="info-row"><span class="lbl">Platform</span><span class="val">{{ influencer.platform|upper if influencer.platform else 'N/A' }}</span></div>
+                <div class="info-row"><span class="lbl">Handle</span><span class="val">{{ influencer.social_handle or 'N/A' }}</span></div>
+                <div class="info-row"><span class="lbl">Followers</span><span class="val">{{ influencer.follower_count|string if influencer.follower_count else 'N/A' }}</span></div>
+                <div class="info-row"><span class="lbl">Niche</span><span class="val">{{ influencer.niche|upper if influencer.niche else 'N/A' }}</span></div>
+                <div class="info-row"><span class="lbl">Source</span><span class="val">{{ influencer.source|upper }}</span></div>
+                <div class="info-row"><span class="lbl">Added</span><span class="val">{{ influencer.created_at.strftime('%d %b %Y') if influencer.created_at else 'N/A' }}</span></div>
+                <div class="info-row"><span class="lbl">Last Contacted</span><span class="val">{{ influencer.last_contacted_at.strftime('%d %b %Y') if influencer.last_contacted_at else 'Never' }}</span></div>
+            </div>
+
+            <!-- Campaigns Card -->
+            <div class="card">
+                <h3><i class="bi bi-ticket-perforated"></i> Campaigns ({{ campaigns|length }})</h3>
+                {% if campaigns %}
+                    {% for camp in campaigns %}
+                    <div class="campaign-item">
+                        <div class="campaign-header">
+                            <span>{{ camp.campaign_name or 'Untitled' }}</span>
+                            <span class="response-badge" style="background:{{ 'rgba(0,200,83,0.12)' if camp.status == 'active' else 'rgba(255,179,0,0.12)' }};color:{{ '#00c853' if camp.status == 'active' else '#ffb300' }};">{{ camp.status|upper }}</span>
+                        </div>
+                        {% if camp.coupon %}
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:6px;">
+                            Coupon: <strong style="color:var(--accent);">{{ camp.coupon.code }}</strong>
+                        </div>
+                        {% endif %}
+                        <div class="campaign-stats">
+                            <div class="campaign-stat">
+                                <div class="cs-val">{{ camp.get_total_uses() }}</div>
+                                <div class="cs-lbl">Uses</div>
+                            </div>
+                            <div class="campaign-stat">
+                                <div class="cs-val">₹{{ '%.0f'|format(camp.get_total_revenue()) }}</div>
+                                <div class="cs-lbl">Revenue</div>
+                            </div>
+                            <div class="campaign-stat">
+                                <div class="cs-val">₹{{ '%.0f'|format(camp.get_total_discount()) }}</div>
+                                <div class="cs-lbl">Discount</div>
+                            </div>
+                        </div>
+                        {% if camp.status != 'completed' %}
+                        <button onclick="toggleCampaign({{ camp.id }})" style="margin-top:8px;padding:4px 12px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:6px;color:var(--text-secondary);font-size:0.68rem;cursor:pointer;">
+                            {{ '⏸ Pause' if camp.status == 'active' else '▶ Resume' }}
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align:center;color:var(--text-muted);font-size:0.75rem;">No campaigns yet</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+            
+
+            <!-- Add Note -->
+            <div class="card">
+                <h3><i class="bi bi-sticky-note"></i> Add Note</h3>
+                <textarea id="newNoteContent" class="form-control" placeholder="Enter your note here..."></textarea>
+                <button class="btn-save" style="margin-top:8px;" onclick="addNote()"><i class="bi bi-check-lg"></i> Save Note</button>
+            </div>
+
+            <!-- Notes History -->
+            <div class="card">
+                <h3><i class="bi bi-clock-history"></i> Note History</h3>
+                <div id="notesContainer">
+                    <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Loading notes...</p>
+                </div>
+            </div>
+
+            <!-- Follow-ups -->
+            <div class="card">
+                <h3><i class="bi bi-bell"></i> Schedule Follow-up</h3>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <input type="datetime-local" id="followupDate" class="form-control">
+                    <select id="followupType" class="form-control">
+                        <option value="call">📞 Call</option>
+                        <option value="whatsapp">💬 WhatsApp</option>
+                        <option value="email">📧 Email</option>
+                    </select>
+                    <input type="text" id="followupNotes" class="form-control" placeholder="Reminder notes...">
+                    <button class="btn-save" onclick="scheduleFollowup()"><i class="bi bi-plus-lg"></i> Schedule</button>
+                </div>
+                <div id="followupsContainer" style="margin-top:16px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const influencerId = {{ influencer.id }};
+
+function showToast(msg, type='success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.style.cssText = `padding:10px 18px;border-radius:10px;font-size:0.78rem;font-weight:600;color:#fff;animation:slideIn 0.3s ease;background:${type==='success'?'var(--accent)':'#ff5252'};`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+async function updateResponseStatus() {
+    const status = document.getElementById('responseStatusSelect').value;
+    await fetch('/admin/influencers/api/'+influencerId+'/response-status', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({response_status: status})
+    });
+    showToast('Response status updated');
+    setTimeout(() => location.reload(), 500);
+}
+
+async function updateLeadStatus() {
+    const sid = document.getElementById('leadStatusSelect').value;
+    if (!sid) return;
+    await fetch('/admin/influencers/api/'+influencerId+'/status', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({status_id: parseInt(sid)})
+    });
+    showToast('Status updated');
+}
+
+async function createCampaign() {
+    const couponId = document.getElementById('campaignCoupon').value;
+    const campaignName = document.getElementById('campaignName').value.trim();
+    if (!couponId) { showToast('Select a coupon', 'error'); return; }
+    
+    const r = await fetch('/admin/influencers/api/'+influencerId+'/campaign', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({coupon_id: parseInt(couponId), campaign_name: campaignName})
+    });
+    const d = await r.json();
+    if (d.success) {
+        showToast('Campaign created!');
+        setTimeout(() => location.reload(), 500);
+    } else {
+        showToast(d.error || 'Error', 'error');
+    }
+}
+
+async function toggleCampaign(campaignId) {
+    await fetch('/admin/influencers/api/campaigns/'+campaignId+'/toggle', {method:'POST'});
+    showToast('Campaign toggled');
+    setTimeout(() => location.reload(), 500);
+}
+
+async function addNote() {
+    const content = document.getElementById('newNoteContent').value.trim();
+    if (!content) { showToast('Note cannot be empty', 'error'); return; }
+    await fetch('/admin/influencers/api/'+influencerId+'/notes', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({content})
+    });
+    document.getElementById('newNoteContent').value = '';
+    loadNotes();
+    showToast('Note added');
+}
+
+async function loadNotes() {
+    const c = document.getElementById('notesContainer');
+    const r = await fetch('/admin/influencers/api/'+influencerId+'/notes');
+    const d = await r.json();
+    if (!d.notes || d.notes.length === 0) {
+        c.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">No notes yet</p>';
+        return;
+    }
+    let h = '';
+    d.notes.forEach(n => {
+        const dt = new Date(n.created_at);
+        h += `<div class="note-item">
+            <div class="note-header">
+                <span>${dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+                <span>${n.created_by || 'Admin'}</span>
+            </div>
+            <div class="note-content">${esc(n.content)}</div>
+        </div>`;
+    });
+    c.innerHTML = h;
+}
+
+async function scheduleFollowup() {
+    const date = document.getElementById('followupDate').value;
+    const type = document.getElementById('followupType').value;
+    const notes = document.getElementById('followupNotes').value.trim();
+    if (!date) { showToast('Select a date', 'error'); return; }
+    
+    await fetch('/admin/leads/api/'+influencerId+'/followups', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({followup_date:date, followup_type:type, notes, lead_type:'influencer'})
+    });
+    document.getElementById('followupDate').value = '';
+    document.getElementById('followupNotes').value = '';
+    loadFollowups();
+    showToast('Follow-up scheduled');
+}
+
+async function loadFollowups() {
+    const c = document.getElementById('followupsContainer');
+    const r = await fetch('/admin/leads/api/'+influencerId+'/followups');
+    const d = await r.json();
+    
+    // Filter for influencer type
+    const influencerFollowups = d.followups ? d.followups.filter(f => f.lead_type === 'influencer') : [];
+    
+    if (influencerFollowups.length === 0) {
+        c.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:0.75rem;">No follow-ups scheduled</p>';
+        return;
+    }
+    let h = '';
+    influencerFollowups.forEach(f => {
+        const dt = new Date(f.followup_date);
+        h += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:8px;background:var(--bg-body);border:1px solid var(--border-color);border-radius:8px;font-size:0.75rem;${f.is_completed?'opacity:0.5;text-decoration:line-through;':''}">
+            <div>
+                <div style="font-weight:600;">${f.followup_type === 'call' ? '📞' : f.followup_type === 'whatsapp' ? '💬' : '📧'} ${f.followup_type}</div>
+                <div style="font-size:0.68rem;color:var(--text-muted);">${dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+                ${f.notes ? `<div style="font-size:0.68rem;color:var(--text-muted);">${esc(f.notes)}</div>` : ''}
+            </div>
+            ${!f.is_completed ? `<button onclick="completeFollowup(${f.id})" style="padding:4px 10px;background:rgba(0,200,83,0.12);color:#00c853;border:1px solid rgba(0,200,83,0.3);border-radius:6px;font-size:0.68rem;font-weight:600;cursor:pointer;">✓ Done</button>` : '<span style="font-size:0.65rem;color:#00c853;">✓</span>'}
+        </div>`;
+    });
+    c.innerHTML = h;
+}
+
+async function completeFollowup(fid) {
+    await fetch('/admin/leads/api/followups/'+fid+'/complete', {method:'POST'});
+    loadFollowups();
+    showToast('Marked complete');
+}
+
+function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+document.addEventListener('DOMContentLoaded', () => { loadNotes(); loadFollowups(); });
+</script>
+{% endblock %}
