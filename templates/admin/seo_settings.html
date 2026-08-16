@@ -1,0 +1,84 @@
+{% extends "base_admin.html" %}
+
+{% block title %}SEO Settings | Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="m-0 text-light"><i class="bi bi-search text-primary"></i> Global SEO Settings</h4>
+    <button class="btn btn-primary" onclick="document.getElementById('seoForm').submit()">Save Settings</button>
+</div>
+
+<form id="seoForm" method="POST" action="{{ url_for('admin.seo_settings') }}">
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4" style="background: var(--bg-card); border-color: var(--border-color);">
+            <div class="card-header border-bottom border-dark">
+                <h6 class="m-0 text-light">General Settings</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label text-light">Site Title (Suffix)</label>
+                    <input type="text" name="site_title" class="form-control bg-dark text-light border-secondary" value="{{ settings.site_title or '' }}">
+                    <div class="form-text">Appended to all page titles (e.g. "My Page | <b>Site Title</b>")</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-light">Default Meta Description</label>
+                    <textarea name="default_meta_description" class="form-control bg-dark text-light border-secondary" rows="3">{{ settings.default_meta_description or '' }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-light">Default Keywords</label>
+                    <input type="text" name="default_keywords" class="form-control bg-dark text-light border-secondary" value="{{ settings.default_keywords or '' }}">
+                    <div class="form-text">Comma-separated keywords for pages without custom meta</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-light">Robots.txt Content</label>
+                    <textarea name="robots_txt_content" class="form-control bg-dark text-light border-secondary font-monospace" rows="6">{{ settings.robots_txt_content or '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4" style="background: var(--bg-card); border-color: var(--border-color);">
+            <div class="card-header border-bottom border-dark">
+                <h6 class="m-0 text-light">Analytics & Tracking</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label text-light">Google Analytics ID</label>
+                    <input type="text" name="google_analytics_id" class="form-control bg-dark text-light border-secondary" placeholder="G-XXXXXXXXXX" value="{{ settings.google_analytics_id or '' }}">
+                    <div class="form-text">Your Google Analytics 4 Measurement ID (e.g. G-XXXXXXXXXX)</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light">Microsoft Clarity ID</label>
+                    <input type="text" name="microsoft_clarity_id" class="form-control bg-dark text-light border-secondary" value="{{ settings.microsoft_clarity_id or '' }}">
+                    <div class="form-text">Optional: Microsoft Clarity tracking ID</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4" style="background: var(--bg-card); border-color: var(--border-color);">
+            <div class="card-header border-bottom border-dark">
+                <h6 class="m-0 text-light">Quick Links</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('seo.sitemap') }}" target="_blank" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-diagram-3"></i> View Sitemap.xml
+                    </a>
+                    <a href="{{ url_for('seo.robots_txt') }}" target="_blank" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-robot"></i> View Robots.txt
+                    </a>
+                    <a href="{{ url_for('seo.rss_feed') }}" target="_blank" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-rss"></i> View RSS Feed
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</form>
+{% endblock %}

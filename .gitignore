@@ -23,3 +23,6 @@ ENV/
 # IDE configurations
 .vscode/
 .idea/
+*.backup
+*.bak
+static/uploads/
