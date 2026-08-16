@@ -1473,8 +1473,6 @@ def check_purchase_blocked(user, plan_tier=None):
     return False, None
 
 
-
-
 # ═══════════════════════════════════════════════════════════
 # 📋 LEAD CRM SYSTEM
 # ═══════════════════════════════════════════════════════════
@@ -1543,8 +1541,10 @@ class Influencer(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    phone = db.Column(db.String(20), nullable=True)
+    
+    # Contact details
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
     
     # Social details
     platform = db.Column(db.String(30), nullable=True)  # youtube, instagram, twitter, telegram, discord, other
