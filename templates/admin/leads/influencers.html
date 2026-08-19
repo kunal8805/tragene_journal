@@ -19,6 +19,7 @@
         padding: 14px 16px;
         cursor: pointer;
         transition: all 0.25s;
+        position: relative;
     }
     .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
     .stat-card.active { border-color: var(--accent); background: rgba(38,166,154,0.06); }
@@ -35,6 +36,10 @@
     .stat-card.agreed .stat-value { color: #00c853; }
     .stat-card.declined .stat-value { color: #ff5252; }
     .stat-card.responded .stat-value { color: #ffb300; }
+    .stat-card .stat-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        display: inline-block; margin-right: 6px;
+    }
 
     .toolbar {
         background: var(--bg-card);
@@ -79,6 +84,36 @@
         white-space: nowrap; transition: all 0.2s;
     }
     .btn-import:hover { background: rgba(139,92,246,0.2); }
+    .btn-status {
+        padding: 9px 16px; background: rgba(255,179,0,0.12); color: #ffb300;
+        border: 1px solid rgba(255,179,0,0.3); border-radius: 10px;
+        font-weight: 600; font-size: 0.78rem; cursor: pointer;
+        white-space: nowrap; transition: all 0.2s;
+    }
+    .btn-status:hover { background: rgba(255,179,0,0.2); }
+
+    /* Bulk Bar */
+    .bulk-bar {
+        display: none; background: var(--accent); border-radius: 10px;
+        padding: 10px 16px; margin-bottom: 16px;
+        align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .bulk-bar.show { display: flex; }
+    .bulk-bar span { color: #fff; font-weight: 600; font-size: 0.8rem; }
+    .bulk-bar select {
+        padding: 6px 10px; background: #fff; color: var(--accent);
+        border: none; border-radius: 6px; font-weight: 600;
+        font-size: 0.72rem; cursor: pointer;
+    }
+    .bulk-bar button {
+        padding: 6px 14px; background: #fff; color: var(--accent);
+        border: none; border-radius: 6px; font-weight: 600;
+        font-size: 0.72rem; cursor: pointer;
+    }
+    .bulk-bar .btn-clear {
+        background: transparent; color: #fff;
+        border: 1px solid rgba(255,255,255,0.4); margin-left: auto;
+    }
 
     .table-card {
         background: var(--bg-card);
@@ -218,7 +253,7 @@
 <div class="crm-container">
     <div id="toastContainer" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
 
-    <!-- Stats -->
+    <!-- Fixed Response Stats -->
     <div class="stats-grid">
         <div class="stat-card total" onclick="filterResponse('all')" id="statAll">
             <div class="stat-label">Total</div>
@@ -246,6 +281,11 @@
         </div>
     </div>
 
+    <!-- Custom Status Cards (only statuses used by influencers) -->
+    <div class="stats-grid" id="customStatusGrid" style="margin-top:-10px;">
+        <div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.75rem;">Loading influencer statuses...</div>
+    </div>
+
     <!-- Toolbar -->
     <div class="toolbar">
         <input type="text" id="searchInput" placeholder="🔍 Search influencer by name, email, phone..." oninput="handleSearch()">
@@ -260,7 +300,24 @@
         </select>
         <button class="btn-primary" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> Add Influencer</button>
         <button class="btn-import" onclick="openImportModal()"><i class="bi bi-upload"></i> Import CSV</button>
+        <button class="btn-status" onclick="openStatusModal()"><i class="bi bi-tag"></i> Create Status</button>
         <span id="resultsCount" style="font-size:0.72rem;color:var(--text-muted);"></span>
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    <div class="bulk-bar" id="bulkBar">
+        <span id="selectedCount">0 selected</span>
+        <select id="bulkResponseSelect" onchange="bulkChangeResponse(this.value)">
+            <option value="">Move Response To...</option>
+            <option value="not_contacted">Not Contacted</option>
+            <option value="contacted">Contacted</option>
+            <option value="responded">Responded</option>
+            <option value="negotiating">Negotiating</option>
+            <option value="agreed">Agreed</option>
+            <option value="declined">Declined</option>
+        </select>
+        <button onclick="bulkAddNote()">+ Add Note</button>
+        <button class="btn-clear" onclick="clearSelection()">Clear</button>
     </div>
 
     <!-- Table -->
@@ -269,17 +326,19 @@
             <table class="crm-table">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="masterCheckbox" onchange="toggleAll()" style="width:14px;height:14px;"></th>
                         <th>Name</th>
                         <th>Contact</th>
                         <th>Platform</th>
                         <th>Followers</th>
                         <th>Niche</th>
+                        <th>Status</th>
                         <th>Response</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="influencerTableBody">
-                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>
+                    <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -362,11 +421,44 @@
     </div>
 </div>
 
+<!-- Create Status Modal -->
+<div class="modal-overlay" id="statusModal">
+    <div class="modal-box">
+        <h5>🏷️ Create Status</h5>
+        <div class="form-group">
+            <label>Status Name</label>
+            <input type="text" id="statusName" placeholder="e.g., VIP Influencer, Top Creator">
+        </div>
+        <div class="form-group">
+            <label>Color</label>
+            <input type="color" id="statusColor" value="#FFB300" style="width:50px;height:35px;border-radius:6px;border:1px solid var(--border-color);cursor:pointer;">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeStatusModal()">Cancel</button>
+            <button class="btn-modal save" onclick="saveStatus()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Note Modal -->
+<div class="modal-overlay" id="bulkNoteModal">
+    <div class="modal-box">
+        <h5>📝 Add Note to Selected</h5>
+        <div class="form-group">
+            <textarea id="bulkNoteContent" rows="4" placeholder="Enter note..." style="width:100%;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:0.82rem;outline:none;resize:vertical;"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeBulkNoteModal()">Cancel</button>
+            <button class="btn-modal save" onclick="saveBulkNote()">Save</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-let currentPage = 1, searchQuery = '', selectedResponse = 'all', searchTimer = null, csvFileData = null;
+let currentPage = 1, searchQuery = '', selectedResponse = 'all', searchTimer = null, csvFileData = null, selectedInfluencers = new Set();
 
 function showToast(msg, type='success') {
     const c = document.getElementById('toastContainer');
@@ -377,9 +469,146 @@ function showToast(msg, type='success') {
     setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 4000);
 }
 
+// Bulk Selection
+function toggleSelect(id, cb) { cb.checked ? selectedInfluencers.add(id) : selectedInfluencers.delete(id); updateBulkBar(); }
+function toggleAll() { const m = document.getElementById('masterCheckbox'); document.querySelectorAll('.inf-checkbox').forEach(cb => { cb.checked = m.checked; m.checked ? selectedInfluencers.add(parseInt(cb.value)) : selectedInfluencers.delete(parseInt(cb.value)); }); updateBulkBar(); }
+function updateBulkBar() { const b = document.getElementById('bulkBar'); if (selectedInfluencers.size > 0) { b.classList.add('show'); document.getElementById('selectedCount').textContent = selectedInfluencers.size + ' selected'; } else { b.classList.remove('show'); } }
+function clearSelection() { selectedInfluencers.clear(); document.querySelectorAll('.inf-checkbox').forEach(cb => cb.checked = false); document.getElementById('masterCheckbox').checked = false; updateBulkBar(); }
+
+async function bulkChangeResponse(status) {
+    if (!status || selectedInfluencers.size === 0) return;
+    for (const id of selectedInfluencers) {
+        await fetch('/admin/influencers/api/'+id+'/response-status', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({response_status: status})
+        });
+    }
+    document.getElementById('bulkResponseSelect').value = '';
+    clearSelection(); loadInfluencers(); showToast('Response status updated for all selected');
+}
+
+function bulkAddNote() { if (selectedInfluencers.size === 0) return; document.getElementById('bulkNoteContent').value = ''; document.getElementById('bulkNoteModal').classList.add('show'); }
+function closeBulkNoteModal() { document.getElementById('bulkNoteModal').classList.remove('show'); }
+async function saveBulkNote() {
+    const content = document.getElementById('bulkNoteContent').value.trim();
+    if (!content || selectedInfluencers.size === 0) return;
+    for (const id of selectedInfluencers) {
+        await fetch('/admin/influencers/api/'+id+'/notes', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({content})
+        });
+    }
+    closeBulkNoteModal(); clearSelection(); showToast('Note added to all selected');
+}
+
+// Load ONLY statuses that are used by influencers
+async function loadCustomStatuses() {
+    try {
+        const infRes = await fetch('/admin/influencers/api/list?page=1&search=&response=all&per_page=1000');
+        const infData = await infRes.json();
+        const influencers = infData.influencers || [];
+        
+        const usedStatuses = {};
+        influencers.forEach(inf => {
+            if (inf.status_name && inf.status_name !== 'Unassigned') {
+                if (!usedStatuses[inf.status_name]) {
+                    usedStatuses[inf.status_name] = { count: 0, color: inf.status_color || '#6B7280' };
+                }
+                usedStatuses[inf.status_name].count++;
+            }
+        });
+        
+        const grid = document.getElementById('customStatusGrid');
+        const statusNames = Object.keys(usedStatuses);
+        
+        if (statusNames.length === 0) {
+            grid.innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">No influencer statuses yet. Assign from Influencer Detail page.</div>';
+            return;
+        }
+        
+        let h = '';
+        statusNames.forEach(name => {
+            const data = usedStatuses[name];
+            h += `<div class="stat-card" onclick="filterByStatus('${name.replace(/'/g, "\\'")}')">
+                <span class="stat-label"><span class="stat-dot" style="background:${data.color};"></span>${esc(name)}</span>
+                <span class="stat-value">${data.count}</span>
+            </div>`;
+        });
+        grid.innerHTML = h;
+    } catch(e) {
+        console.error('Custom status load error:', e);
+        document.getElementById('customStatusGrid').innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">Error loading statuses.</div>';
+    }
+}
+
+function filterByStatus(statusName) {
+    selectedResponse = 'all';
+    document.getElementById('responseFilter').value = 'all';
+    currentPage = 1;
+    searchQuery = '';
+    document.getElementById('searchInput').value = '';
+    loadInfluencersByStatus(statusName);
+}
+
+async function loadInfluencersByStatus(statusName) {
+    const tbody = document.getElementById('influencerTableBody');
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
+    
+    const params = new URLSearchParams({ page: 1, search: '', response: 'all', per_page: 1000 });
+    const r = await fetch('/admin/influencers/api/list?' + params);
+    const d = await r.json();
+    
+    const filtered = (d.influencers || []).filter(i => i.status_name === statusName);
+    renderInfluencerRows(filtered);
+    document.getElementById('resultsCount').textContent = filtered.length + ' influencers';
+    updatePagination(filtered.length, 1);
+}
+
+function renderInfluencerRows(influencers) {
+    const tbody = document.getElementById('influencerTableBody');
+    
+    if (influencers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="bi bi-megaphone"></i><p>No influencers with this status.</p></div></td></tr>';
+        return;
+    }
+    
+    let h = '';
+    influencers.forEach(inf => {
+        h += buildRowHTML(inf);
+    });
+    tbody.innerHTML = h;
+}
+
+function buildRowHTML(inf) {
+    const platformBadge = inf.platform ? `<span class="platform-badge ${inf.platform}">${inf.platform}</span>` : '<span style="color:var(--text-muted);">—</span>';
+    const respBadge = `<span class="response-badge ${inf.response_status}">${inf.response_status.replace('_',' ').toUpperCase()}</span>`;
+    const followers = inf.follower_count ? inf.follower_count.toLocaleString('en-IN') : '—';
+    const statusBadge = inf.status_name !== 'Unassigned' ? `<span class="response-badge" style="background:${inf.status_color}20;color:${inf.status_color};">${esc(inf.status_name)}</span>` : '<span style="color:var(--text-muted);font-size:0.68rem;">—</span>';
+    
+    return `<tr>
+        <td><input type="checkbox" class="inf-checkbox" value="${inf.id}" onchange="toggleSelect(${inf.id},this)" style="width:14px;height:14px;"></td>
+        <td><a href="/admin/influencers/${inf.id}" class="inf-name">${esc(inf.name)}</a></td>
+        <td>
+            <div style="font-size:0.75rem;">${esc(inf.email)}</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);">${esc(inf.phone || '')}</div>
+        </td>
+        <td>${platformBadge}</td>
+        <td>${followers}</td>
+        <td>${inf.niche ? esc(inf.niche) : '—'}</td>
+        <td>${statusBadge}</td>
+        <td>${respBadge}</td>
+        <td>
+            <div style="display:flex;gap:4px;">
+                <a href="/admin/influencers/${inf.id}" class="action-btn" title="View"><i class="bi bi-eye"></i></a>
+                ${inf.phone ? `<a href="https://wa.me/${inf.phone.replace(/[^0-9]/g,'')}" target="_blank" class="action-btn wa" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>` : ''}
+            </div>
+        </td>
+    </tr>`;
+}
+
 async function loadInfluencers() {
     const tbody = document.getElementById('influencerTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
     
     const params = new URLSearchParams({ page: currentPage, search: searchQuery, response: selectedResponse });
     const r = await fetch('/admin/influencers/api/list?' + params);
@@ -388,34 +617,14 @@ async function loadInfluencers() {
     document.getElementById('resultsCount').textContent = (d.total||0) + ' influencers';
     
     if (!d.influencers || d.influencers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="bi bi-megaphone"></i><p>No influencers found. Click "Add Influencer" or "Import CSV".</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="bi bi-megaphone"></i><p>No influencers found. Click "Add Influencer" or "Import CSV".</p></div></td></tr>';
         updatePagination(0, 1);
         return;
     }
     
     let h = '';
     d.influencers.forEach(inf => {
-        const platformBadge = inf.platform ? `<span class="platform-badge ${inf.platform}">${inf.platform}</span>` : '<span style="color:var(--text-muted);">—</span>';
-        const respBadge = `<span class="response-badge ${inf.response_status}">${inf.response_status.replace('_',' ').toUpperCase()}</span>`;
-        const followers = inf.follower_count ? inf.follower_count.toLocaleString('en-IN') : '—';
-        
-        h += `<tr>
-            <td><a href="/admin/influencers/${inf.id}" class="inf-name">${esc(inf.name)}</a></td>
-            <td>
-                <div style="font-size:0.75rem;">${esc(inf.email)}</div>
-                <div style="font-size:0.68rem;color:var(--text-muted);">${esc(inf.phone || '')}</div>
-            </td>
-            <td>${platformBadge}</td>
-            <td>${followers}</td>
-            <td>${inf.niche ? esc(inf.niche) : '—'}</td>
-            <td>${respBadge}</td>
-            <td>
-                <div style="display:flex;gap:4px;">
-                    <a href="/admin/influencers/${inf.id}" class="action-btn" title="View"><i class="bi bi-eye"></i></a>
-                    ${inf.phone ? `<a href="https://wa.me/${inf.phone.replace(/[^0-9]/g,'')}" target="_blank" class="action-btn wa" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>` : ''}
-                </div>
-            </td>
-        </tr>`;
+        h += buildRowHTML(inf);
     });
     
     tbody.innerHTML = h;
@@ -468,8 +677,7 @@ async function saveInfluencer() {
     });
     const d = await r.json();
     if (d.success) {
-        closeAddModal(); loadInfluencers(); showToast('Influencer added!');
-        // Reset form
+        closeAddModal(); loadInfluencers(); loadCustomStatuses(); showToast('Influencer added!');
         ['addName','addEmail','addPhone','addHandle','addFollowers'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('addPlatform').value = '';
         document.getElementById('addNiche').value = '';
@@ -498,7 +706,7 @@ function previewCSV() {
         if (lines.length < 2) { showToast('CSV needs header + data rows', 'error'); return; }
         
         const headers = lines[0].split(',').map(h => h.trim());
-        const previewRows = lines.slice(1, 6); // First 5 data rows
+        const previewRows = lines.slice(1, 6);
         
         let html = '<table><thead><tr>' + headers.map(h => `<th>${esc(h)}</th>`).join('') + '</tr></thead><tbody>';
         previewRows.forEach(row => {
@@ -527,16 +735,40 @@ async function importCSV() {
     const d = await r.json();
     
     if (d.success) {
-        closeImportModal(); loadInfluencers();
+        closeImportModal(); loadInfluencers(); loadCustomStatuses();
         showToast(`✅ ${d.added} added, ${d.skipped} skipped, ${d.failed} failed`);
     } else {
         showToast(d.error || 'Import failed', 'error');
     }
 }
 
+// Status Modal
+function openStatusModal() { document.getElementById('statusModal').classList.add('show'); }
+function closeStatusModal() { document.getElementById('statusModal').classList.remove('show'); }
+
+async function saveStatus() {
+    const name = document.getElementById('statusName').value.trim();
+    const color = document.getElementById('statusColor').value;
+    if (!name) { showToast('Status name required', 'error'); return; }
+    
+    const r = await fetch('/admin/leads/api/statuses/custom', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({name, color})
+    });
+    const d = await r.json();
+    if (d.success) {
+        closeStatusModal();
+        document.getElementById('statusName').value = '';
+        loadCustomStatuses();
+        showToast('Status created! Assign it to influencers from their detail page.');
+    } else {
+        showToast(d.error || 'Error', 'error');
+    }
+}
+
 function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-document.addEventListener('keydown', e => { if (e.key==='Escape') { closeAddModal(); closeImportModal(); } });
-document.addEventListener('DOMContentLoaded', loadInfluencers);
+document.addEventListener('keydown', e => { if (e.key==='Escape') { closeAddModal(); closeImportModal(); closeStatusModal(); closeBulkNoteModal(); } });
+document.addEventListener('DOMContentLoaded', () => { loadInfluencers(); loadCustomStatuses(); });
 </script>
 {% endblock %}

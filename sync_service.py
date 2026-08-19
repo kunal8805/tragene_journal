@@ -703,3 +703,178 @@ def stop_scheduler():
     if _scheduler:
         _scheduler.shutdown()
         print("🛑 Sync scheduler stopped")
+
+# -----------------------------------------------------------
+# ?? VPS COMMUNICATION (MT4/MT5 Sync)
+# -----------------------------------------------------------
+
+VPS_URL = os.environ.get('VPS_SYNC_URL', 'http://your-vps-ip:5002')
+VPS_INTERNAL_KEY = os.environ.get('VPS_INTERNAL_KEY', 'TGF_INT_xK92mQ27pL38nR4')
+
+
+def generate_sync_id(user_id, account_id):
+    """Generate unique sync_id for VPS tracking"""
+    import secrets
+    random_part = secrets.token_hex(8)
+    return f"TGF_SYNC_{user_id}_{account_id}_{random_part}"
+
+
+def send_mt_credentials_to_vps(connection):
+    """Send MT4/MT5 credentials to VPS sync server"""
+    import requests
+    
+    try:
+        password = decrypt(connection.investor_password_encrypted)
+        if not password:
+            return False, "Could not decrypt password"
+        
+        payload = {
+            'sync_id': connection.sync_id,
+            'username': connection.username,
+            'mt5_login': connection.mt_account_number,
+            'mt5_password': password,
+            'mt5_server': connection.server_name
+        }
+        
+        resp = requests.post(
+            f"{VPS_URL}/api/add_credential",
+            json=payload,
+            headers={'X-Internal-Key': VPS_INTERNAL_KEY},
+            timeout=15
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('status') == 'ok':
+                return True, None
+            else:
+                return False, data.get('message', 'VPS rejected credentials')
+        else:
+            return False, f"VPS returned: {resp.status_code}"
+            
+    except requests.exceptions.ConnectionError:
+        return False, "VPS server unreachable. Check VPS is running."
+    except Exception as e:
+        return False, str(e)[:200]
+
+
+def remove_mt_credentials_from_vps(sync_id):
+    """Remove credentials from VPS when user deletes connection"""
+    import requests
+    try:
+        requests.post(
+            f"{VPS_URL}/api/delete_by_sync_id",
+            json={'sync_id': sync_id},
+            headers={'X-Internal-Key': VPS_INTERNAL_KEY},
+            timeout=10
+        )
+        return True
+    except:
+        return False
+
+
+def pause_mt_on_vps(sync_id):
+    """Pause sync on VPS"""
+    import requests
+    try:
+        requests.post(
+            f"{VPS_URL}/api/pause_by_sync_id",
+            json={'sync_id': sync_id},
+            headers={'X-Internal-Key': VPS_INTERNAL_KEY},
+            timeout=10
+        )
+        return True
+    except:
+        return False
+
+
+def resume_mt_on_vps(sync_id):
+    """Resume sync on VPS"""
+    import requests
+    try:
+        requests.post(
+            f"{VPS_URL}/api/resume_by_sync_id",
+            json={'sync_id': sync_id},
+            headers={'X-Internal-Key': VPS_INTERNAL_KEY},
+            timeout=10
+        )
+        return True
+    except:
+        return False
+
+
+def process_mt5_trade_data(payload):
+    """Process incoming MT5 trade data from VPS"""
+    sync_id = payload.get('sync_id')
+    if not sync_id:
+        return {'success': False, 'error': 'No sync_id in payload'}
+    
+    connection = SyncConnection.query.filter_by(sync_id=sync_id).first()
+    if not connection:
+        return {'success': False, 'error': f'Connection not found for sync_id: {sync_id}'}
+    
+    trades_added = 0
+    closed_trades = payload.get('closed_trades', [])
+    
+    for trade_data in closed_trades:
+        try:
+            ticket = str(trade_data.get('ticket', ''))
+            
+            existing = Trade.query.filter_by(
+                user_id=connection.user_id,
+                account_id=connection.account_id,
+                import_source='auto_sync',
+                notes=f"MT5_{ticket}"
+            ).first()
+            
+            if existing:
+                continue
+            
+            symbol = trade_data.get('symbol', 'UNKNOWN')
+            trade_type = 'buy' if trade_data.get('type') in [0, 2] else 'sell'
+            open_price = trade_data.get('open_price', 0) or 0
+            close_price = trade_data.get('close_price', 0) or 0
+            lots = trade_data.get('lots', 1.0) or 1.0
+            profit = trade_data.get('profit')
+            sl = trade_data.get('sl')
+            tp = trade_data.get('tp')
+            close_time = trade_data.get('close_time')
+            
+            trade = Trade(
+                user_id=connection.user_id,
+                account_id=connection.account_id,
+                market='forex',
+                symbol=symbol,
+                trade_type=trade_type,
+                entry_price=float(open_price),
+                exit_price=float(close_price),
+                stop_loss=float(sl) if sl else None,
+                take_profit=float(tp) if tp else None,
+                quantity=float(lots),
+                profit_loss=float(profit) if profit is not None else None,
+                entry_date=datetime.fromtimestamp(close_time) if close_time else datetime.utcnow(),
+                exit_date=datetime.fromtimestamp(close_time) if close_time else datetime.utcnow(),
+                import_source='auto_sync',
+                exchange='mt5',
+                broker=connection.server_name or 'MT5',
+                notes=f"MT5_{ticket}",
+            )
+            
+            trade.calculate_pnl()
+            db.session.add(trade)
+            trades_added += 1
+            
+        except Exception as e:
+            print(f"?? Error mapping MT5 trade: {e}")
+            continue
+    
+    connection.last_synced_at = datetime.utcnow()
+    connection.sync_status = 'active'
+    connection.last_error = None
+    connection.last_error_at = None
+    connection.total_trades_fetched = (connection.total_trades_fetched or 0) + trades_added
+    connection.sync_count = (connection.sync_count or 0) + 1
+    db.session.commit()
+    
+    print(f"? MT5 data processed: {sync_id} ? {trades_added} new trades")
+    return {'success': True, 'trades_added': trades_added}

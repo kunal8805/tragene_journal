@@ -8,7 +8,7 @@ import io
 import os
 from werkzeug.utils import secure_filename
 from sqlalchemy import func
-from sync_service import can_create_sync, encrypt, decrypt, sync_connection, test_connection
+from sync_service import can_create_sync, encrypt, decrypt, sync_connection, test_connection, generate_sync_id, send_mt_credentials_to_vps, remove_mt_credentials_from_vps, pause_mt_on_vps, resume_mt_on_vps
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 # ═══════════════════════════════════════════════════════════
@@ -2562,10 +2562,26 @@ def sync_connect():
         connection.server_name = server
         connection.mt_account_number = login
         connection.investor_password_encrypted = encrypt(password)
-        connection.sync_status = 'pending'
         
-        flash(f'✅ {platform.upper()} credentials saved! Admin will verify and activate sync shortly.', 'success')
+        # Generate sync_id and username for VPS
+        connection.sync_id = generate_sync_id(current_user.id, get_active_account_id())
+        connection.username = current_user.email
+        connection.sync_status = 'active'
+        
         db.session.add(connection)
+        db.session.flush()
+        
+        # Send credentials to VPS
+        success, error = send_mt_credentials_to_vps(connection)
+        
+        if success:
+            connection.sync_status = 'active'
+            flash(f'✅ {platform.upper()} connected! Sync is active. Trades will appear automatically.', 'success')
+        else:
+            connection.sync_status = 'error'
+            connection.last_error = error
+            flash(f'⚠️ Credentials saved but VPS sync failed: {error}', 'warning')
+        
         db.session.commit()
         return redirect(url_for('user.sync_center'))
     
@@ -2611,7 +2627,16 @@ def sync_toggle(connection_id):
     ).first_or_404()
     
     connection.is_active = not connection.is_active
-    connection.sync_status = 'active' if connection.is_active else 'paused'
+    
+    if connection.is_active:
+        connection.sync_status = 'active'
+        if connection.platform in ['mt4', 'mt5'] and connection.sync_id:
+            resume_mt_on_vps(connection.sync_id)
+    else:
+        connection.sync_status = 'paused'
+        if connection.platform in ['mt4', 'mt5'] and connection.sync_id:
+            pause_mt_on_vps(connection.sync_id)
+    
     connection.updated_at = datetime.utcnow()
     db.session.commit()
     
@@ -2628,6 +2653,10 @@ def sync_delete(connection_id):
         id=connection_id,
         user_id=current_user.id
     ).first_or_404()
+    
+    # Remove from VPS if MT platform
+    if connection.platform in ['mt4', 'mt5'] and connection.sync_id:
+        remove_mt_credentials_from_vps(connection.sync_id)
     
     # Clear encrypted credentials
     connection.api_key_encrypted = None
@@ -2653,4 +2682,3 @@ def sync_logs(connection_id):
     ).first_or_404()
     
     return render_template('user/sync/sync_logs.html', connection=connection)
-

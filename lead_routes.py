@@ -581,17 +581,42 @@ def api_add_influencer():
     follower_count = data.get('follower_count') or None
     niche = data.get('niche', '').strip() or None
     
-    if not name or not email:
-        return jsonify({'success': False, 'error': 'Name and email required'})
+    # Updated validation: Name required, Email OR Phone required
+    if not name:
+        return jsonify({
+            'success': False,
+            'error': 'Name is required'
+        })
     
-    existing = Influencer.query.filter_by(email=email).first()
+    if not email and not phone:
+        return jsonify({
+            'success': False,
+            'error': 'Either email or phone is required'
+        })
+    
+    # Check for duplicates by email OR phone
+    existing = None
+    
+    if email:
+        existing = Influencer.query.filter_by(
+            email=email
+        ).first()
+    
+    if not existing and phone:
+        existing = Influencer.query.filter_by(
+            phone=phone
+        ).first()
+    
     if existing:
-        return jsonify({'success': False, 'error': 'Email already exists'})
+        return jsonify({
+            'success': False,
+            'error': 'An influencer with this email or phone already exists'
+        })
     
     try:
         influencer = Influencer(
             name=name,
-            email=email,
+            email=email if email else None,
             phone=phone,
             platform=platform,
             social_handle=social_handle,
@@ -631,32 +656,62 @@ def api_import_influencers_csv():
         skipped = 0
         failed = 0
         errors = []
+        row_number = 0
+        
+        # Helper function to clean NULL values
+        def clean_value(value):
+            """Convert NULL, null, N/A, NA, empty strings to None"""
+            if value is None:
+                return None
+            value = value.strip()
+            if value.upper() in ['NULL', 'NONE', 'N/A', 'NA', '']:
+                return None
+            return value
         
         for row in reader:
-            name = (row.get('name') or '').strip()
-            email = (row.get('email') or '').strip()
+            row_number += 1
             
-            if not name or not email:
+            # Clean all values
+            name = clean_value(row.get('name'))
+            email = clean_value(row.get('email'))
+            phone = clean_value(row.get('phone'))
+            platform = clean_value(row.get('platform'))
+            social_handle = clean_value(row.get('social_handle'))
+            niche = clean_value(row.get('niche'))
+            
+            # Validate: Name required
+            if not name:
                 failed += 1
-                errors.append(f'Row skipped: missing name or email')
+                errors.append(f'Row {row_number}: Missing name')
                 continue
             
-            existing = Influencer.query.filter_by(email=email).first()
+            # Validate: Email OR Phone required
+            if not email and not phone:
+                failed += 1
+                errors.append(f'Row {row_number} ({name}): Missing both email and phone')
+                continue
+            
+            # Check for duplicates by email OR phone
+            existing = None
+            
+            if email:
+                existing = Influencer.query.filter_by(email=email).first()
+            
+            if not existing and phone:
+                existing = Influencer.query.filter_by(phone=phone).first()
+            
             if existing:
                 skipped += 1
                 continue
             
-            phone = (row.get('phone') or '').strip() or None
-            platform = (row.get('platform') or '').strip() or None
-            social_handle = (row.get('social_handle') or '').strip() or None
-            niche = (row.get('niche') or '').strip() or None
-            
+            # Parse follower count
             follower_count = None
-            fc_raw = (row.get('follower_count') or '').strip()
+            fc_raw = clean_value(row.get('follower_count'))
             if fc_raw:
                 try:
+                    # Remove commas and convert to int
                     follower_count = int(fc_raw.replace(',', ''))
-                except:
+                except (ValueError, AttributeError):
                     follower_count = None
             
             try:
@@ -675,21 +730,45 @@ def api_import_influencers_csv():
                 added += 1
             except Exception as e:
                 failed += 1
-                errors.append(f'{email}: {str(e)}')
+                errors.append(f'Row {row_number} ({name}): {str(e)}')
         
-        db.session.commit()
+        # Commit everything
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'error': f'Database error during import: {str(e)}'
+            })
         
+        # Final response
         return jsonify({
             'success': True,
-            'message': f'Import complete: {added} added, {skipped} skipped (duplicates), {failed} failed',
+            'message': (
+                f'Import complete: '
+                f'{added} added, '
+                f'{skipped} skipped (duplicates), '
+                f'{failed} failed'
+            ),
             'added': added,
             'skipped': skipped,
             'failed': failed,
-            'errors': errors[:10]
+            'errors': errors[:20]
         })
-        
+    
+    except UnicodeDecodeError:
+        return jsonify({
+            'success': False,
+            'error': 'CSV file must be UTF-8 encoded'
+        })
+    
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 
 # ═══════════════════════════════════════════════════════════

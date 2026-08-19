@@ -38,6 +38,14 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4811775453229832"
      crossorigin="anonymous"></script>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ url_for('static', filename='favicon-48x48.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -646,21 +654,3 @@
 
         // ===== ACTIVE NAV LINK HIGHLIGHT =====
         document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.tj-nav-link');
-            
-            navLinks.forEach(link => {
-                const href = link.getAttribute('href');
-                if (href && href !== '#' && href !== '#features' && href !== '#pricing') {
-                    if (currentPath === href || (href !== '/' && currentPath.startsWith(href))) {
-                        link.style.color = 'var(--bull) !important';
-                    }
-                }
-            });
-        });
-    </script>
-    
-    <!-- ===== BLOCK FOR PAGE-SPECIFIC SCRIPTS ===== -->
-    {% block extra_js %}{% endblock %}
-</body>
-</html>

@@ -83,7 +83,11 @@
     }
     .chart-title i { color: var(--accent); }
 
-    .table-pay { color: var(--text-primary) !important; margin-bottom: 0; }
+    .table-pay { 
+        color: var(--text-primary) !important; 
+        margin-bottom: 0; 
+        background: transparent !important;
+    }
     .table-pay thead th {
         background: var(--sidebar-hover); color: var(--text-muted) !important;
         font-weight: 700; font-size: 0.65rem; text-transform: uppercase;
@@ -91,11 +95,23 @@
         padding: 10px 10px; white-space: nowrap;
     }
     .table-pay tbody td {
-        border-color: var(--border-color) !important; font-size: 0.78rem;
-        vertical-align: middle; padding: 10px 10px; color: var(--text-primary);
+        border-color: var(--border-color) !important; 
+        font-size: 0.78rem;
+        vertical-align: middle; 
+        padding: 10px 10px; 
+        color: var(--text-primary);
+        background: transparent !important;
     }
-    .table-pay tbody tr { transition: background 0.15s; }
+    .table-pay tbody tr { 
+        transition: background 0.15s; 
+        background: var(--bg-card);
+    }
     .table-pay tbody tr:hover { background: var(--sidebar-hover); }
+    
+    .username-text {
+        color: var(--text-primary, #ffffff) !important;
+        font-weight: 700;
+    }
 
     .badge-tier {
         padding: 4px 10px; border-radius: 12px;
@@ -257,9 +273,9 @@
                     <tbody>
                         {% for spender in top_spenders %}
                         <tr>
-                            <td><strong>{{ loop.index }}</strong></td>
+                            <td><strong class="username-text">{{ loop.index }}</strong></td>
                             <td>
-                                <strong>{{ spender.username }}</strong>
+                                <strong class="username-text">{{ spender.username }}</strong>
                                 <div style="font-size:0.65rem;color:var(--text-muted);">{{ spender.email }}</div>
                             </td>
                             <td>{{ spender.orders }}</td>
@@ -385,7 +401,7 @@
                         var tx = data.transactions[i];
                         html += '<tr>' +
                             '<td style="font-size:0.7rem;font-family:\'JetBrains Mono\',monospace;">' + tx.order_id + '</td>' +
-                            '<td><strong>' + tx.username + '</strong><div style="font-size:0.65rem;color:var(--text-muted);">' + tx.email + '</div></td>' +
+                            '<td><strong class="username-text">' + tx.username + '</strong><div style="font-size:0.65rem;color:var(--text-muted);">' + tx.email + '</div></td>' +
                             '<td><span class="badge-tier ' + tx.plan.toLowerCase() + '">' + tx.plan + ' · ' + tx.plan_type + '</span></td>' +
                             '<td style="font-weight:700;">' + tx.currency + ' ' + tx.amount.toFixed(2) + '</td>' +
                             '<td><span class="badge-status-pay ' + tx.status.toLowerCase() + '">' + tx.status + '</span></td>' +

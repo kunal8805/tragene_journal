@@ -1,0 +1,335 @@
+{% extends "base_admin.html" %}
+{% block title %}Sync Details - Tragene Journal{% endblock %}
+{% block page_title %}🔧 Sync Connection Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        background: rgba(15,23,42,0.5);
+        border: 1px solid rgba(38,166,154,0.12);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+    }
+    .detail-card h6 {
+        font-family: 'Space Grotesk', sans-serif;
+        color: #e0f0ed;
+        font-size: 0.85rem;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        font-size: 0.75rem;
+        gap: 20px;
+    }
+    .detail-row .label { color: #64748b; white-space: nowrap; }
+    .detail-row .value { 
+        color: #e0f0ed; 
+        font-weight: 600; 
+        font-family: 'JetBrains Mono', monospace;
+        text-align: right;
+        word-break: break-all;
+    }
+    
+    .badge-status {
+        padding: 3px 12px; border-radius: 12px; font-size: 0.65rem;
+        font-weight: 700; font-family: 'JetBrains Mono', monospace; white-space: nowrap;
+    }
+    .badge-status.active { background: rgba(0,230,118,0.1); color: #00e676; }
+    .badge-status.error { background: rgba(255,82,82,0.1); color: #ff5252; }
+    .badge-status.stopped { background: rgba(255,255,255,0.03); color: #64748b; }
+    .badge-status.paused { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .badge-status.pending { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+    .badge-status.expired { background: rgba(255,179,0,0.1); color: #ffb300; }
+    
+    .btn-admin {
+        padding: 8px 16px; border-radius: 8px; font-size: 0.7rem;
+        font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03); color: #94a3b8;
+        transition: all 0.2s; font-family: 'Space Grotesk', sans-serif;
+        text-decoration: none; display: inline-block;
+        white-space: nowrap;
+    }
+    .btn-admin:hover { background: rgba(38,166,154,0.1); border-color: #26a69a; color: #26a69a; }
+    .btn-admin.danger:hover { background: rgba(255,82,82,0.1); border-color: #ff5252; color: #ff5252; }
+    .btn-admin.success:hover { background: rgba(0,230,118,0.1); border-color: #00e676; color: #00e676; }
+    
+    .error-box {
+        background: rgba(255,82,82,0.05);
+        border: 1px solid rgba(255,82,82,0.2);
+        border-radius: 10px;
+        padding: 14px;
+        margin-top: 12px;
+        color: #ff5252;
+        font-size: 0.7rem;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .trades-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+    .trades-table th {
+        background: rgba(15,23,42,0.8); color: #64748b; font-size: 0.6rem;
+        text-transform: uppercase; letter-spacing: 0.8px; padding: 10px;
+        text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .trades-table td {
+        padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);
+        color: #94a3b8;
+    }
+    .profit { color: #00e676; font-weight: 700; }
+    .loss { color: #ff5252; font-weight: 700; }
+    
+    .control-bar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .sync-id-full {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: #26a69a;
+        background: rgba(38,166,154,0.05);
+        border: 1px solid rgba(38,166,154,0.2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        display: inline-block;
+        word-break: break-all;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Back button + Header -->
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('admin.admin_sync') }}" class="btn-admin">← Back to Sync Admin</a>
+</div>
+
+<!-- Header -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+    <div>
+        <h5 style="font-family:'Space Grotesk',sans-serif;color:#e0f0ed;font-size:1.2rem;margin:0;">
+            {{ user.email if user else 'Unknown User' }}
+        </h5>
+        <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">
+            User ID: #{{ user.id if user else 'N/A' }} · Plan: {{ user.subscription_tier.upper() if user else 'N/A' }}
+        </div>
+    </div>
+    <div>
+        {% if connection.admin_stopped %}
+        <span class="badge-status stopped">⏹ STOPPED</span>
+        {% elif not connection.is_active %}
+        <span class="badge-status paused">⏸ PAUSED</span>
+        {% else %}
+        <span class="badge-status {{ connection.sync_status }}">{{ connection.sync_status.upper() }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Sync ID -->
+<div style="margin-bottom: 20px;">
+    <div style="font-size:0.62rem;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Sync ID</div>
+    <div class="sync-id-full">{{ connection.sync_id or 'N/A' }}</div>
+</div>
+
+<!-- Admin Controls -->
+<div class="control-bar">
+    {% if connection.is_active and not connection.admin_stopped %}
+    <form method="POST" action="{{ url_for('admin.admin_stop_sync', connection_id=connection.id) }}" style="display:inline;">
+        <input type="hidden" name="reason" value="Stopped by admin from detail page">
+        <button type="submit" class="btn-admin danger">⏹ Stop Sync</button>
+    </form>
+    {% else %}
+    <form method="POST" action="{{ url_for('admin.admin_start_sync', connection_id=connection.id) }}" style="display:inline;">
+        <button type="submit" class="btn-admin success">▶ Start Sync</button>
+    </form>
+    {% endif %}
+    
+    <a href="{{ url_for('admin.admin_sync') }}" class="btn-admin">← Back</a>
+</div>
+
+<!-- User Info + Connection Info -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="detail-card">
+        <h6>👤 USER INFO</h6>
+        <div class="detail-row">
+            <span class="label">Email</span>
+            <span class="value">{{ user.email if user else 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Username</span>
+            <span class="value">{{ user.username if user else 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Plan</span>
+            <span class="value">{{ user.subscription_tier.upper() if user else 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Subscription</span>
+            <span class="value">{{ 'Active' if user.subscription_active else 'Inactive' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Trading Account</span>
+            <span class="value">{{ account.name if account else 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Joined</span>
+            <span class="value">{{ user.created_at.strftime('%d %b %Y') if user else 'N/A' }}</span>
+        </div>
+    </div>
+
+    <div class="detail-card">
+        <h6>🔗 CONNECTION INFO</h6>
+        <div class="detail-row">
+            <span class="label">Platform</span>
+            <span class="value">{{ connection.platform.upper() }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Market</span>
+            <span class="value">{{ connection.market.title() }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Label</span>
+            <span class="value">{{ connection.label or '-' }}</span>
+        </div>
+        {% if connection.server_name %}
+        <div class="detail-row">
+            <span class="label">Server</span>
+            <span class="value">{{ connection.server_name }}</span>
+        </div>
+        {% endif %}
+        {% if connection.mt_account_number %}
+        <div class="detail-row">
+            <span class="label">MT Login</span>
+            <span class="value">{{ connection.mt_account_number }}</span>
+        </div>
+        {% endif %}
+        <div class="detail-row">
+            <span class="label">Method</span>
+            <span class="value">{{ connection.method or 'api' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Created</span>
+            <span class="value">{{ connection.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Updated</span>
+            <span class="value">{{ connection.updated_at.strftime('%d %b %Y, %H:%M') if connection.updated_at else 'Never' }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Sync Status + Error -->
+<div class="detail-card">
+    <h6>📊 SYNC STATUS</h6>
+    <div class="detail-row">
+        <span class="label">Current Status</span>
+        <span class="value">
+            {% if connection.admin_stopped %}
+            STOPPED BY ADMIN
+            {% elif not connection.is_active %}
+            PAUSED
+            {% else %}
+            {{ connection.sync_status.upper() }}
+            {% endif %}
+        </span>
+    </div>
+    <div class="detail-row">
+        <span class="label">Is Active</span>
+        <span class="value">{{ 'Yes' if connection.is_active else 'No' }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="label">Admin Stopped</span>
+        <span class="value">{{ 'Yes' if connection.admin_stopped else 'No' }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="label">Last Synced</span>
+        <span class="value">{{ connection.last_synced_at.strftime('%d %b %Y, %H:%M:%S') if connection.last_synced_at else 'Never' }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="label">Total Syncs</span>
+        <span class="value">{{ connection.sync_count or 0 }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="label">Total Trades Fetched</span>
+        <span class="value">{{ connection.total_trades_fetched or 0 }}</span>
+    </div>
+    
+    {% if connection.stop_reason %}
+    <div class="detail-row">
+        <span class="label">Stop Reason</span>
+        <span class="value" style="color:#ffb300;">{{ connection.stop_reason }}</span>
+    </div>
+    {% endif %}
+    
+    {% if connection.last_error %}
+    <div class="error-box">
+        <strong>⚠️ Last Error:</strong><br>
+        {{ connection.last_error }}
+        {% if connection.last_error_at %}
+        <div style="margin-top:6px;font-size:0.6rem;color:#64748b;">
+            {{ connection.last_error_at.strftime('%d %b %Y, %H:%M:%S') }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Trades -->
+<div class="detail-card">
+    <h6>📈 RECENT TRADES (Last 20)</h6>
+    {% if recent_trades %}
+    <div class="table-responsive">
+        <table class="trades-table">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Type</th>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>P&L</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trade in recent_trades %}
+                <tr>
+                    <td style="color:#e0f0ed;font-weight:600;">{{ trade.symbol }}</td>
+                    <td>
+                        <span style="color:{{ '#00e676' if trade.trade_type == 'buy' else '#ff5252' }};">
+                            {{ trade.trade_type.upper() }}
+                        </span>
+                    </td>
+                    <td>{{ trade.entry_price }}</td>
+                    <td>{{ trade.exit_price or '-' }}</td>
+                    <td>
+                        {% if trade.profit_loss is not none %}
+                        <span class="{{ 'profit' if trade.profit_loss > 0 else 'loss' }}">
+                            {{ '+' if trade.profit_loss > 0 else '' }}{{ trade.profit_loss }}
+                        </span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.65rem;">{{ trade.entry_date.strftime('%d %b %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:30px;color:#64748b;">
+        No trades fetched yet from this connection.
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

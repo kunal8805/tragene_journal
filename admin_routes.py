@@ -1243,7 +1243,6 @@ def admin_start_sync(connection_id):
     
     return redirect(url_for('admin.admin_sync'))
 
-
 @admin_bp.route('/sync/user/<int:user_id>/stop-all', methods=['POST'])
 @admin_required
 def admin_stop_all_user_sync(user_id):
@@ -1267,3 +1266,28 @@ def admin_user_sync_logs(user_id):
     
     stats = get_user_sync_stats(user_id)
     return jsonify(stats)
+
+
+@admin_bp.route('/sync/<int:connection_id>/detail')
+@admin_required
+def admin_sync_detail(connection_id):
+    """Full detail page for one sync connection"""
+    from models import SyncConnection, User, TradingAccount
+    
+    connection = SyncConnection.query.get_or_404(connection_id)
+    user = User.query.get(connection.user_id)
+    account = TradingAccount.query.get(connection.account_id) if connection.account_id else None
+    
+    # Get recent trades from this connection
+    recent_trades = Trade.query.filter_by(
+        user_id=connection.user_id,
+        account_id=connection.account_id,
+        import_source='auto_sync'
+    ).order_by(Trade.entry_date.desc()).limit(20).all()
+    
+    return render_template('admin/sync/sync_detail.html',
+        connection=connection,
+        user=user,
+        account=account,
+        recent_trades=recent_trades
+    )

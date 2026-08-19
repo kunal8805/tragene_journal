@@ -120,6 +120,7 @@
         vertical-align: middle;
         padding: 12px 14px;
         background: transparent !important;
+        color: var(--text-primary) !important;
     }
     table tbody tr {
         transition: background 0.15s;
@@ -141,6 +142,10 @@
         font-size: 0.8rem;
         margin-right: 8px;
         flex-shrink: 0;
+    }
+    .username-text {
+        color: var(--text-primary, #ffffff) !important;
+        font-weight: 700;
     }
     .badge-tier {
         padding: 4px 10px;
@@ -450,7 +455,7 @@
                     data-admin="{{ 'admin' if user.is_admin else '' }}">
                     <td>
                         <span class="user-avatar">{{ user.username[0]|upper }}</span>
-                        <strong>{{ user.username }}</strong>
+                        <strong class="username-text">{{ user.username }}</strong>
                         <div style="font-size: 0.7rem; color: var(--text-muted);">{{ user.email }}</div>
                     </td>
                     <td>

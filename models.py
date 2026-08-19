@@ -350,6 +350,10 @@ class SyncConnection(db.Model):
     mt_account_number = db.Column(db.String(50))  # MT4/MT5 login ID
     investor_password_encrypted = db.Column(db.Text)  # MT4/MT5 investor password
     passphrase_encrypted = db.Column(db.Text)  # Some exchanges need passphrase
+
+    # VPS Sync Tracking
+    sync_id = db.Column(db.String(80), unique=True, nullable=True)  # TGF_SYNC_{user}_{account}_{random}
+    username = db.Column(db.String(80), nullable=True)  # Denormalized username for VPS display
     
     # Status & Stats
     is_active = db.Column(db.Boolean, default=True)
@@ -1472,7 +1476,6 @@ def check_purchase_blocked(user, plan_tier=None):
     
     return False, None
 
-
 # ═══════════════════════════════════════════════════════════
 # 📋 LEAD CRM SYSTEM
 # ═══════════════════════════════════════════════════════════
@@ -1544,13 +1547,13 @@ class Influencer(db.Model):
     
     # Contact details
     email = db.Column(db.String(120), unique=True, nullable=True)
-    phone = db.Column(db.String(50), nullable=True)
+    phone = db.Column(db.String(100), nullable=True)  # Increased from 50 to 100 for multiple numbers
     
     # Social details
-    platform = db.Column(db.String(30), nullable=True)  # youtube, instagram, twitter, telegram, discord, other
+    platform = db.Column(db.String(50), nullable=True)  # Increased from 30 to 50
     social_handle = db.Column(db.String(100), nullable=True)  # @username
     follower_count = db.Column(db.Integer, nullable=True)
-    niche = db.Column(db.String(50), nullable=True)  # forex, crypto, stocks, options, general
+    niche = db.Column(db.String(100), nullable=True)  # Increased from 50 to 100
     
     # Status tracking
     status_id = db.Column(db.Integer, db.ForeignKey('lead_statuses.id'), nullable=True)  # Lead status category

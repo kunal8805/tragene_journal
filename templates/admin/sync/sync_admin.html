@@ -36,15 +36,20 @@
     .badge-status.error { background: rgba(255,82,82,0.1); color: #ff5252; }
     .badge-status.stopped { background: rgba(255,255,255,0.03); color: #64748b; }
     .badge-status.expired { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .badge-status.paused { background: rgba(255,179,0,0.1); color: #ffb300; }
+    .badge-status.pending { background: rgba(139,92,246,0.1); color: #8b5cf6; }
     
     .btn-admin-sm {
         padding: 5px 12px; border-radius: 6px; font-size: 0.62rem;
         font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.08);
         background: rgba(255,255,255,0.03); color: #94a3b8;
         transition: all 0.2s; font-family: 'Space Grotesk', sans-serif; white-space: nowrap;
+        text-decoration: none; display: inline-block;
     }
     .btn-admin-sm:hover { background: rgba(38,166,154,0.1); border-color: var(--accent); color: var(--accent); }
     .btn-admin-sm.danger:hover { background: rgba(255,82,82,0.1); border-color: #ff5252; color: #ff5252; }
+    .btn-admin-sm.success:hover { background: rgba(0,230,118,0.1); border-color: #00e676; color: #00e676; }
+    .btn-admin-sm.info:hover { background: rgba(38,166,154,0.1); border-color: #26a69a; color: #26a69a; }
     
     .search-bar {
         display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
@@ -65,6 +70,16 @@
         background: var(--bg-card); border: 1px solid var(--border-color);
         border-radius: 16px; padding: 24px; max-width: 500px; width: 90%;
         max-height: 80vh; overflow-y: auto;
+    }
+    
+    .sync-id-text {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.55rem;
+        color: #26a69a;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 </style>
 {% endblock %}
@@ -93,23 +108,40 @@
         <div class="as-value" style="color:#ffb300;">{{ stats.stale }}</div>
         <div class="as-label">Stale (>24h)</div>
     </div>
+    <div class="admin-stat">
+        <div class="as-value" style="color:#8b5cf6;">{{ stats.pending }}</div>
+        <div class="as-label">Pending</div>
+    </div>
 </div>
 
 <!-- Search -->
 <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Search by user email, platform, or status..." onkeyup="filterTable()">
+    <input type="text" id="searchInput" placeholder="Search by user email, platform, sync ID, or status..." onkeyup="filterTable()">
     <select id="statusFilter" onchange="filterTable()">
         <option value="all">All Status</option>
         <option value="active">Active</option>
         <option value="error">Error</option>
         <option value="stopped">Stopped</option>
+        <option value="paused">Paused</option>
         <option value="expired">Expired</option>
+        <option value="pending">Pending</option>
     </select>
     <select id="marketFilter" onchange="filterTable()">
         <option value="all">All Markets</option>
         <option value="crypto">Crypto</option>
         <option value="forex">Forex</option>
         <option value="indian_stock">Indian</option>
+    </select>
+    <select id="platformFilter" onchange="filterTable()">
+        <option value="all">All Platforms</option>
+        <option value="mt5">MT5</option>
+        <option value="mt4">MT4</option>
+        <option value="binance">Binance</option>
+        <option value="coinbase">Coinbase</option>
+        <option value="bybit">Bybit</option>
+        <option value="kraken">Kraken</option>
+        <option value="okx">OKX</option>
+        <option value="kucoin">KuCoin</option>
     </select>
 </div>
 
@@ -122,7 +154,7 @@
                 <th>Plan</th>
                 <th>Market</th>
                 <th>Platform</th>
-                <th>Label</th>
+                <th>Sync ID</th>
                 <th>Status</th>
                 <th>Last Synced</th>
                 <th>Trades</th>
@@ -131,20 +163,35 @@
         </thead>
         <tbody>
             {% for conn, user in connections %}
-            <tr class="sync-row" data-status="{{ conn.sync_status }}{{ ' stopped' if conn.admin_stopped }}{{ ' paused' if not conn.is_active }}" data-market="{{ conn.market }}" data-search="{{ user.email }} {{ conn.platform }} {{ conn.label or '' }} {{ conn.sync_status }}">
+            <tr class="sync-row" 
+                data-status="{{ conn.sync_status }}{{ ' stopped' if conn.admin_stopped }}{{ ' paused' if not conn.is_active }}" 
+                data-market="{{ conn.market }}" 
+                data-platform="{{ conn.platform }}"
+                data-search="{{ user.email }} {{ conn.platform }} {{ conn.label or '' }} {{ conn.sync_status }} {{ conn.sync_id or '' }}">
                 <td>
                     <strong style="color:#e0f0ed;">{{ user.email }}</strong>
                     <div style="font-size:0.62rem;color:#64748b;">ID: {{ user.id }}</div>
                 </td>
                 <td><span class="badge-status" style="background:rgba(139,92,246,0.1);color:#8b5cf6;">{{ user.subscription_tier.upper() }}</span></td>
                 <td>{{ conn.market.title() }}</td>
-                <td>{{ conn.platform.upper() }}</td>
-                <td>{{ conn.label or '-' }}</td>
+                <td>
+                    {{ conn.platform.upper() }}
+                    {% if conn.platform in ['mt4', 'mt5'] %}
+                    <span style="font-size:0.55rem;color:#26a69a;display:block;">VPS</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if conn.sync_id %}
+                    <div class="sync-id-text" title="{{ conn.sync_id }}">{{ conn.sync_id }}</div>
+                    {% else %}
+                    <span style="color:#64748b;">-</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% if conn.admin_stopped %}
                     <span class="badge-status stopped">STOPPED</span>
                     {% elif not conn.is_active %}
-                    <span class="badge-status expired">PAUSED</span>
+                    <span class="badge-status paused">PAUSED</span>
                     {% else %}
                     <span class="badge-status {{ conn.sync_status }}">{{ conn.sync_status.upper() }}</span>
                     {% endif %}
@@ -152,9 +199,14 @@
                 <td style="font-size:0.68rem;font-family:'JetBrains Mono',monospace;">
                     {{ conn.last_synced_at.strftime('%d %b %H:%M') if conn.last_synced_at else 'Never' }}
                 </td>
-                <td>{{ conn.total_trades_fetched or 0 }}</td>
                 <td>
-                    <div style="display:flex;gap:4px;">
+                    <strong style="color:#e0f0ed;">{{ conn.total_trades_fetched or 0 }}</strong>
+                    <div style="font-size:0.55rem;color:#64748b;">{{ conn.sync_count or 0 }} syncs</div>
+                </td>
+                <td>
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                        <a href="{{ url_for('admin.admin_sync_detail', connection_id=conn.id) }}" class="btn-admin-sm info">🔍 Details</a>
+                        
                         {% if conn.is_active and not conn.admin_stopped %}
                         <form method="POST" action="{{ url_for('admin.admin_stop_sync', connection_id=conn.id) }}" style="display:inline;">
                             <input type="hidden" name="reason" value="Stopped by admin">
@@ -162,9 +214,10 @@
                         </form>
                         {% else %}
                         <form method="POST" action="{{ url_for('admin.admin_start_sync', connection_id=conn.id) }}" style="display:inline;">
-                            <button type="submit" class="btn-admin-sm">▶ Start</button>
+                            <button type="submit" class="btn-admin-sm success">▶ Start</button>
                         </form>
                         {% endif %}
+                        
                         <button class="btn-admin-sm" onclick="viewUserLogs({{ user.id }}, '{{ user.email }}')">📋</button>
                     </div>
                 </td>
@@ -190,12 +243,14 @@
         const search = document.getElementById('searchInput').value.toLowerCase();
         const status = document.getElementById('statusFilter').value;
         const market = document.getElementById('marketFilter').value;
+        const platform = document.getElementById('platformFilter').value;
         
         document.querySelectorAll('.sync-row').forEach(row => {
             const matchSearch = row.dataset.search.toLowerCase().includes(search);
             const matchStatus = status === 'all' || row.dataset.status.includes(status);
             const matchMarket = market === 'all' || row.dataset.market === market;
-            row.style.display = matchSearch && matchStatus && matchMarket ? '' : 'none';
+            const matchPlatform = platform === 'all' || row.dataset.platform === platform;
+            row.style.display = matchSearch && matchStatus && matchMarket && matchPlatform ? '' : 'none';
         });
     }
     

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, redirect, url_for, request, session, Response
+from flask import Flask, render_template, flash, redirect, url_for, request, session, Response, jsonify
 from extensions import db, login_manager, migrate
 import os
 from datetime import datetime, timedelta
@@ -212,6 +212,60 @@ def create_app():
     @app.route('/about')
     def about():
         return render_template('about.html')
+    
+    # ═══════════════════════════════════════════════════════════
+    # 🔄 MT5 VPS SYNC WEBHOOK (NEW)
+    # ═══════════════════════════════════════════════════════════
+    
+    @app.route('/api/mt5/sync', methods=['POST'])
+    def mt5_sync_webhook():
+        """Receive MT5 trade data from VPS sync server"""
+        from sync_service import process_mt5_trade_data
+        
+        # Verify internal key
+        api_key = request.headers.get('X-Internal-Key')
+        expected_key = os.environ.get('VPS_INTERNAL_KEY', 'TGF_INT_xK92mQ27pL38nR4')
+        
+        if api_key != expected_key:
+            print(f"❌ MT5 Webhook: Invalid internal key from {request.remote_addr}")
+            return jsonify({'status': 'error', 'message': 'Invalid internal key'}), 401
+        
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({'status': 'error', 'message': 'No JSON data received'}), 400
+            
+            sync_id = data.get('sync_id')
+            if not sync_id:
+                return jsonify({'status': 'error', 'message': 'No sync_id in payload'}), 400
+            
+            print(f"📥 MT5 Webhook received: sync_id={sync_id}, trades={len(data.get('closed_trades', []))}")
+            
+            result = process_mt5_trade_data(data)
+            
+            if result.get('success'):
+                print(f"✅ MT5 Webhook processed: {result.get('trades_added', 0)} new trades saved")
+                return jsonify({
+                    'status': 'ok',
+                    'message': f"Processed {result.get('trades_added', 0)} trades",
+                    'trades_added': result.get('trades_added', 0)
+                }), 200
+            else:
+                print(f"⚠️ MT5 Webhook error: {result.get('error', 'Unknown error')}")
+                return jsonify({
+                    'status': 'error',
+                    'message': result.get('error', 'Processing failed')
+                }), 400
+                
+        except Exception as e:
+            print(f"❌ MT5 Webhook exception: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'status': 'error', 'message': f'Server error: {str(e)[:200]}'}), 500
+    
+    # ═══════════════════════════════════════════════════════════
+    # END MT5 VPS SYNC WEBHOOK
+    # ═══════════════════════════════════════════════════════════
     
     # Start sync scheduler
     from sync_service import start_scheduler

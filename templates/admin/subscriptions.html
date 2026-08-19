@@ -90,6 +90,10 @@
     }
     table tbody tr { transition: background 0.15s; background: var(--bg-card); }
     table tbody tr:hover { background: var(--sidebar-hover); }
+    .username-text {
+        color: var(--text-primary, #ffffff) !important;
+        font-weight: 700;
+    }
 
     .badge-tier {
         padding: 4px 10px; border-radius: 12px; font-size: 0.63rem;
@@ -273,7 +277,7 @@
                     data-plan="{{ sub.plan_type }}"
                     data-status="{{ sub.status_label }}">
                     <td>
-                        <strong>{{ sub.username }}</strong>
+                        <strong class="username-text">{{ sub.username }}</strong>
                         <div style="font-size: 0.68rem; color: var(--text-muted);">{{ sub.email }}</div>
                     </td>
                     <td><span class="badge-tier {{ sub.tier }}">{{ sub.tier.upper() }}</span></td>
