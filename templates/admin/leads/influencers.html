@@ -40,6 +40,16 @@
         width: 8px; height: 8px; border-radius: 50%;
         display: inline-block; margin-right: 6px;
     }
+    .stat-card .delete-status {
+        position: absolute; top: 8px; right: 8px;
+        width: 20px; height: 20px; border-radius: 50%;
+        background: rgba(255,82,82,0.1); color: #ff5252;
+        border: none; cursor: pointer; display: none;
+        align-items: center; justify-content: center;
+        font-size: 0.6rem; transition: all 0.2s;
+    }
+    .stat-card:hover .delete-status { display: flex; }
+    .stat-card .delete-status:hover { background: rgba(255,82,82,0.25); }
 
     .toolbar {
         background: var(--bg-card);
@@ -92,7 +102,6 @@
     }
     .btn-status:hover { background: rgba(255,179,0,0.2); }
 
-    /* Bulk Bar */
     .bulk-bar {
         display: none; background: var(--accent); border-radius: 10px;
         padding: 10px 16px; margin-bottom: 16px;
@@ -191,7 +200,6 @@
     .empty-state { text-align: center; padding: 50px; color: var(--text-muted); }
     .empty-state i { font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 10px; }
 
-    /* Modal */
     .modal-overlay {
         display: none; position: fixed; inset: 0;
         background: rgba(0,0,0,0.65); z-index: 1050;
@@ -281,7 +289,7 @@
         </div>
     </div>
 
-    <!-- Custom Status Cards (only statuses used by influencers) -->
+    <!-- Custom Status Cards (ONLY influencer statuses) -->
     <div class="stats-grid" id="customStatusGrid" style="margin-top:-10px;">
         <div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.75rem;">Loading influencer statuses...</div>
     </div>
@@ -329,6 +337,7 @@
                         <th><input type="checkbox" id="masterCheckbox" onchange="toggleAll()" style="width:14px;height:14px;"></th>
                         <th>Name</th>
                         <th>Contact</th>
+                        <th>Location</th>
                         <th>Platform</th>
                         <th>Followers</th>
                         <th>Niche</th>
@@ -338,7 +347,7 @@
                     </tr>
                 </thead>
                 <tbody id="influencerTableBody">
-                    <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>
+                    <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -387,6 +396,10 @@
             </div>
         </div>
         <div class="form-group">
+            <label>Location</label>
+            <input type="text" id="addLocation" placeholder="e.g., Mumbai, Maharashtra">
+        </div>
+        <div class="form-group">
             <label>Niche</label>
             <select id="addNiche">
                 <option value="">Select</option>
@@ -409,7 +422,7 @@
     <div class="modal-box">
         <h5>📥 Import Influencers from CSV</h5>
         <p style="font-size:0.72rem;color:var(--text-muted);margin-bottom:12px;">
-            CSV format: <code>name,email,phone,platform,follower_count,niche,social_handle</code><br>
+            CSV format: <code>name,email,phone,location,platform,follower_count,niche,social_handle</code><br>
             Empty fields will be set as NULL.
         </p>
         <input type="file" id="csvFile" accept=".csv" onchange="previewCSV()" style="width:100%;padding:8px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.75rem;">
@@ -424,7 +437,7 @@
 <!-- Create Status Modal -->
 <div class="modal-overlay" id="statusModal">
     <div class="modal-box">
-        <h5>🏷️ Create Status</h5>
+        <h5>🏷️ Create Influencer Status</h5>
         <div class="form-group">
             <label>Status Name</label>
             <input type="text" id="statusName" placeholder="e.g., VIP Influencer, Top Creator">
@@ -469,7 +482,6 @@ function showToast(msg, type='success') {
     setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 4000);
 }
 
-// Bulk Selection
 function toggleSelect(id, cb) { cb.checked ? selectedInfluencers.add(id) : selectedInfluencers.delete(id); updateBulkBar(); }
 function toggleAll() { const m = document.getElementById('masterCheckbox'); document.querySelectorAll('.inf-checkbox').forEach(cb => { cb.checked = m.checked; m.checked ? selectedInfluencers.add(parseInt(cb.value)) : selectedInfluencers.delete(parseInt(cb.value)); }); updateBulkBar(); }
 function updateBulkBar() { const b = document.getElementById('bulkBar'); if (selectedInfluencers.size > 0) { b.classList.add('show'); document.getElementById('selectedCount').textContent = selectedInfluencers.size + ' selected'; } else { b.classList.remove('show'); } }
@@ -501,37 +513,37 @@ async function saveBulkNote() {
     closeBulkNoteModal(); clearSelection(); showToast('Note added to all selected');
 }
 
-// Load ONLY statuses that are used by influencers
 async function loadCustomStatuses() {
     try {
+        const statusRes = await fetch('/admin/leads/api/statuses');
+        const statusData = await statusRes.json();
+        const allStatuses = statusData.statuses || [];
+        
         const infRes = await fetch('/admin/influencers/api/list?page=1&search=&response=all&per_page=1000');
         const infData = await infRes.json();
         const influencers = infData.influencers || [];
         
-        const usedStatuses = {};
+        const statusCounts = {};
         influencers.forEach(inf => {
             if (inf.status_name && inf.status_name !== 'Unassigned') {
-                if (!usedStatuses[inf.status_name]) {
-                    usedStatuses[inf.status_name] = { count: 0, color: inf.status_color || '#6B7280' };
-                }
-                usedStatuses[inf.status_name].count++;
+                statusCounts[inf.status_name] = (statusCounts[inf.status_name] || 0) + 1;
             }
         });
         
         const grid = document.getElementById('customStatusGrid');
-        const statusNames = Object.keys(usedStatuses);
         
-        if (statusNames.length === 0) {
-            grid.innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">No influencer statuses yet. Assign from Influencer Detail page.</div>';
+        if (allStatuses.length === 0) {
+            grid.innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">No influencer statuses yet. Click "Create Status" to add one.</div>';
             return;
         }
         
         let h = '';
-        statusNames.forEach(name => {
-            const data = usedStatuses[name];
-            h += `<div class="stat-card" onclick="filterByStatus('${name.replace(/'/g, "\\'")}')">
-                <span class="stat-label"><span class="stat-dot" style="background:${data.color};"></span>${esc(name)}</span>
-                <span class="stat-value">${data.count}</span>
+        allStatuses.forEach(status => {
+            const count = statusCounts[status.name] || 0;
+            h += `<div class="stat-card" onclick="filterByStatus('${status.name.replace(/'/g, "\\'")}')">
+                <span class="stat-label"><span class="stat-dot" style="background:${status.color || '#6B7280'};"></span>${esc(status.name)}</span>
+                <span class="stat-value">${count}</span>
+                <button class="delete-status" onclick="event.stopPropagation();deleteInfluencerStatus(${status.id}, '${status.name.replace(/'/g, "\\'")}')" title="Delete status">✕</button>
             </div>`;
         });
         grid.innerHTML = h;
@@ -552,7 +564,7 @@ function filterByStatus(statusName) {
 
 async function loadInfluencersByStatus(statusName) {
     const tbody = document.getElementById('influencerTableBody');
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
     
     const params = new URLSearchParams({ page: 1, search: '', response: 'all', per_page: 1000 });
     const r = await fetch('/admin/influencers/api/list?' + params);
@@ -568,7 +580,7 @@ function renderInfluencerRows(influencers) {
     const tbody = document.getElementById('influencerTableBody');
     
     if (influencers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="bi bi-megaphone"></i><p>No influencers with this status.</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="bi bi-megaphone"></i><p>No influencers with this status.</p></div></td></tr>';
         return;
     }
     
@@ -583,6 +595,7 @@ function buildRowHTML(inf) {
     const platformBadge = inf.platform ? `<span class="platform-badge ${inf.platform}">${inf.platform}</span>` : '<span style="color:var(--text-muted);">—</span>';
     const respBadge = `<span class="response-badge ${inf.response_status}">${inf.response_status.replace('_',' ').toUpperCase()}</span>`;
     const followers = inf.follower_count ? inf.follower_count.toLocaleString('en-IN') : '—';
+    const location = inf.location ? esc(inf.location) : '<span style="color:var(--text-muted);font-size:0.68rem;">NULL</span>';
     const statusBadge = inf.status_name !== 'Unassigned' ? `<span class="response-badge" style="background:${inf.status_color}20;color:${inf.status_color};">${esc(inf.status_name)}</span>` : '<span style="color:var(--text-muted);font-size:0.68rem;">—</span>';
     
     return `<tr>
@@ -592,6 +605,7 @@ function buildRowHTML(inf) {
             <div style="font-size:0.75rem;">${esc(inf.email)}</div>
             <div style="font-size:0.68rem;color:var(--text-muted);">${esc(inf.phone || '')}</div>
         </td>
+        <td>${location}</td>
         <td>${platformBadge}</td>
         <td>${followers}</td>
         <td>${inf.niche ? esc(inf.niche) : '—'}</td>
@@ -608,7 +622,7 @@ function buildRowHTML(inf) {
 
 async function loadInfluencers() {
     const tbody = document.getElementById('influencerTableBody');
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
     
     const params = new URLSearchParams({ page: currentPage, search: searchQuery, response: selectedResponse });
     const r = await fetch('/admin/influencers/api/list?' + params);
@@ -617,7 +631,7 @@ async function loadInfluencers() {
     document.getElementById('resultsCount').textContent = (d.total||0) + ' influencers';
     
     if (!d.influencers || d.influencers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="bi bi-megaphone"></i><p>No influencers found. Click "Add Influencer" or "Import CSV".</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="bi bi-megaphone"></i><p>No influencers found. Click "Add Influencer" or "Import CSV".</p></div></td></tr>';
         updatePagination(0, 1);
         return;
     }
@@ -653,18 +667,21 @@ function filterResponse(r) { selectedResponse = r; document.getElementById('resp
 }
 function goToPage(p) { currentPage = p; loadInfluencers(); }
 
-// Add Modal
 function openAddModal() { document.getElementById('addModal').classList.add('show'); }
 function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
 
 async function saveInfluencer() {
     const name = document.getElementById('addName').value.trim();
     const email = document.getElementById('addEmail').value.trim();
-    if (!name || !email) { showToast('Name and email required', 'error'); return; }
+    const phone = document.getElementById('addPhone').value.trim();
+    
+    if (!name) { showToast('Name is required', 'error'); return; }
+    if (!email && !phone) { showToast('Either email or phone is required', 'error'); return; }
     
     const data = {
         name, email,
-        phone: document.getElementById('addPhone').value.trim(),
+        phone: phone,
+        location: document.getElementById('addLocation').value.trim(),
         platform: document.getElementById('addPlatform').value,
         social_handle: document.getElementById('addHandle').value.trim(),
         follower_count: document.getElementById('addFollowers').value,
@@ -678,7 +695,7 @@ async function saveInfluencer() {
     const d = await r.json();
     if (d.success) {
         closeAddModal(); loadInfluencers(); loadCustomStatuses(); showToast('Influencer added!');
-        ['addName','addEmail','addPhone','addHandle','addFollowers'].forEach(id => document.getElementById(id).value = '');
+        ['addName','addEmail','addPhone','addLocation','addHandle','addFollowers'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('addPlatform').value = '';
         document.getElementById('addNiche').value = '';
     } else {
@@ -686,7 +703,6 @@ async function saveInfluencer() {
     }
 }
 
-// Import Modal
 function openImportModal() {
     document.getElementById('importModal').classList.add('show');
     document.getElementById('csvFile').value = '';
@@ -736,13 +752,23 @@ async function importCSV() {
     
     if (d.success) {
         closeImportModal(); loadInfluencers(); loadCustomStatuses();
-        showToast(`✅ ${d.added} added, ${d.skipped} skipped, ${d.failed} failed`);
+        
+        let msg = `✅ ${d.added} added, ${d.skipped} skipped, ${d.failed} failed`;
+        
+        if (d.skip_reasons && d.skip_reasons.length > 0) {
+            msg += '\n\n⚠️ Skipped:\n' + d.skip_reasons.join('\n');
+        }
+        
+        if (d.fail_reasons && d.fail_reasons.length > 0) {
+            msg += '\n\n❌ Failed:\n' + d.fail_reasons.join('\n');
+        }
+        
+        showToast(msg, d.failed > 0 ? 'error' : 'success');
     } else {
         showToast(d.error || 'Import failed', 'error');
     }
 }
 
-// Status Modal
 function openStatusModal() { document.getElementById('statusModal').classList.add('show'); }
 function closeStatusModal() { document.getElementById('statusModal').classList.remove('show'); }
 
@@ -759,8 +785,24 @@ async function saveStatus() {
     if (d.success) {
         closeStatusModal();
         document.getElementById('statusName').value = '';
+        document.getElementById('statusColor').value = '#FFB300';
+        await loadCustomStatuses();
+        showToast('✅ Status created! Now visible below.');
+    } else {
+        showToast(d.error || 'Error', 'error');
+    }
+}
+
+async function deleteInfluencerStatus(id, name) {
+    if (!confirm(`Delete status "${name}"? Influencers with this status will be unassigned.`)) return;
+    
+    const r = await fetch('/admin/leads/api/statuses/' + id, {method:'DELETE'});
+    const d = await r.json();
+    
+    if (d.success) {
         loadCustomStatuses();
-        showToast('Status created! Assign it to influencers from their detail page.');
+        loadInfluencers();
+        showToast('Status deleted');
     } else {
         showToast(d.error || 'Error', 'error');
     }

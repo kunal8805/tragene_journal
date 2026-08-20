@@ -1077,13 +1077,17 @@ def get_unanalyzed_count(user):
 
 def seed_plan_defaults():
     defaults = [
-        {'plan_tier': 'free', 'monthly_tokens': 2000, 'queries_per_week': 2, 'reports_per_week': 2},
-        {'plan_tier': 'pro', 'monthly_tokens': 50000, 'queries_per_week': None, 'reports_per_week': None},
-        {'plan_tier': 'elite', 'monthly_tokens': 150000, 'queries_per_week': None, 'reports_per_week': None},
+        {'plan_tier': 'free', 'monthly_tokens': 2000, 'daily_requests': 2, 'queries_per_week': 2, 'reports_per_week': 2},
+        {'plan_tier': 'pro', 'monthly_tokens': 50000, 'daily_requests': 50, 'queries_per_week': None, 'reports_per_week': None},
+        {'plan_tier': 'elite', 'monthly_tokens': 150000, 'daily_requests': 150, 'queries_per_week': None, 'reports_per_week': None},
+        {'plan_tier': 'enterprise', 'monthly_tokens': 500000, 'daily_requests': None, 'queries_per_week': None, 'reports_per_week': None},
     ]
     for d in defaults:
-        if not AIPlanDefaults.query.filter_by(plan_tier=d['plan_tier']).first():
+        plan_default = AIPlanDefaults.query.filter_by(plan_tier=d['plan_tier']).first()
+        if not plan_default:
             db.session.add(AIPlanDefaults(**d))
+        elif plan_default.daily_requests is None and d['daily_requests'] is not None:
+            plan_default.daily_requests = d['daily_requests']
     db.session.commit()
     print("✅ AI Plan defaults seeded!")
 

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, flash, redirect, url_for, request, session, Response, jsonify
-from extensions import db, login_manager, migrate
+from extensions import db, login_manager, migrate, limiter
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -14,10 +14,20 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(basedir, 'trading_journal.db'))
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+    app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['REMEMBER_COOKIE_SECURE'] = True
+    app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+    app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
+    app.config['RATELIMIT_STORAGE_URI'] = os.environ.get('RATELIMIT_STORAGE_URI', 'redis://localhost:6379')
     
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
     
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
@@ -26,7 +36,17 @@ def create_app():
     
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        user_id_parts = str(user_id).split(':', 1)
+        try:
+            if len(user_id_parts) == 2:
+                raw_user_id, raw_session_version = user_id_parts
+                user = User.query.get(int(raw_user_id))
+                if user and (user.session_version or 0) == int(raw_session_version):
+                    return user
+                return None
+            return User.query.get(int(user_id))
+        except (TypeError, ValueError):
+            return None
     
     from auth import auth_bp
     from user_routes import user_bp
@@ -113,6 +133,20 @@ def create_app():
         }
 
     @app.before_request
+    def enforce_session_version():
+        from flask_login import current_user, logout_user
+        if request.path.startswith('/static/') or not current_user.is_authenticated:
+            return
+        if session.get('is_moderator'):
+            return
+        expected_version = current_user.session_version or 0
+        if session.get('session_version') != expected_version:
+            logout_user()
+            session.clear()
+            flash('Your session has expired. Please log in again.', 'warning')
+            return redirect(url_for('auth.login'))
+
+    @app.before_request
     def check_redirects():
         from flask import request, redirect
         from models import Redirect
@@ -131,6 +165,14 @@ def create_app():
             return render_template('404.html', popular_blogs=popular_blogs), 404
         except:
             return "Page not found", 404
+    
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        message = 'Too many attempts. Please wait a moment and try again.'
+        if request.path.startswith('/ai') or request.path.startswith('/api/'):
+            return jsonify({'success': False, 'message': message}), 429
+        flash(message, 'danger')
+        return redirect(request.referrer or url_for('auth.login'))
             
     @app.after_request
     def add_security_headers(response):

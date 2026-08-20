@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Logout - Tragene Journal{% endblock %}
+
+{% block public_ad %}{% endblock %}
+
+{% block content %}
+<style>
+    .logout-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        background: #0b1215;
+    }
+    .logout-dialog {
+        width: 100%;
+        max-width: 460px;
+        background: rgba(14, 26, 30, 0.92);
+        border: 1px solid rgba(77, 208, 225, 0.18);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 32px 70px rgba(0, 0, 0, 0.55);
+    }
+    .logout-dialog h2 {
+        margin-bottom: 0.4rem;
+        font-size: 1.6rem;
+    }
+    .logout-dialog p {
+        color: #9fbac4;
+        margin-bottom: 1.5rem;
+    }
+    .logout-actions {
+        display: grid;
+        gap: 0.9rem;
+    }
+    .logout-option {
+        width: 100%;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.8rem;
+        padding: 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #eef6f9;
+        text-align: left;
+        cursor: pointer;
+    }
+    .logout-option:hover {
+        border-color: rgba(77, 208, 225, 0.35);
+        background: rgba(77, 208, 225, 0.08);
+    }
+    .logout-option strong {
+        display: block;
+        font-size: 0.98rem;
+    }
+    .logout-option span {
+        display: block;
+        margin-top: 0.25rem;
+        color: #91aeb8;
+        font-size: 0.85rem;
+    }
+    .logout-cancel {
+        display: inline-flex;
+        margin-top: 1.2rem;
+        color: #8bb4c2;
+    }
+</style>
+
+<div class="logout-wrapper">
+    <div class="logout-dialog" role="dialog" aria-labelledby="logoutTitle">
+        <h2 id="logoutTitle">Log out</h2>
+        <p>Choose how you want to end your session.</p>
+        <form method="POST" action="{{ url_for('auth.logout') }}" class="logout-actions">
+            <button type="submit" name="logout_scope" value="device" class="logout-option">
+                <i class="bi bi-phone"></i>
+                <span>
+                    <strong>Log out this device only</strong>
+                    <span>Ends only this browser session.</span>
+                </span>
+            </button>
+            <button type="submit" name="logout_scope" value="all" class="logout-option">
+                <i class="bi bi-shield-lock"></i>
+                <span>
+                    <strong>Log out of all devices</strong>
+                    <span>This will log you out everywhere, including this device.</span>
+                </span>
+            </button>
+        </form>
+        <a href="{{ request.referrer or url_for('user.dashboard') }}" class="logout-cancel">Cancel</a>
+    </div>
+</div>
+{% endblock %}

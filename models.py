@@ -70,6 +70,9 @@ class User(UserMixin, db.Model):
     email_verified = db.Column(db.Boolean, default=False)
     email_verified_at = db.Column(db.DateTime, nullable=True)
     lead_status_id = db.Column(db.Integer, db.ForeignKey('lead_statuses.id'), nullable=True)
+    failed_attempts = db.Column(db.Integer, default=0, nullable=False)
+    locked_until = db.Column(db.DateTime, nullable=True)
+    session_version = db.Column(db.Integer, default=0, nullable=False)
     lead_status = db.relationship('LeadStatus', backref='users_with_status', foreign_keys=[lead_status_id])
     
     trades = db.relationship('Trade', backref='trader', lazy=True, foreign_keys='Trade.user_id')
@@ -77,6 +80,9 @@ class User(UserMixin, db.Model):
     day_notes = db.relationship('DayNote', backref='author', lazy=True, foreign_keys='DayNote.user_id')
     accounts = db.relationship('TradingAccount', backref='owner', lazy=True, foreign_keys='TradingAccount.user_id')
     diary_entries = db.relationship('DiaryEntry', backref='author_ref', lazy=True, foreign_keys='DiaryEntry.user_id')
+    
+    def get_id(self):
+        return f"{self.id}:{self.session_version or 0}"
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -635,6 +641,7 @@ class AIPlanDefaults(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     plan_tier = db.Column(db.String(20), unique=True, nullable=False)
     monthly_tokens = db.Column(db.Integer, default=2000)
+    daily_requests = db.Column(db.Integer, nullable=True)
     queries_per_week = db.Column(db.Integer, nullable=True)
     reports_per_week = db.Column(db.Integer, default=2)
     is_active = db.Column(db.Boolean, default=True)
@@ -1490,6 +1497,7 @@ class LeadStatus(db.Model):
     is_default = db.Column(db.Boolean, default=False)  # System default vs custom
     is_active = db.Column(db.Boolean, default=True)
     sort_order = db.Column(db.Integer, default=0)
+    status_type = db.Column(db.String(20), default='lead')  # 'lead' or 'influencer'
     created_by_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -1497,7 +1505,7 @@ class LeadStatus(db.Model):
     creator = db.relationship('User', backref='created_lead_statuses', foreign_keys=[created_by_admin_id])
     
     def __repr__(self):
-        return f'<LeadStatus {self.name}>'
+        return f'<LeadStatus {self.name} ({self.status_type})>'
 
 
 class LeadNote(db.Model):
@@ -1548,6 +1556,7 @@ class Influencer(db.Model):
     # Contact details
     email = db.Column(db.String(120), unique=True, nullable=True)
     phone = db.Column(db.String(100), nullable=True)  # Increased from 50 to 100 for multiple numbers
+    location = db.Column(db.String(200), nullable=True)  # State/City/Country
     
     # Social details
     platform = db.Column(db.String(50), nullable=True)  # Increased from 30 to 50
@@ -1638,18 +1647,18 @@ class InfluencerCampaign(db.Model):
 def seed_lead_statuses():
     """Seed default lead status categories"""
     defaults = [
-        {'name': 'New Lead', 'color': '#6B7280', 'is_default': True, 'sort_order': 1},
-        {'name': 'Verified', 'color': '#10B981', 'is_default': True, 'sort_order': 2},
-        {'name': 'Interested', 'color': '#F59E0B', 'is_default': True, 'sort_order': 3},
-        {'name': 'Call Follow-up', 'color': '#3B82F6', 'is_default': True, 'sort_order': 4},
-        {'name': 'WhatsApp Follow-up', 'color': '#22C55E', 'is_default': True, 'sort_order': 5},
-        {'name': 'Email Follow-up', 'color': '#8B5CF6', 'is_default': True, 'sort_order': 6},
-        {'name': 'Purchased', 'color': '#06B6D4', 'is_default': True, 'sort_order': 7},
-        {'name': 'Dead Lead', 'color': '#EF4444', 'is_default': True, 'sort_order': 8},
+        {'name': 'New Lead', 'color': '#6B7280', 'is_default': True, 'sort_order': 1, 'status_type': 'lead'},
+        {'name': 'Verified', 'color': '#10B981', 'is_default': True, 'sort_order': 2, 'status_type': 'lead'},
+        {'name': 'Interested', 'color': '#F59E0B', 'is_default': True, 'sort_order': 3, 'status_type': 'lead'},
+        {'name': 'Call Follow-up', 'color': '#3B82F6', 'is_default': True, 'sort_order': 4, 'status_type': 'lead'},
+        {'name': 'WhatsApp Follow-up', 'color': '#22C55E', 'is_default': True, 'sort_order': 5, 'status_type': 'lead'},
+        {'name': 'Email Follow-up', 'color': '#8B5CF6', 'is_default': True, 'sort_order': 6, 'status_type': 'lead'},
+        {'name': 'Purchased', 'color': '#06B6D4', 'is_default': True, 'sort_order': 7, 'status_type': 'lead'},
+        {'name': 'Dead Lead', 'color': '#EF4444', 'is_default': True, 'sort_order': 8, 'status_type': 'lead'},
     ]
     
     for d in defaults:
-        if not LeadStatus.query.filter_by(name=d['name'], is_default=True).first():
+        if not LeadStatus.query.filter_by(name=d['name'], is_default=True, status_type='lead').first():
             db.session.add(LeadStatus(**d))
     
     db.session.commit()

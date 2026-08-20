@@ -164,7 +164,6 @@
     }
     .empty-state i { font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 10px; }
 
-    /* Quick status select in table */
     .quick-status-select {
         padding: 4px 8px;
         background: var(--bg-input);
@@ -178,7 +177,6 @@
     }
     .quick-status-select:focus { border-color: var(--accent); }
 
-    /* Modal */
     .modal-overlay {
         display: none; position: fixed; inset: 0;
         background: rgba(0,0,0,0.65); z-index: 1050;
@@ -346,7 +344,7 @@ function showToast(msg, type='success') {
 
 async function loadStatuses() {
     try {
-        const r = await fetch('/admin/leads/api/statuses');
+        const r = await fetch('/admin/leads/api/statuses?status_type=lead');
         const d = await r.json();
         if (d.success) {
             allStatuses = d.statuses || [];
@@ -356,7 +354,6 @@ async function loadStatuses() {
                 sf.innerHTML += `<option value="${s.name}">${s.name}</option>`;
             });
             
-            // Populate bulk status select
             const bs = document.getElementById('bulkStatusSelect');
             bs.innerHTML = '<option value="">Move To...</option>';
             allStatuses.forEach(s => {
@@ -497,7 +494,11 @@ async function saveStatus() {
     const name = document.getElementById('statusName').value.trim();
     const color = document.getElementById('statusColor').value;
     if (!name) { showToast('Name required', 'error'); return; }
-    const r = await fetch('/admin/leads/api/statuses/custom', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,color})});
+    const r = await fetch('/admin/leads/api/statuses/custom', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name, color, status_type: 'lead'})
+    });
     const d = await r.json();
     if (d.success) { closeStatusModal(); loadStatuses(); showToast('Status created'); } else { showToast(d.error || 'Error', 'error'); }
 }

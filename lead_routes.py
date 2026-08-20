@@ -56,7 +56,7 @@ def admin_required(f):
 @admin_required
 def leads():
     """Lead CRM - list all users"""
-    all_statuses = LeadStatus.query.filter_by(is_active=True).order_by(LeadStatus.sort_order).all()
+    all_statuses = LeadStatus.query.filter_by(is_active=True, status_type='lead').order_by(LeadStatus.sort_order).all()
     return render_template('admin/leads/leads.html', all_statuses=all_statuses)
 
 
@@ -69,17 +69,17 @@ def leads():
 def lead_detail(user_id):
     """Lead detail - view user, add notes, change status"""
     lead = User.query.get_or_404(user_id)
-    all_statuses = LeadStatus.query.filter_by(is_active=True).order_by(LeadStatus.sort_order).all()
+    all_statuses = LeadStatus.query.filter_by(is_active=True, status_type='lead').order_by(LeadStatus.sort_order).all()
     
     # Get lead's current status
     lead_status = lead.lead_status if lead.lead_status_id else None
     if not lead_status:
         if lead.subscription_tier != 'free':
-            lead_status = LeadStatus.query.filter_by(name='Purchased', is_default=True).first()
+            lead_status = LeadStatus.query.filter_by(name='Purchased', is_default=True, status_type='lead').first()
         elif lead.email_verified:
-            lead_status = LeadStatus.query.filter_by(name='Verified', is_default=True).first()
+            lead_status = LeadStatus.query.filter_by(name='Verified', is_default=True, status_type='lead').first()
         else:
-            lead_status = LeadStatus.query.filter_by(name='New Lead', is_default=True).first()
+            lead_status = LeadStatus.query.filter_by(name='New Lead', is_default=True, status_type='lead').first()
     
     # Get subscription info
     sub = Subscription.query.filter_by(user_id=lead.id).first()
@@ -100,7 +100,7 @@ def lead_detail(user_id):
 @admin_required
 def influencers():
     """Influencer CRM - list all influencers"""
-    all_statuses = LeadStatus.query.filter_by(is_active=True).order_by(LeadStatus.sort_order).all()
+    all_statuses = LeadStatus.query.filter_by(is_active=True, status_type='influencer').order_by(LeadStatus.sort_order).all()
     
     # Stats
     total = Influencer.query.count()
@@ -130,7 +130,7 @@ def influencers():
 def influencer_detail(influencer_id):
     """Influencer detail page"""
     influencer = Influencer.query.get_or_404(influencer_id)
-    all_statuses = LeadStatus.query.filter_by(is_active=True).order_by(LeadStatus.sort_order).all()
+    all_statuses = LeadStatus.query.filter_by(is_active=True, status_type='influencer').order_by(LeadStatus.sort_order).all()
     all_coupons = Coupon.query.filter_by(is_active=True).order_by(Coupon.created_at.desc()).all()
     campaigns = InfluencerCampaign.query.filter_by(influencer_id=influencer.id).order_by(InfluencerCampaign.created_at.desc()).all()
     
@@ -169,7 +169,7 @@ def api_leads_list():
         )
     
     if status != 'all' and status != 'none':
-        status_obj = LeadStatus.query.filter_by(name=status).first()
+        status_obj = LeadStatus.query.filter_by(name=status, status_type='lead').first()
         if status_obj:
             if status == 'Purchased':
                 query = query.filter(User.subscription_tier != 'free')
@@ -178,7 +178,6 @@ def api_leads_list():
             elif status == 'New Lead':
                 query = query.filter(User.email_verified == False, User.subscription_tier == 'free')
             else:
-                # Custom statuses - filter by lead_status_id
                 query = query.filter(User.lead_status_id == status_obj.id)
     
     elif status == 'none':
@@ -195,10 +194,9 @@ def api_leads_list():
     
     leads_data = []
     for u in users:
-        # Determine status - REAL from DB
         if u.lead_status_id:
             status_obj = LeadStatus.query.get(u.lead_status_id)
-            if status_obj:
+            if status_obj and status_obj.status_type == 'lead':
                 status_name = status_obj.name
                 status_color = status_obj.color
             else:
@@ -245,8 +243,7 @@ def api_leads_stats():
     """Get lead stats for dashboard cards"""
     stats = {}
     
-    # Count by lead_status_id (REAL counts from DB)
-    all_statuses = LeadStatus.query.filter_by(is_active=True).all()
+    all_statuses = LeadStatus.query.filter_by(is_active=True, status_type='lead').all()
     for s in all_statuses:
         count = User.query.filter_by(lead_status_id=s.id).count()
         stats[s.name] = count
@@ -268,7 +265,7 @@ def api_lead_status(user_id):
     
     if status_id:
         status = LeadStatus.query.get(int(status_id))
-        if status:
+        if status and status.status_type == 'lead':
             user.lead_status_id = status.id
             db.session.commit()
             return jsonify({'success': True, 'message': f'Status changed to {status.name}'})
@@ -296,7 +293,6 @@ def api_lead_notes(user_id):
             } for n in notes]
         })
     
-    # POST - add note
     data = request.get_json()
     content = data.get('content', '').strip()
     if not content:
@@ -345,7 +341,6 @@ def api_lead_followups(user_id):
             } for f in followups]
         })
     
-    # POST - schedule follow-up
     data = request.get_json()
     followup_date = data.get('followup_date')
     followup_type = data.get('followup_type', 'call')
@@ -421,7 +416,7 @@ def api_bulk_action():
             return jsonify({'success': False, 'error': 'No status selected'})
         
         status = LeadStatus.query.get(int(status_id))
-        if not status:
+        if not status or status.status_type != 'lead':
             return jsonify({'success': False, 'error': 'Invalid status'})
         
         for lid in lead_ids:
@@ -436,21 +431,23 @@ def api_bulk_action():
 
 
 # ═══════════════════════════════════════════════════════════
-# 📊 API — STATUS CRUD
+# 📊 API — STATUS CRUD (With status_type support)
 # ═══════════════════════════════════════════════════════════
 
 @lead_bp.route('/leads/api/statuses')
 @admin_required
 def api_get_statuses():
-    """Get all status categories"""
-    statuses = LeadStatus.query.filter_by(is_active=True).order_by(LeadStatus.sort_order).all()
+    """Get all status categories - filter by status_type"""
+    status_type = request.args.get('status_type', 'lead')
+    statuses = LeadStatus.query.filter_by(is_active=True, status_type=status_type).order_by(LeadStatus.sort_order).all()
     return jsonify({
         'success': True,
         'statuses': [{
             'id': s.id,
             'name': s.name,
             'color': s.color,
-            'is_default': s.is_default
+            'is_default': s.is_default,
+            'status_type': s.status_type
         } for s in statuses]
     })
 
@@ -458,21 +455,26 @@ def api_get_statuses():
 @lead_bp.route('/leads/api/statuses/custom', methods=['POST'])
 @admin_required
 def api_create_status():
-    """Create a custom status"""
+    """Create a custom status - for lead OR influencer"""
     data = request.get_json()
     name = data.get('name', '').strip()
     color = data.get('color', '#4F46E5')
+    status_type = data.get('status_type', 'lead')
     
     if not name:
         return jsonify({'success': False, 'error': 'Name required'})
     
-    existing = LeadStatus.query.filter_by(name=name).first()
+    if status_type not in ['lead', 'influencer']:
+        return jsonify({'success': False, 'error': 'Invalid status_type'})
+    
+    existing = LeadStatus.query.filter_by(name=name, status_type=status_type).first()
     if existing:
-        return jsonify({'success': False, 'error': 'Status already exists'})
+        return jsonify({'success': False, 'error': 'Status already exists for this type'})
     
     status = LeadStatus(
         name=name,
         color=color,
+        status_type=status_type,
         is_default=False,
         is_active=True,
         sort_order=99,
@@ -481,7 +483,7 @@ def api_create_status():
     db.session.add(status)
     db.session.commit()
     
-    return jsonify({'success': True, 'status': {'id': status.id, 'name': status.name, 'color': status.color}})
+    return jsonify({'success': True, 'status': {'id': status.id, 'name': status.name, 'color': status.color, 'status_type': status.status_type}})
 
 
 @lead_bp.route('/leads/api/statuses/<int:status_id>', methods=['PUT', 'DELETE'])
@@ -494,13 +496,15 @@ def api_update_delete_status(status_id):
         if status.is_default:
             return jsonify({'success': False, 'error': 'Cannot delete default status'})
         
-        Influencer.query.filter_by(status_id=status.id).update({Influencer.status_id: None})
-        User.query.filter_by(lead_status_id=status.id).update({User.lead_status_id: None})
+        if status.status_type == 'influencer':
+            Influencer.query.filter_by(status_id=status.id).update({Influencer.status_id: None})
+        else:
+            User.query.filter_by(lead_status_id=status.id).update({User.lead_status_id: None})
+        
         db.session.delete(status)
         db.session.commit()
         return jsonify({'success': True, 'message': 'Status deleted'})
     
-    # PUT - update
     data = request.get_json()
     status.name = data.get('name', status.name)
     status.color = data.get('color', status.color)
@@ -529,7 +533,8 @@ def api_influencers_list():
                 Influencer.name.ilike(f'%{search}%'),
                 Influencer.email.ilike(f'%{search}%'),
                 Influencer.phone.ilike(f'%{search}%'),
-                Influencer.social_handle.ilike(f'%{search}%')
+                Influencer.social_handle.ilike(f'%{search}%'),
+                Influencer.location.ilike(f'%{search}%')
             )
         )
     
@@ -546,13 +551,14 @@ def api_influencers_list():
         'name': inf.name,
         'email': inf.email,
         'phone': inf.phone or '',
+        'location': inf.location or '',
         'platform': inf.platform or '',
         'social_handle': inf.social_handle or '',
         'follower_count': inf.follower_count or 0,
         'niche': inf.niche or '',
         'response_status': inf.response_status,
-        'status_name': inf.status.name if inf.status else 'Unassigned',
-        'status_color': inf.status.color if inf.status else '#6B7280',
+        'status_name': inf.status.name if inf.status and inf.status.status_type == 'influencer' else 'Unassigned',
+        'status_color': inf.status.color if inf.status and inf.status.status_type == 'influencer' else '#6B7280',
         'created_at': inf.created_at.strftime('%d %b %Y') if inf.created_at else ''
     } for inf in influencers]
     
@@ -576,48 +582,35 @@ def api_add_influencer():
     name = data.get('name', '').strip()
     email = data.get('email', '').strip()
     phone = data.get('phone', '').strip() or None
+    location = data.get('location', '').strip() or None
     platform = data.get('platform', '').strip() or None
     social_handle = data.get('social_handle', '').strip() or None
     follower_count = data.get('follower_count') or None
     niche = data.get('niche', '').strip() or None
     
-    # Updated validation: Name required, Email OR Phone required
     if not name:
-        return jsonify({
-            'success': False,
-            'error': 'Name is required'
-        })
+        return jsonify({'success': False, 'error': 'Name is required'})
     
     if not email and not phone:
-        return jsonify({
-            'success': False,
-            'error': 'Either email or phone is required'
-        })
+        return jsonify({'success': False, 'error': 'Either email or phone is required'})
     
-    # Check for duplicates by email OR phone
     existing = None
     
     if email:
-        existing = Influencer.query.filter_by(
-            email=email
-        ).first()
+        existing = Influencer.query.filter_by(email=email).first()
     
     if not existing and phone:
-        existing = Influencer.query.filter_by(
-            phone=phone
-        ).first()
+        existing = Influencer.query.filter_by(phone=phone).first()
     
     if existing:
-        return jsonify({
-            'success': False,
-            'error': 'An influencer with this email or phone already exists'
-        })
+        return jsonify({'success': False, 'error': 'An influencer with this email or phone already exists'})
     
     try:
         influencer = Influencer(
             name=name,
             email=email if email else None,
             phone=phone,
+            location=location,
             platform=platform,
             social_handle=social_handle,
             follower_count=int(follower_count) if follower_count else None,
@@ -655,12 +648,11 @@ def api_import_influencers_csv():
         added = 0
         skipped = 0
         failed = 0
-        errors = []
+        skip_reasons = []
+        fail_reasons = []
         row_number = 0
         
-        # Helper function to clean NULL values
         def clean_value(value):
-            """Convert NULL, null, N/A, NA, empty strings to None"""
             if value is None:
                 return None
             value = value.strip()
@@ -671,45 +663,46 @@ def api_import_influencers_csv():
         for row in reader:
             row_number += 1
             
-            # Clean all values
             name = clean_value(row.get('name'))
             email = clean_value(row.get('email'))
             phone = clean_value(row.get('phone'))
+            location = clean_value(row.get('location'))
             platform = clean_value(row.get('platform'))
             social_handle = clean_value(row.get('social_handle'))
             niche = clean_value(row.get('niche'))
             
-            # Validate: Name required
             if not name:
                 failed += 1
-                errors.append(f'Row {row_number}: Missing name')
+                fail_reasons.append(f'Row {row_number}: Missing name')
                 continue
             
-            # Validate: Email OR Phone required
             if not email and not phone:
                 failed += 1
-                errors.append(f'Row {row_number} ({name}): Missing both email and phone')
+                fail_reasons.append(f'Row {row_number} ({name}): Missing both email and phone')
                 continue
             
-            # Check for duplicates by email OR phone
             existing = None
+            duplicate_reason = ''
             
             if email:
                 existing = Influencer.query.filter_by(email=email).first()
+                if existing:
+                    duplicate_reason = f'duplicate email: {email}'
             
             if not existing and phone:
                 existing = Influencer.query.filter_by(phone=phone).first()
+                if existing:
+                    duplicate_reason = f'duplicate phone: {phone}'
             
             if existing:
                 skipped += 1
+                skip_reasons.append(f'Row {row_number} ({name}): {duplicate_reason}')
                 continue
             
-            # Parse follower count
             follower_count = None
             fc_raw = clean_value(row.get('follower_count'))
             if fc_raw:
                 try:
-                    # Remove commas and convert to int
                     follower_count = int(fc_raw.replace(',', ''))
                 except (ValueError, AttributeError):
                     follower_count = None
@@ -719,6 +712,7 @@ def api_import_influencers_csv():
                     name=name,
                     email=email,
                     phone=phone,
+                    location=location,
                     platform=platform,
                     social_handle=social_handle,
                     follower_count=follower_count,
@@ -730,45 +724,30 @@ def api_import_influencers_csv():
                 added += 1
             except Exception as e:
                 failed += 1
-                errors.append(f'Row {row_number} ({name}): {str(e)}')
+                fail_reasons.append(f'Row {row_number} ({name}): {str(e)}')
         
-        # Commit everything
         try:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            return jsonify({
-                'success': False,
-                'error': f'Database error during import: {str(e)}'
-            })
+            return jsonify({'success': False, 'error': f'Database error during import: {str(e)}'})
         
-        # Final response
         return jsonify({
             'success': True,
-            'message': (
-                f'Import complete: '
-                f'{added} added, '
-                f'{skipped} skipped (duplicates), '
-                f'{failed} failed'
-            ),
+            'message': f'Import complete: {added} added, {skipped} skipped, {failed} failed',
             'added': added,
             'skipped': skipped,
             'failed': failed,
-            'errors': errors[:20]
+            'skip_reasons': skip_reasons[:20],
+            'fail_reasons': fail_reasons[:20]
         })
     
     except UnicodeDecodeError:
-        return jsonify({
-            'success': False,
-            'error': 'CSV file must be UTF-8 encoded'
-        })
+        return jsonify({'success': False, 'error': 'CSV file must be UTF-8 encoded'})
     
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        })
+        return jsonify({'success': False, 'error': str(e)})
 
 
 # ═══════════════════════════════════════════════════════════
@@ -846,7 +825,15 @@ def api_influencer_status(influencer_id):
     data = request.get_json()
     
     status_id = data.get('status_id')
-    influencer.status_id = int(status_id) if status_id else None
+    if status_id:
+        status = LeadStatus.query.get(int(status_id))
+        if status and status.status_type == 'influencer':
+            influencer.status_id = status.id
+        else:
+            return jsonify({'success': False, 'error': 'Invalid influencer status'})
+    else:
+        influencer.status_id = None
+    
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Status updated'})

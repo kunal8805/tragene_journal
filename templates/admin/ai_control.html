@@ -437,6 +437,8 @@
                     </h6>
                     <label>Monthly Tokens</label>
                     <input type="number" class="plan-tokens" data-plan="{{ plan.plan_tier }}" value="{{ plan.monthly_tokens }}">
+                    <label>Requests/Day</label>
+                    <input type="number" class="plan-daily" data-plan="{{ plan.plan_tier }}" value="{{ plan.daily_requests or '' }}" placeholder="Unlimited">
                     <label>Queries/Week</label>
                     <input type="number" class="plan-queries" data-plan="{{ plan.plan_tier }}" value="{{ plan.queries_per_week or '' }}" placeholder="Unlimited">
                     <label>Reports/Week</label>
@@ -764,6 +766,7 @@
             defaults.push({
                 plan_tier: plan,
                 monthly_tokens: parseInt(card.querySelector('.plan-tokens').value) || 0,
+                daily_requests: card.querySelector('.plan-daily').value ? parseInt(card.querySelector('.plan-daily').value) : null,
                 queries_per_week: card.querySelector('.plan-queries').value ? parseInt(card.querySelector('.plan-queries').value) : null,
                 reports_per_week: card.querySelector('.plan-reports').value ? parseInt(card.querySelector('.plan-reports').value) : null
             });

@@ -5,12 +5,13 @@ All AI endpoints for users
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from extensions import db
+from extensions import db, limiter
 from models import (
     AIReport, AIUsageLog, AIPlanDefaults, AIUserOverride,
     TradingGoal, CoachInsight, Trade, DiaryEntry, Checklist,
     AIChatSession, AIChatMessage
 )
+from rate_limits import ai_rate_limit_key, require_daily_ai_quota
 from ai_service import (
     generate_report, coach_chat, analyze_goal, suggest_goals,
     get_user_reports, get_unanalyzed_count,
@@ -20,6 +21,7 @@ from ai_service import (
 from datetime import datetime, date, timedelta
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/ai')
+limiter.limit("10 per minute", key_func=ai_rate_limit_key)(ai_bp)
 
 # ═══════════════════════════════════════════════════════════
 # 🏠 AI REPORTS PAGE
@@ -59,6 +61,7 @@ def ai_reports():
 
 @ai_bp.route('/generate-report', methods=['POST'])
 @login_required
+@require_daily_ai_quota
 def api_generate_report():
     account_id = None
     active_account = current_user.get_active_account()
@@ -113,6 +116,7 @@ def api_reports_list():
 
 @ai_bp.route('/coach-chat', methods=['POST'])
 @login_required
+@require_daily_ai_quota
 def api_coach_chat():
     data = request.get_json()
     question = data.get('question', '').strip()
@@ -155,6 +159,7 @@ def api_delete_session(session_id):
 
 @ai_bp.route('/chat/send', methods=['POST'])
 @login_required
+@require_daily_ai_quota
 def api_chat_send():
     """Send a message in a chat session"""
     data = request.get_json()
@@ -227,6 +232,7 @@ def api_update_goal(goal_id):
 
 @ai_bp.route('/goals/<int:goal_id>/analyze', methods=['POST'])
 @login_required
+@require_daily_ai_quota
 def api_analyze_goal(goal_id):
     result = analyze_goal(current_user, goal_id)
     return jsonify(result)
@@ -243,6 +249,7 @@ def api_delete_goal(goal_id):
 
 @ai_bp.route('/goals/suggest', methods=['POST'])
 @login_required
+@require_daily_ai_quota
 def api_suggest_goals():
     if not current_user.can_access_goals():
         return jsonify({'success': False, 'message': 'Elite plan required.'})

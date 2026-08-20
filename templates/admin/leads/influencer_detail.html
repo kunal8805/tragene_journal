@@ -173,6 +173,9 @@
             <h4>{{ influencer.name }}</h4>
             <p><i class="bi bi-envelope"></i> {{ influencer.email }}</p>
             <p><i class="bi bi-telephone"></i> {{ influencer.phone or 'No phone' }}</p>
+            {% if influencer.location %}
+            <p><i class="bi bi-geo-alt"></i> {{ influencer.location }}</p>
+            {% endif %}
         </div>
         <div class="inf-actions">
             {% if influencer.phone %}
@@ -227,6 +230,7 @@
                 <div class="info-row"><span class="lbl">Handle</span><span class="val">{{ influencer.social_handle or 'N/A' }}</span></div>
                 <div class="info-row"><span class="lbl">Followers</span><span class="val">{{ influencer.follower_count|string if influencer.follower_count else 'N/A' }}</span></div>
                 <div class="info-row"><span class="lbl">Niche</span><span class="val">{{ influencer.niche|upper if influencer.niche else 'N/A' }}</span></div>
+                <div class="info-row"><span class="lbl">Location</span><span class="val">{{ influencer.location or 'N/A' }}</span></div>
                 <div class="info-row"><span class="lbl">Source</span><span class="val">{{ influencer.source|upper }}</span></div>
                 <div class="info-row"><span class="lbl">Added</span><span class="val">{{ influencer.created_at.strftime('%d %b %Y') if influencer.created_at else 'N/A' }}</span></div>
                 <div class="info-row"><span class="lbl">Last Contacted</span><span class="val">{{ influencer.last_contacted_at.strftime('%d %b %Y') if influencer.last_contacted_at else 'Never' }}</span></div>
@@ -276,8 +280,6 @@
 
         <!-- Right Column -->
         <div>
-            
-
             <!-- Add Note -->
             <div class="card">
                 <h3><i class="bi bi-sticky-note"></i> Add Note</h3>
@@ -347,24 +349,6 @@ async function updateLeadStatus() {
     showToast('Status updated');
 }
 
-async function createCampaign() {
-    const couponId = document.getElementById('campaignCoupon').value;
-    const campaignName = document.getElementById('campaignName').value.trim();
-    if (!couponId) { showToast('Select a coupon', 'error'); return; }
-    
-    const r = await fetch('/admin/influencers/api/'+influencerId+'/campaign', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({coupon_id: parseInt(couponId), campaign_name: campaignName})
-    });
-    const d = await r.json();
-    if (d.success) {
-        showToast('Campaign created!');
-        setTimeout(() => location.reload(), 500);
-    } else {
-        showToast(d.error || 'Error', 'error');
-    }
-}
-
 async function toggleCampaign(campaignId) {
     await fetch('/admin/influencers/api/campaigns/'+campaignId+'/toggle', {method:'POST'});
     showToast('Campaign toggled');
@@ -426,7 +410,6 @@ async function loadFollowups() {
     const r = await fetch('/admin/leads/api/'+influencerId+'/followups');
     const d = await r.json();
     
-    // Filter for influencer type
     const influencerFollowups = d.followups ? d.followups.filter(f => f.lead_type === 'influencer') : [];
     
     if (influencerFollowups.length === 0) {

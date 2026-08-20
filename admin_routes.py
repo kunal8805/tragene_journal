@@ -602,12 +602,13 @@ def api_user_ai_reports(user_id):
 def api_plan_defaults():
     if request.method == 'GET':
         defaults = AIPlanDefaults.query.order_by(AIPlanDefaults.plan_tier).all()
-        return jsonify({'defaults': [{'plan_tier': d.plan_tier, 'monthly_tokens': d.monthly_tokens, 'queries_per_week': d.queries_per_week, 'reports_per_week': d.reports_per_week, 'is_active': d.is_active} for d in defaults]})
+        return jsonify({'defaults': [{'plan_tier': d.plan_tier, 'monthly_tokens': d.monthly_tokens, 'daily_requests': d.daily_requests, 'queries_per_week': d.queries_per_week, 'reports_per_week': d.reports_per_week, 'is_active': d.is_active} for d in defaults]})
     data = request.get_json()
     for item in data.get('defaults', []):
         plan_default = AIPlanDefaults.query.filter_by(plan_tier=item['plan_tier']).first()
         if plan_default:
             plan_default.monthly_tokens = item.get('monthly_tokens', plan_default.monthly_tokens)
+            plan_default.daily_requests = item.get('daily_requests', plan_default.daily_requests)
             plan_default.queries_per_week = item.get('queries_per_week', plan_default.queries_per_week)
             plan_default.reports_per_week = item.get('reports_per_week', plan_default.reports_per_week)
             plan_default.updated_by_admin_id = current_user.id

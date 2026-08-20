@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, Response
 from flask_login import login_required, current_user
-from extensions import db
+from extensions import db, limiter
 from models import Trade, ImportHistory, DayNote, DiaryEntry, DiaryImage, TradingAccount, User, FAQ, SupportTicket, TicketReply, TradeScreenshot, AIUsageLog, detect_market, get_market_info, get_currency_for_market, SyncConnection
+from rate_limits import ai_rate_limit_key, require_daily_ai_quota
 from datetime import datetime, date, timedelta
 import csv
 import io
@@ -1249,6 +1250,8 @@ def ai_report():
 
 @user_bp.route('/analyse/<page_key>')
 @login_required
+@limiter.limit("10 per minute", key_func=ai_rate_limit_key)
+@require_daily_ai_quota
 def analyse_page(page_key):
     """View or trigger per-page AI analysis"""
     from ai_service import analyse_page as run_analysis
@@ -1804,6 +1807,8 @@ def delete_diary_entry(entry_id):
 
 @user_bp.route('/diary/auto-write', methods=['POST'])
 @login_required
+@limiter.limit("10 per minute", key_func=ai_rate_limit_key)
+@require_daily_ai_quota
 def auto_write_diary():
     """Auto-generate a diary entry using AI based on today's trading activity"""
     # Elite check
@@ -2265,6 +2270,8 @@ def payment_history():
 
 @user_bp.route('/api/trade/<int:trade_id>/analyse', methods=['POST'])
 @login_required
+@limiter.limit("10 per minute", key_func=ai_rate_limit_key)
+@require_daily_ai_quota
 def api_analyse_trade(trade_id):
     """Get AI analysis for a specific trade"""
     account_id = get_active_account_id()
@@ -2337,6 +2344,8 @@ Be direct and cite the actual numbers from this trade. No generic advice."""
 
 @user_bp.route('/api/trade/<int:trade_id>/chat', methods=['POST'])
 @login_required
+@limiter.limit("10 per minute", key_func=ai_rate_limit_key)
+@require_daily_ai_quota
 def api_trade_chat(trade_id):
     """Chat with AI about a specific trade"""
     account_id = get_active_account_id()

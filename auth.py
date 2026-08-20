@@ -1,7 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
-from extensions import db
+from extensions import db, limiter
 from models import User, TradingAccount, Moderator
+from rate_limits import (
+    is_user_locked,
+    login_rate_limit_key,
+    record_failed_login,
+    reset_failed_login,
+)
 from verify_email import send_verification_email, verify_email_token
 from datetime import datetime
 
@@ -107,7 +113,9 @@ def register():
         user.current_account_id = account.id
         db.session.commit()
         
-        login_user(user)
+        session.permanent = True
+        session['session_version'] = user.session_version or 0
+        login_user(user, remember=True)
         send_verification_email(user)
         
         flash('Registration successful! Please check your email to verify your account. 📧', 'success')
@@ -117,6 +125,12 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit(
+    "5 per minute",
+    key_func=login_rate_limit_key,
+    methods=["POST"],
+    error_message="Too many login attempts for this email from your network. Please try again in a minute."
+)
 def login():
     # If moderator session exists, go to admin
     if session.get('is_moderator'):
@@ -131,7 +145,6 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
-        remember = request.form.get('remember') == 'on'
         
         if not email or not password:
             flash('Please enter email and password.', 'danger')
@@ -173,10 +186,16 @@ def login():
         
         # 2. Try regular user login (admin or normal user)
         user = User.query.filter_by(email=email).first()
+        if user:
+            locked, retry_after = is_user_locked(user)
+            if locked:
+                flash(f'Too many failed attempts. Try again in {retry_after}.', 'danger')
+                return render_template('login.html')
         
         if user and user.check_password(password):
             # Clear moderator session
             session.clear()
+            session.permanent = True
             
             if not user.get_active_account():
                 account = TradingAccount(
@@ -190,7 +209,10 @@ def login():
                 user.current_account_id = account.id
                 db.session.commit()
             
-            login_user(user, remember=remember)
+            reset_failed_login(user)
+            session['session_version'] = user.session_version or 0
+            login_user(user, remember=True)
+            db.session.commit()
             flash(f'Welcome back, {user.full_name}! 👋', 'success')
             
             next_page = request.args.get('next')
@@ -201,20 +223,37 @@ def login():
                 return redirect(url_for('admin.dashboard'))
             return redirect(url_for('user.dashboard'))
         
+        if user:
+            retry_after = record_failed_login(user)
+            if retry_after:
+                flash(f'Too many failed attempts. Try again in {retry_after}.', 'danger')
+                return render_template('login.html')
+        
         flash('Invalid email or password. Please try again.', 'danger')
     
     return render_template('login.html')
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['GET', 'POST'])
+@login_required
 def logout():
-    if current_user.is_authenticated:
-        username = current_user.full_name or current_user.username
-        logout_user()
-        flash(f'Logged out successfully. See you soon, {username}! 👋', 'success')
+    if request.method == 'GET':
+        return render_template('logout.html')
     
-    # Clear everything
+    logout_scope = request.form.get('logout_scope', 'device')
+    username = current_user.full_name or current_user.username
+    
+    if logout_scope == 'all':
+        current_user.session_version = (current_user.session_version or 0) + 1
+        db.session.commit()
+        logout_user()
+        session.clear()
+        flash('You have been logged out of all devices.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    logout_user()
     session.clear()
+    flash(f'Logged out successfully. See you soon, {username}! 👋', 'success')
     
     return redirect(url_for('auth.login'))
 
