@@ -532,7 +532,6 @@ def api_update_delete_status(status_id):
 # ═══════════════════════════════════════════════════════════
 # 📊 API — INFLUENCER LIST
 # ═══════════════════════════════════════════════════════════
-
 @lead_bp.route('/influencers/api/list')
 @admin_required
 def api_influencers_list():
@@ -540,7 +539,8 @@ def api_influencers_list():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '').strip()
     response_filter = request.args.get('response', 'all')
-    per_page = 25
+    status_filter = request.args.get('status', 'all')  # ADD THIS - filter by status name
+    per_page = request.args.get('per_page', 25, type=int)  # ADD THIS - allow custom per_page
     
     query = Influencer.query
     
@@ -558,6 +558,24 @@ def api_influencers_list():
     if response_filter != 'all':
         query = query.filter(Influencer.response_status == response_filter)
     
+    # ADD THIS - Filter by status name if provided
+    if status_filter != 'all':
+        status_obj = LeadStatus.query.filter_by(
+            name=status_filter, 
+            status_type='influencer',
+            is_active=True
+        ).first()
+        if status_obj:
+            query = query.filter(Influencer.status_id == status_obj.id)
+        else:
+            # If status doesn't exist, return empty result
+            return jsonify({
+                'success': True,
+                'influencers': [],
+                'total': 0,
+                'pages': 0
+            })
+    
     total = query.count()
     pages = max(1, (total + per_page - 1) // per_page)
     
@@ -574,6 +592,7 @@ def api_influencers_list():
         'follower_count': inf.follower_count or 0,
         'niche': inf.niche or '',
         'response_status': inf.response_status,
+        'status_id': inf.status_id,  # ADD THIS
         'status_name': inf.status.name if inf.status and inf.status.status_type == 'influencer' else 'Unassigned',
         'status_color': inf.status.color if inf.status and inf.status.status_type == 'influencer' else '#6B7280',
         'created_at': inf.created_at.strftime('%d %b %Y') if inf.created_at else ''
@@ -583,9 +602,10 @@ def api_influencers_list():
         'success': True,
         'influencers': data,
         'total': total,
-        'pages': pages
+        'pages': pages,
+        'current_page': page,  # ADD THIS
+        'per_page': per_page  # ADD THIS
     })
-
 
 # ═══════════════════════════════════════════════════════════
 # 📊 API — INFLUENCER ADD (Manual)
@@ -926,4 +946,35 @@ def api_influencer_stats():
         'negotiating': negotiating,
         'agreed': agreed,
         'declined': declined
+    })
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 📊 API — INFLUENCER STATUS COUNTS
+# ═══════════════════════════════════════════════════════════
+
+@lead_bp.route('/influencers/api/status-counts')
+@admin_required
+def api_influencer_status_counts():
+    """Get counts of influencers per status category"""
+    # Get all active influencer statuses
+    statuses = LeadStatus.query.filter_by(
+        is_active=True, 
+        status_type='influencer'
+    ).order_by(LeadStatus.sort_order).all()
+    
+    result = []
+    for s in statuses:
+        count = Influencer.query.filter_by(status_id=s.id).count()
+        result.append({
+            'id': s.id,
+            'name': s.name,
+            'color': s.color,
+            'count': count
+        })
+    
+    return jsonify({
+        'success': True,
+        'statuses': result
     })

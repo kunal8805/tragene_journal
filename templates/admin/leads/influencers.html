@@ -562,18 +562,32 @@ function filterByStatus(statusName) {
     loadInfluencersByStatus(statusName);
 }
 
-async function loadInfluencersByStatus(statusName) {
-    const tbody = document.getElementById('influencerTableBody');
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
-    
-    const params = new URLSearchParams({ page: 1, search: '', response: 'all', per_page: 1000 });
-    const r = await fetch('/admin/influencers/api/list?' + params);
-    const d = await r.json();
-    
-    const filtered = (d.influencers || []).filter(i => i.status_name === statusName);
-    renderInfluencerRows(filtered);
-    document.getElementById('resultsCount').textContent = filtered.length + ' influencers';
-    updatePagination(filtered.length, 1);
+async function loadCustomStatuses() {
+    try {
+        const statusRes = await fetch('/admin/influencers/api/status-counts');
+        const statusData = await statusRes.json();
+        const allStatuses = statusData.statuses || [];
+        
+        const grid = document.getElementById('customStatusGrid');
+        
+        if (allStatuses.length === 0) {
+            grid.innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">No influencer statuses yet. Click "Create Status" to add one.</div>';
+            return;
+        }
+        
+        let h = '';
+        allStatuses.forEach(status => {
+            h += `<div class="stat-card" onclick="filterByStatus('${status.name.replace(/'/g, "\\'")}')">
+                <span class="stat-label"><span class="stat-dot" style="background:${status.color || '#6B7280'};"></span>${esc(status.name)}</span>
+                <span class="stat-value">${status.count}</span>
+                <button class="delete-status" onclick="event.stopPropagation();deleteInfluencerStatus(${status.id}, '${status.name.replace(/'/g, "\\'")}')" title="Delete status">✕</button>
+            </div>`;
+        });
+        grid.innerHTML = h;
+    } catch(e) {
+        console.error('Custom status load error:', e);
+        document.getElementById('customStatusGrid').innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">Error loading statuses.</div>';
+    }
 }
 
 function renderInfluencerRows(influencers) {
