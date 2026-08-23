@@ -1,0 +1,1034 @@
+{% extends "base_user.html" %}
+{% block title %}Connect Your Trading Account - Tragene Journal{% endblock %}
+{% block page_title %}📘 Connect Your Trading Account{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --accent: #26a69a;
+        --accent-hover: #2cbbb0;
+        --accent-light: rgba(38,166,154,0.1);
+        --accent-border: rgba(38,166,154,0.3);
+        --bg-card: rgba(15,23,42,0.5);
+        --border-color: rgba(255,255,255,0.08);
+        --text-primary: #e0f0ed;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --warning: #ffb300;
+        --danger: #ff5252;
+        --success: #00e676;
+        --info: #3b82f6;
+        --bg-body: #0a0f1a;
+    }
+
+    .guide-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px 16px;
+    }
+
+    /* ── Toast ── */
+    .toast-mini {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        padding: 10px 24px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        font-family: 'Space Grotesk', sans-serif;
+        animation: toastUp 0.4s ease, toastDown 0.4s ease 2s forwards;
+    }
+    
+    @keyframes toastUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    @keyframes toastDown { from { transform: translateX(-50%) translateY(0); opacity: 1; } to { transform: translateX(-50%) translateY(20px); opacity: 0; } }
+
+    /* ── Landing View ── */
+    .landing-hero {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .landing-hero .hero-icon {
+        font-size: 3rem;
+        margin-bottom: 16px;
+        animation: floatIcon 3s ease-in-out infinite;
+    }
+    
+    @keyframes floatIcon {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .landing-hero h1 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        line-height: 1.2;
+    }
+    
+    .landing-hero .hero-subtitle {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        max-width: 500px;
+        margin: 0 auto 8px;
+        line-height: 1.6;
+    }
+    
+    .landing-hero .hero-safe {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: rgba(0,230,118,0.08);
+        border: 1px solid rgba(0,230,118,0.2);
+        border-radius: 20px;
+        font-size: 0.72rem;
+        color: var(--success);
+        font-weight: 600;
+    }
+    
+    .option-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .option-card {
+        background: var(--bg-card);
+        border: 2px solid var(--border-color);
+        border-radius: 20px;
+        padding: 32px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+    
+    .option-card::before {
+        content: '';
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 150px; height: 150px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(38,166,154,0.06) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .option-card:hover {
+        border-color: var(--accent-border);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    
+    .option-card .option-icon {
+        font-size: 2.8rem;
+        margin-bottom: 14px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .option-card h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .option-card p {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 18px;
+        line-height: 1.5;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .btn-view-guide {
+        padding: 10px 22px;
+        background: var(--accent-light);
+        border: 1px solid var(--accent-border);
+        color: var(--accent);
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.78rem;
+        cursor: pointer;
+        font-family: 'Space Grotesk', sans-serif;
+        transition: all 0.2s;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .btn-view-guide:hover {
+        background: var(--accent);
+        color: #000;
+    }
+
+    /* ── Subpage View ── */
+    .subpage {
+        display: none;
+        animation: fadeIn 0.4s ease;
+    }
+    
+    .subpage.active {
+        display: block;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+        cursor: pointer;
+    }
+    
+    .back-link:hover { color: var(--accent); }
+    
+    .subpage-header {
+        margin-bottom: 24px;
+    }
+    
+    .subpage-header h2 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1.4rem;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .subpage-header p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+    
+    .steps-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .steps-card h4 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .step-item {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 16px;
+        align-items: flex-start;
+    }
+    
+    .step-item:last-child { margin-bottom: 0; }
+    
+    .step-number {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        border-radius: 50%;
+        background: var(--accent-light);
+        border: 1px solid var(--accent-border);
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.75rem;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .step-content {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+    
+    .step-content strong {
+        color: var(--text-primary);
+    }
+    
+    .step-content .inline-code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem;
+        background: rgba(38,166,154,0.08);
+        padding: 2px 8px;
+        border-radius: 4px;
+        color: var(--accent);
+    }
+    
+    .warning-box {
+        background: rgba(255,179,0,0.05);
+        border: 1px solid rgba(255,179,0,0.2);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 16px 0;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .warning-box.danger {
+        background: rgba(255,82,82,0.05);
+        border-color: rgba(255,82,82,0.2);
+    }
+    
+    .warning-box i {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+    
+    .warning-box.danger i { color: var(--danger); }
+    .warning-box:not(.danger) i { color: var(--warning); }
+    
+    .warning-box .warning-text {
+        font-size: 0.75rem;
+        line-height: 1.5;
+    }
+    
+    .warning-box.danger .warning-text { color: var(--danger); }
+    .warning-box:not(.danger) .warning-text { color: var(--warning); }
+    
+    .warning-box .warning-text strong { font-weight: 700; }
+
+    /* ── Tabs ── */
+    .tab-row {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        margin-bottom: 16px;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab-btn {
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-size: 0.72rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .tab-btn:hover {
+        border-color: var(--accent-border);
+        color: var(--accent);
+    }
+    
+    .tab-btn.active {
+        background: var(--accent-light);
+        border-color: var(--accent-border);
+        color: var(--accent);
+    }
+    
+    .tab-content {
+        display: none;
+        padding: 16px;
+        background: rgba(15,23,42,0.3);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .tab-content h5 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+    }
+    
+    .tab-content p, .tab-content li {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+    
+    .tab-content ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .tab-content li {
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .tab-content li::before {
+        content: '›';
+        color: var(--accent);
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    /* ── FAQ Accordion ── */
+    .faq-item {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        overflow: hidden;
+        background: var(--bg-card);
+    }
+    
+    .faq-question {
+        padding: 14px 16px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+    
+    .faq-question:hover {
+        background: rgba(38,166,154,0.03);
+    }
+    
+    .faq-question .faq-icon {
+        transition: transform 0.3s;
+        color: var(--accent);
+        flex-shrink: 0;
+    }
+    
+    .faq-item.open .faq-icon {
+        transform: rotate(45deg);
+    }
+    
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+    
+    .faq-item.open .faq-answer {
+        max-height: 300px;
+    }
+    
+    .faq-answer-inner {
+        padding: 0 16px 14px;
+    }
+
+    /* ── CTA Button ── */
+    .btn-connect-now {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 28px;
+        background: var(--accent);
+        color: #000;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        font-family: 'Space Grotesk', sans-serif;
+        transition: all 0.2s;
+        text-decoration: none;
+        margin-top: 20px;
+    }
+    
+    .btn-connect-now:hover {
+        background: var(--accent-hover);
+        color: #000;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(38,166,154,0.3);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+        .option-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .landing-hero h1 {
+            font-size: 1.4rem;
+        }
+        
+        .steps-card {
+            padding: 18px;
+        }
+        
+        .tab-row {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="guide-container">
+    <div id="toastContainer" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- LANDING VIEW -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="landingView">
+        <div class="landing-hero">
+            <div class="hero-icon">🔗</div>
+            <h1>Connect Your Trading Account</h1>
+            <p class="hero-subtitle">
+                Sync your trades automatically with Tragene Journal. Choose your platform below and follow our step-by-step guide.
+            </p>
+            <span class="hero-safe">
+                <i class="bi bi-shield-check"></i> 100% Read-Only Access — We Cannot Trade or Withdraw
+            </span>
+        </div>
+        
+        <div class="option-grid">
+            <!-- Crypto Option -->
+            <div class="option-card" onclick="showSubpage('crypto')">
+                <div class="option-icon">₿</div>
+                <h3>Crypto Exchange</h3>
+                <p>Connect via read-only API key from 100+ exchanges — Binance, Bybit, KuCoin, OKX & more.</p>
+                <button class="btn-view-guide">View Guide →</button>
+            </div>
+            
+            <!-- MT4/MT5 Option -->
+            <div class="option-card" onclick="showSubpage('mt')">
+                <div class="option-icon">📊</div>
+                <h3>MT4 / MT5</h3>
+                <p>Connect your MetaTrader account using the read-only Investor Password — safe and secure.</p>
+                <button class="btn-view-guide">View Guide →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SUBPAGE 1: CRYPTO EXCHANGE -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="subpage" id="cryptoSubpage">
+        <a class="back-link" onclick="showLanding()">
+            <i class="bi bi-arrow-left"></i> Back to options
+        </a>
+        
+        <div class="subpage-header">
+            <h2>₿ Connect Crypto Exchange</h2>
+            <p>Follow these steps to create a read-only API key and connect your exchange account.</p>
+        </div>
+        
+        <!-- Universal Steps -->
+        <div class="steps-card">
+            <h4>📋 Universal Steps</h4>
+            
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">Log in to your exchange → click your <strong>Account/Profile icon</strong> (usually top-right corner).</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">Find <span class="inline-code">API Management</span> — may be under <strong>Security Settings</strong> or <strong>Developer Tools</strong>.</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-content">Click <span class="inline-code">Create API</span> or <span class="inline-code">Generate New Key</span>.</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">4</div>
+                <div class="step-content">Label it <span class="inline-code">Tragene Journal Sync</span> for easy identification.</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">5</div>
+                <div class="step-content">Enable <strong>Read/Read-Only permission</strong>.</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">6</div>
+                <div class="step-content">Disable <strong>Trade permission</strong> (unless required) and <strong>ALWAYS disable Withdraw</strong>.</div>
+            </div>
+            
+            <div class="warning-box danger">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="warning-text"><strong>Never enable withdrawal permissions</strong> on any API key you share with a third-party tool.</span>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">7</div>
+                <div class="step-content">Add IP restriction if offered (optional but recommended).</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">8</div>
+                <div class="step-content">Complete <strong>2FA/email verification</strong> to confirm creation.</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">9</div>
+                <div class="step-content">Copy <strong>API Key + Secret</strong> immediately (secret shown once) and paste into Tragene's Connect Exchange form.</div>
+            </div>
+        </div>
+        
+        <!-- Exchange Tabs -->
+        <div class="steps-card">
+            <h4>🔍 Exchange-Specific Guides</h4>
+            
+            <div class="tab-row" id="exchangeTabs">
+                <button class="tab-btn active" onclick="showExchangeTab('binance')">Binance</button>
+                <button class="tab-btn" onclick="showExchangeTab('bybit')">Bybit</button>
+                <button class="tab-btn" onclick="showExchangeTab('kucoin')">KuCoin</button>
+                <button class="tab-btn" onclick="showExchangeTab('okx')">OKX</button>
+                <button class="tab-btn" onclick="showExchangeTab('bitget')">Bitget</button>
+                <button class="tab-btn" onclick="showExchangeTab('coinbase')">Coinbase</button>
+                <button class="tab-btn" onclick="showExchangeTab('mexc')">MEXC</button>
+            </div>
+            
+            <div class="tab-content active" id="tab-binance">
+                <h5>Binance</h5>
+                <ul>
+                    <li>Profile Icon → API Management → Create API</li>
+                    <li>Choose "System-generated" key type</li>
+                    <li>Enable only "Enable Reading" permission</li>
+                    <li>IP restriction: Optional (recommended)</li>
+                    <li>No passphrase required</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="tab-bybit">
+                <h5>Bybit</h5>
+                <ul>
+                    <li>Profile → API → Create New Key</li>
+                    <li>Select "Read-Write" then uncheck all except "Read"</li>
+                    <li>No passphrase required for API v5</li>
+                    <li>IP whitelist: Recommended</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="tab-kucoin">
+                <h5>KuCoin</h5>
+                <ul>
+                    <li>Profile → API Management → Create API</li>
+                    <li><strong>Requires trading password</strong> to create keys</li>
+                    <li>Enable only "General" permission (read-only)</li>
+                    <li>Passphrase required — save it securely</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="tab-okx">
+                <h5>OKX</h5>
+                <ul>
+                    <li>Profile → API → Create API Key</li>
+                    <li>Passphrase is mandatory</li>
+                    <li>Enable only "Read" permission</li>
+                    <li>IP whitelist: Recommended</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="tab-bitget">
+                <h5>Bitget</h5>
+                <ul>
+                    <li>Profile → API Management → Create API</li>
+                    <li>Passphrase required</li>
+                    <li>Enable only "Read" permission</li>
+                    <li>No IP restriction by default</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="tab-coinbase">
+                <h5>Coinbase</h5>
+                <ul>
+                    <li>Settings → API → New API Key</li>
+                    <li>Requires <strong>Organization ID</strong> + Key + Secret</li>
+                    <li>Enable only "Read" scope</li>
+                    <li>Passphrase not required</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="tab-mexc">
+                <h5>MEXC</h5>
+                <ul>
+                    <li>Profile → API Management → Create API</li>
+                    <li>No passphrase required</li>
+                    <li>Enable only "Read" permission</li>
+                    <li>IP restriction: Optional</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- FAQ -->
+        <div class="steps-card">
+            <h4>❓ FAQ — Crypto Exchange</h4>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    Is it safe to share my API key with Tragene?
+                    <i class="bi bi-plus-lg faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Yes. We only require read-only API keys. These keys cannot execute trades or withdraw funds. The exchange itself enforces these restrictions — we literally cannot use them for anything other than viewing your trade history.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    I can't find the API Management menu
+                    <i class="bi bi-plus-lg faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Different exchanges place this under different names. Try searching for "API" in your account settings search bar. Common locations: Profile → Security → API, or Profile → Developer Tools → API.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    My sync is not working after connecting
+                    <i class="bi bi-plus-lg faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Check that: 1) Your API key is still active, 2) Read permission is enabled, 3) Your IP hasn't changed (if IP restricted), 4) The key hasn't expired. Try disconnecting and reconnecting with a fresh key.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    I accidentally leaked my API key — what now?
+                    <i class="bi bi-plus-lg faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Immediately go to your exchange's API Management, delete the compromised key, and create a new one. Then update the credentials in Tragene. Since our keys are read-only, the damage is limited, but you should still act quickly.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <a href="{{ url_for('user.sync_setup') }}" class="btn-connect-now">
+            <i class="bi bi-link-45deg"></i> Connect Now
+        </a>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SUBPAGE 2: MT4/MT5 -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="subpage" id="mtSubpage">
+        <a class="back-link" onclick="showLanding()">
+            <i class="bi bi-arrow-left"></i> Back to options
+        </a>
+        
+        <div class="subpage-header">
+            <h2>📊 Connect MT4 / MT5</h2>
+            <p>Use your Investor Password to connect MetaTrader safely — read-only access guaranteed.</p>
+        </div>
+        
+        <!-- Universal Steps -->
+        <div class="steps-card">
+            <h4>📋 Universal Steps</h4>
+            
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">Open your <strong>MT4/MT5 terminal</strong> or broker's client portal.</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">Locate your <strong>account number/login</strong>, <strong>server name</strong>, and <strong>investor password</strong> — found via <span class="inline-code">Terminal → right-click account → Manage Accounts</span>, or in your broker's welcome email.</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-content">If no investor password exists, generate one: right-click account in Terminal → <span class="inline-code">Change Investor Password</span> → set new (separate from main trading password).</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">4</div>
+                <div class="step-content">Note the <strong>server name exactly as displayed</strong> (case-sensitive, e.g. <span class="inline-code">ICMarketsSC-Live05</span>).</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">5</div>
+                <div class="step-content">In Tragene dashboard → Connect Account → MT4/MT5 → enter <strong>Account Login, Server Name, Investor Password</strong>.</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">6</div>
+                <div class="step-content">Click Connect — access is <strong>read-only</strong>, view trade history only, cannot trade or withdraw.</div>
+            </div>
+            
+            <div class="warning-box danger">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="warning-text"><strong>Never share your MAIN trading password</strong> — only the read-only Investor Password is required.</span>
+            </div>
+        </div>
+        
+        <!-- Broker Tabs -->
+        <div class="steps-card">
+            <h4>🔍 Broker-Specific Guides</h4>
+            
+            <div class="tab-row" id="brokerTabs">
+                <button class="tab-btn active" onclick="showBrokerTab('icmarkets')">IC Markets</button>
+                <button class="tab-btn" onclick="showBrokerTab('exness')">Exness</button>
+                <button class="tab-btn" onclick="showBrokerTab('xm')">XM</button>
+                <button class="tab-btn" onclick="showBrokerTab('ftmo')">FTMO</button>
+                <button class="tab-btn" onclick="showBrokerTab('pepperstone')">Pepperstone</button>
+                <button class="tab-btn" onclick="showBrokerTab('fbs')">FBS</button>
+            </div>
+            
+            <div class="tab-content active" id="btab-icmarkets">
+                <h5>IC Markets</h5>
+                <ul>
+                    <li>Server names: ICMarketsSC-Live05, ICMarketsSC-Live06, etc.</li>
+                    <li>Investor password found in welcome email or client portal</li>
+                    <li>Can generate via MT4/MT5 Terminal → right-click account</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="btab-exness">
+                <h5>Exness</h5>
+                <ul>
+                    <li>Server names: Exness-Real, Exness-Trial, Exness-Demo</li>
+                    <li>Investor password available in Personal Area → Account Settings</li>
+                    <li>Also in MT4/MT5 Terminal under account management</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="btab-xm">
+                <h5>XM</h5>
+                <ul>
+                    <li>Server names: XMGlobal-Real, XMGlobal-Demo</li>
+                    <li>Investor password found in email or Members Area</li>
+                    <li>Can reset via MT4/MT5 Terminal</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="btab-ftmo">
+                <h5>FTMO</h5>
+                <ul>
+                    <li>Server names: FTMO-Server1, FTMO-Server2, FTMO-Demo</li>
+                    <li>Investor password in FTMO Client Area</li>
+                    <li>Separate for each challenge/verification account</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="btab-pepperstone">
+                <h5>Pepperstone</h5>
+                <ul>
+                    <li>Server names: Pepperstone-Edge, Pepperstone-Razor</li>
+                    <li>Investor password in secure client portal</li>
+                    <li>Available in MT4/MT5 account settings</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="btab-fbs">
+                <h5>FBS</h5>
+                <ul>
+                    <li>Server names: FBS-Real, FBS-Cent, FBS-Demo</li>
+                    <li>Investor password in FBS Personal Area</li>
+                    <li>Can be generated in MT4/MT5 Terminal</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- FAQ -->
+        <div class="steps-card">
+            <h4>❓ FAQ — MT4/MT5</h4>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    What's the difference between Investor and Trading password?
+                    <i class="bi bi-plus-lg faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        The <strong>Trading (Master) Password</strong> allows full access — placing trades, modifying orders, withdrawing funds. The <strong>Investor Password</strong> is read-only — you can view account history and open positions but cannot execute any trades. Always use the Investor Password for third-party tools.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    I can't find "Manage Accounts" option in Terminal
+                    <i class="bi bi-plus-lg faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        In MT4: Open Terminal (Ctrl+T) → right-click anywhere in the account section → "Login to Trade Account" or "Manage Accounts". In MT5: Navigator panel → right-click your account → "Change Investor Password" or check your broker's client portal.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    My server name is not listed
+                    <i class="bi bi-plus-lg faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        The server name must be entered exactly as shown in your MT4/MT5 terminal. It's case-sensitive. Check your broker's welcome email or client portal if you can't find it in the terminal. If your broker uses a custom server, contact their support.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    My trades are not syncing after connection
+                    <i class="bi bi-plus-lg faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-inner">
+                        Check that: 1) The server name is exactly correct (case-sensitive), 2) The account number is correct, 3) The investor password hasn't been changed, 4) Your broker hasn't blocked API connections. Try disconnecting and reconnecting.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <a href="{{ url_for('user.sync_setup') }}" class="btn-connect-now">
+            <i class="bi bi-link-45deg"></i> Connect Now
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ── Navigation Functions ──
+    function showLanding() {
+        document.getElementById('landingView').style.display = 'block';
+        document.getElementById('cryptoSubpage').classList.remove('active');
+        document.getElementById('mtSubpage').classList.remove('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function showSubpage(type) {
+        document.getElementById('landingView').style.display = 'none';
+        if (type === 'crypto') {
+            document.getElementById('cryptoSubpage').classList.add('active');
+            document.getElementById('mtSubpage').classList.remove('active');
+        } else {
+            document.getElementById('mtSubpage').classList.add('active');
+            document.getElementById('cryptoSubpage').classList.remove('active');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    // ── Exchange Tabs ──
+    function showExchangeTab(exchange) {
+        // Update tab buttons
+        document.querySelectorAll('#exchangeTabs .tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Hide all tab contents
+        document.querySelectorAll('[id^="tab-"]').forEach(tab => {
+            if (tab.id.startsWith('tab-')) {
+                tab.classList.remove('active');
+            }
+        });
+        
+        // Show selected tab
+        document.getElementById('tab-' + exchange).classList.add('active');
+    }
+    
+    // ── Broker Tabs ──
+    function showBrokerTab(broker) {
+        // Update tab buttons
+        document.querySelectorAll('#brokerTabs .tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Hide all tab contents
+        document.querySelectorAll('[id^="btab-"]').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById('btab-' + broker).classList.add('active');
+    }
+    
+    // ── FAQ Accordion ──
+    function toggleFAQ(element) {
+        const faqItem = element.parentElement;
+        const isOpen = faqItem.classList.contains('open');
+        
+        // Close all FAQs
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.classList.remove('open');
+        });
+        
+        // Toggle clicked FAQ
+        if (!isOpen) {
+            faqItem.classList.add('open');
+        }
+    }
+    
+    // ── Toast ──
+    function showToast(message, color = '#26a69a') {
+        const toast = document.createElement('div');
+        toast.className = 'toast-mini';
+        toast.style.cssText = `
+            background: rgba(15,23,42,0.95);
+            border: 1px solid ${color};
+            color: ${color};
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+    }
+</script>
+{% endblock %}

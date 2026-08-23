@@ -1645,8 +1645,10 @@ class InfluencerCampaign(db.Model):
 # ═══════════════════════════════════════════════════════════
 
 def seed_lead_statuses():
-    """Seed default lead status categories"""
-    defaults = [
+    """Seed default lead status categories for both leads and influencers"""
+    
+    # Lead statuses
+    lead_defaults = [
         {'name': 'New Lead', 'color': '#6B7280', 'is_default': True, 'sort_order': 1, 'status_type': 'lead'},
         {'name': 'Verified', 'color': '#10B981', 'is_default': True, 'sort_order': 2, 'status_type': 'lead'},
         {'name': 'Interested', 'color': '#F59E0B', 'is_default': True, 'sort_order': 3, 'status_type': 'lead'},
@@ -1657,9 +1659,18 @@ def seed_lead_statuses():
         {'name': 'Dead Lead', 'color': '#EF4444', 'is_default': True, 'sort_order': 8, 'status_type': 'lead'},
     ]
     
-    for d in defaults:
-        if not LeadStatus.query.filter_by(name=d['name'], is_default=True, status_type='lead').first():
+    # Influencer statuses
+    influencer_defaults = [
+        {'name': 'New Influencer', 'color': '#6B7280', 'is_default': True, 'sort_order': 1, 'status_type': 'influencer'},
+        {'name': 'Top Priority', 'color': '#F59E0B', 'is_default': True, 'sort_order': 2, 'status_type': 'influencer'},
+        {'name': 'VIP Influencer', 'color': '#8B5CF6', 'is_default': True, 'sort_order': 3, 'status_type': 'influencer'},
+        {'name': 'In Discussion', 'color': '#3B82F6', 'is_default': True, 'sort_order': 4, 'status_type': 'influencer'},
+        {'name': 'Partnered', 'color': '#00C853', 'is_default': True, 'sort_order': 5, 'status_type': 'influencer'},
+    ]
+    
+    for d in lead_defaults + influencer_defaults:
+        if not LeadStatus.query.filter_by(name=d['name'], status_type=d['status_type']).first():
             db.session.add(LeadStatus(**d))
     
     db.session.commit()
-    print("✅ Lead statuses seeded!")
+    print("✅ Lead and Influencer statuses seeded!")

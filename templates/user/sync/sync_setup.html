@@ -123,6 +123,22 @@
     .btn-submit:hover { opacity: 0.9; }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
     
+    /* NEW: How to Connect Button */
+    .btn-guide {
+        width: 100%; padding: 14px; background: rgba(38,166,154,0.08);
+        border: 1px solid rgba(38,166,154,0.2); color: var(--accent);
+        border-radius: 12px; font-weight: 700; font-size: 0.85rem;
+        cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+        transition: all 0.2s; margin-top: 12px;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        text-decoration: none;
+    }
+    .btn-guide:hover {
+        background: rgba(38,166,154,0.15);
+        border-color: rgba(38,166,154,0.4);
+        color: var(--accent);
+    }
+    
     .security-note {
         background: rgba(255,179,0,0.05); border: 1px solid rgba(255,179,0,0.1);
         border-radius: 10px; padding: 12px 14px; font-size: 0.7rem; color: #ffb300;
@@ -300,6 +316,11 @@
         </button>
     </form>
     
+    <!-- NEW: How to Connect Guide Button -->
+    <a href="{{ url_for('user.connect_guide') }}" class="btn-guide">
+        <i class="bi bi-book"></i> How to Connect — Step-by-Step Guide
+    </a>
+    
     <div style="text-align:center;margin-top:12px;">
         <a href="{{ url_for('user.sync_center') }}" style="color:#64748b;font-size:0.78rem;">← Back to Sync Center</a>
     </div>
@@ -397,6 +418,11 @@
         currentPlatform = platform;
         document.getElementById('platformInput').value = platform;
         document.getElementById('methodInput').value = market === 'indian_stock' ? 'csv' : 'api';
+        
+        // Highlight selected platform chip
+        document.querySelectorAll('.platform-chip').forEach(chip => chip.classList.remove('selected'));
+        document.querySelector(`[data-platform="${platform}"]`).classList.add('selected');
+        
         updateSubmitButton();
     }
     

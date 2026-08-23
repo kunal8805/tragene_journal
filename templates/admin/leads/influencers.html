@@ -515,7 +515,7 @@ async function saveBulkNote() {
 
 async function loadCustomStatuses() {
     try {
-        const statusRes = await fetch('/admin/leads/api/statuses');
+        const statusRes = await fetch('/admin/leads/api/statuses?status_type=influencer');
         const statusData = await statusRes.json();
         const allStatuses = statusData.statuses || [];
         
@@ -779,7 +779,7 @@ async function saveStatus() {
     
     const r = await fetch('/admin/leads/api/statuses/custom', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({name, color})
+        body: JSON.stringify({name, color, status_type: 'influencer'})
     });
     const d = await r.json();
     if (d.success) {

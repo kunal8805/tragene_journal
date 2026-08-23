@@ -69,9 +69,10 @@ def leads():
 def lead_detail(user_id):
     """Lead detail - view user, add notes, change status"""
     lead = User.query.get_or_404(user_id)
+    # FIXED: Added status_type='lead' filter
     all_statuses = LeadStatus.query.filter_by(is_active=True, status_type='lead').order_by(LeadStatus.sort_order).all()
     
-    # Get lead's current status
+    # Get lead's current status - if no status assigned, show "Unassigned"
     lead_status = lead.lead_status if lead.lead_status_id else None
     if not lead_status:
         if lead.subscription_tier != 'free':
@@ -90,7 +91,6 @@ def lead_detail(user_id):
         lead_status=lead_status,
         subscription=sub
     )
-
 
 # ═══════════════════════════════════════════════════════════
 # 🤖 INFLUENCER CRM — LIST PAGE
@@ -248,6 +248,11 @@ def api_leads_stats():
         count = User.query.filter_by(lead_status_id=s.id).count()
         stats[s.name] = count
     
+    # Add auto-detected statuses
+    stats['Purchased'] = User.query.filter(User.subscription_tier != 'free', User.lead_status_id == None).count()
+    stats['Verified'] = User.query.filter(User.email_verified == True, User.subscription_tier == 'free', User.lead_status_id == None).count()
+    stats['New Lead'] = User.query.filter(User.email_verified == False, User.subscription_tier == 'free', User.lead_status_id == None).count()
+    
     return jsonify(stats)
 
 
@@ -264,13 +269,27 @@ def api_lead_status(user_id):
     status_id = data.get('status_id')
     
     if status_id:
-        status = LeadStatus.query.get(int(status_id))
-        if status and status.status_type == 'lead':
-            user.lead_status_id = status.id
-            db.session.commit()
-            return jsonify({'success': True, 'message': f'Status changed to {status.name}'})
+        try:
+            status_id_int = int(status_id)
+            status = LeadStatus.query.get(status_id_int)
+            if status and status.status_type == 'lead':
+                user.lead_status_id = status.id
+                db.session.commit()
+                return jsonify({
+                    'success': True, 
+                    'message': f'Status changed to {status.name}',
+                    'status': {
+                        'id': status.id,
+                        'name': status.name,
+                        'color': status.color
+                    }
+                })
+            else:
+                return jsonify({'success': False, 'error': 'Invalid lead status'})
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'error': 'Invalid status ID'})
     
-    return jsonify({'success': False, 'error': 'Invalid status'})
+    return jsonify({'success': False, 'error': 'No status ID provided'})
 
 
 # ═══════════════════════════════════════════════════════════
@@ -493,18 +512,16 @@ def api_update_delete_status(status_id):
     status = LeadStatus.query.get_or_404(status_id)
     
     if request.method == 'DELETE':
-        if status.is_default:
-            return jsonify({'success': False, 'error': 'Cannot delete default status'})
+        # Allow deletion of any status, but reassign leads/influencers first
+        Influencer.query.filter_by(status_id=status.id).update({Influencer.status_id: None})
+        User.query.filter_by(lead_status_id=status.id).update({User.lead_status_id: None})
         
-        if status.status_type == 'influencer':
-            Influencer.query.filter_by(status_id=status.id).update({Influencer.status_id: None})
-        else:
-            User.query.filter_by(lead_status_id=status.id).update({User.lead_status_id: None})
-        
-        db.session.delete(status)
+        # Soft delete - just mark as inactive instead of hard delete
+        status.is_active = False
         db.session.commit()
         return jsonify({'success': True, 'message': 'Status deleted'})
     
+    # PUT - update
     data = request.get_json()
     status.name = data.get('name', status.name)
     status.color = data.get('color', status.color)

@@ -2691,3 +2691,11 @@ def sync_logs(connection_id):
     ).first_or_404()
     
     return render_template('user/sync/sync_logs.html', connection=connection)
+
+
+
+@user_bp.route('/sync/connect-guide')
+@login_required
+def connect_guide():
+    """How to Connect - Step-by-Step Guide"""
+    return render_template('user/sync/connect_guide.html')  # ✅ Correct path

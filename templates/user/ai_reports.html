@@ -622,8 +622,8 @@
     <div class="token-info">
         <div class="token-icon">🪙</div>
         <div class="token-text">
-            <h6>AI Tokens</h6>
-            <span>{% if current_user.subscription_tier in ['pro', 'elite'] %}Unlimited access{% else %}Resets monthly{% endif %}</span>
+            <h6>AI Access</h6>
+            <span>{% if current_user.subscription_tier in ['pro', 'elite'] %}Unlimited access{% else %}Monthly allocation{% endif %}</span>
         </div>
     </div>
     
@@ -640,7 +640,7 @@
             <div class="token-progress-fill" style="width:{{ pct }}%; background:{{ '#00e676' if pct < 50 else '#ffb300' if pct < 80 else '#ff5252' }};"></div>
         </div>
         <div class="token-amount" style="color:{{ '#00e676' if tokens_remaining > token_limit * 0.3 else '#ffb300' if tokens_remaining > 0 else '#ff5252' }};">
-            {{ '{:,}'.format(tokens_remaining) }} / {{ '{:,}'.format(token_limit) }}
+            {{ weekly_queries }}/{{ weekly_limit }} Reports
         </div>
     {% endif %}
 </div>
@@ -691,8 +691,6 @@
                         <div class="rc-date">{{ report.report_date.strftime('%d %B %Y') }}</div>
                         <div class="rc-meta">
                             <span>📊 {{ report.trades_analyzed }} trades</span>
-                            <span>🪙 {{ report.total_tokens }} tokens</span>
-                            <span>💰 ${{ '%.4f'|format(report.api_cost) }}</span>
                         </div>
                     </div>
                     <span class="rc-score {% if report.performance_score >= 7 %}high{% elif report.performance_score >= 4 %}mid{% else %}low{% endif %}">

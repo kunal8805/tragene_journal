@@ -331,40 +331,61 @@ function showToast(msg, type='success') {
 
 async function updateResponseStatus() {
     const status = document.getElementById('responseStatusSelect').value;
-    await fetch('/admin/influencers/api/'+influencerId+'/response-status', {
+    const r = await fetch('/admin/influencers/api/'+influencerId+'/response-status', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({response_status: status})
     });
-    showToast('Response status updated');
-    setTimeout(() => location.reload(), 500);
+    const d = await r.json();
+    if (d.success) {
+        showToast('Response status updated');
+        setTimeout(() => location.reload(), 500);
+    } else {
+        showToast(d.error || 'Error updating status', 'error');
+    }
 }
 
 async function updateLeadStatus() {
     const sid = document.getElementById('leadStatusSelect').value;
     if (!sid) return;
-    await fetch('/admin/influencers/api/'+influencerId+'/status', {
+    
+    const r = await fetch('/admin/influencers/api/'+influencerId+'/status', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({status_id: parseInt(sid)})
     });
-    showToast('Status updated');
+    const d = await r.json();
+    if (d.success) {
+        showToast('Status updated');
+        setTimeout(() => location.reload(), 500);
+    } else {
+        showToast(d.error || 'Error updating status', 'error');
+    }
 }
 
 async function toggleCampaign(campaignId) {
-    await fetch('/admin/influencers/api/campaigns/'+campaignId+'/toggle', {method:'POST'});
-    showToast('Campaign toggled');
-    setTimeout(() => location.reload(), 500);
+    const r = await fetch('/admin/influencers/api/campaigns/'+campaignId+'/toggle', {method:'POST'});
+    const d = await r.json();
+    if (d.success) {
+        showToast('Campaign toggled');
+        setTimeout(() => location.reload(), 500);
+    }
 }
 
 async function addNote() {
     const content = document.getElementById('newNoteContent').value.trim();
     if (!content) { showToast('Note cannot be empty', 'error'); return; }
-    await fetch('/admin/influencers/api/'+influencerId+'/notes', {
+    
+    const r = await fetch('/admin/influencers/api/'+influencerId+'/notes', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({content})
     });
-    document.getElementById('newNoteContent').value = '';
-    loadNotes();
-    showToast('Note added');
+    const d = await r.json();
+    if (d.success) {
+        document.getElementById('newNoteContent').value = '';
+        loadNotes();
+        showToast('Note added');
+    } else {
+        showToast(d.error || 'Error adding note', 'error');
+    }
 }
 
 async function loadNotes() {
@@ -395,22 +416,27 @@ async function scheduleFollowup() {
     const notes = document.getElementById('followupNotes').value.trim();
     if (!date) { showToast('Select a date', 'error'); return; }
     
-    await fetch('/admin/leads/api/'+influencerId+'/followups', {
+    const r = await fetch('/admin/influencers/api/'+influencerId+'/followups', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({followup_date:date, followup_type:type, notes, lead_type:'influencer'})
     });
-    document.getElementById('followupDate').value = '';
-    document.getElementById('followupNotes').value = '';
-    loadFollowups();
-    showToast('Follow-up scheduled');
+    const d = await r.json();
+    if (d.success) {
+        document.getElementById('followupDate').value = '';
+        document.getElementById('followupNotes').value = '';
+        loadFollowups();
+        showToast('Follow-up scheduled');
+    } else {
+        showToast(d.error || 'Error scheduling follow-up', 'error');
+    }
 }
 
 async function loadFollowups() {
     const c = document.getElementById('followupsContainer');
-    const r = await fetch('/admin/leads/api/'+influencerId+'/followups');
+    const r = await fetch('/admin/influencers/api/'+influencerId+'/followups');
     const d = await r.json();
     
-    const influencerFollowups = d.followups ? d.followups.filter(f => f.lead_type === 'influencer') : [];
+    const influencerFollowups = d.followups ? d.followups.filter(f => f.lead_type === 'influencer' || f.lead_type === undefined) : [];
     
     if (influencerFollowups.length === 0) {
         c.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:0.75rem;">No follow-ups scheduled</p>';
@@ -432,9 +458,12 @@ async function loadFollowups() {
 }
 
 async function completeFollowup(fid) {
-    await fetch('/admin/leads/api/followups/'+fid+'/complete', {method:'POST'});
-    loadFollowups();
-    showToast('Marked complete');
+    const r = await fetch('/admin/leads/api/followups/'+fid+'/complete', {method:'POST'});
+    const d = await r.json();
+    if (d.success) {
+        loadFollowups();
+        showToast('Marked complete');
+    }
 }
 
 function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
