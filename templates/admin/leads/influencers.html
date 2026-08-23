@@ -515,55 +515,6 @@ async function saveBulkNote() {
 
 async function loadCustomStatuses() {
     try {
-        const statusRes = await fetch('/admin/leads/api/statuses?status_type=influencer');
-        const statusData = await statusRes.json();
-        const allStatuses = statusData.statuses || [];
-        
-        const infRes = await fetch('/admin/influencers/api/list?page=1&search=&response=all&per_page=1000');
-        const infData = await infRes.json();
-        const influencers = infData.influencers || [];
-        
-        const statusCounts = {};
-        influencers.forEach(inf => {
-            if (inf.status_name && inf.status_name !== 'Unassigned') {
-                statusCounts[inf.status_name] = (statusCounts[inf.status_name] || 0) + 1;
-            }
-        });
-        
-        const grid = document.getElementById('customStatusGrid');
-        
-        if (allStatuses.length === 0) {
-            grid.innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">No influencer statuses yet. Click "Create Status" to add one.</div>';
-            return;
-        }
-        
-        let h = '';
-        allStatuses.forEach(status => {
-            const count = statusCounts[status.name] || 0;
-            h += `<div class="stat-card" onclick="filterByStatus('${status.name.replace(/'/g, "\\'")}')">
-                <span class="stat-label"><span class="stat-dot" style="background:${status.color || '#6B7280'};"></span>${esc(status.name)}</span>
-                <span class="stat-value">${count}</span>
-                <button class="delete-status" onclick="event.stopPropagation();deleteInfluencerStatus(${status.id}, '${status.name.replace(/'/g, "\\'")}')" title="Delete status">✕</button>
-            </div>`;
-        });
-        grid.innerHTML = h;
-    } catch(e) {
-        console.error('Custom status load error:', e);
-        document.getElementById('customStatusGrid').innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">Error loading statuses.</div>';
-    }
-}
-
-function filterByStatus(statusName) {
-    selectedResponse = 'all';
-    document.getElementById('responseFilter').value = 'all';
-    currentPage = 1;
-    searchQuery = '';
-    document.getElementById('searchInput').value = '';
-    loadInfluencersByStatus(statusName);
-}
-
-async function loadCustomStatuses() {
-    try {
         const statusRes = await fetch('/admin/influencers/api/status-counts');
         const statusData = await statusRes.json();
         const allStatuses = statusData.statuses || [];
@@ -588,6 +539,43 @@ async function loadCustomStatuses() {
         console.error('Custom status load error:', e);
         document.getElementById('customStatusGrid').innerHTML = '<div class="text-center py-2" style="grid-column:1/-1;color:var(--text-muted);font-size:0.72rem;">Error loading statuses.</div>';
     }
+}
+
+function filterByStatus(statusName) {
+    selectedResponse = 'all';
+    document.getElementById('responseFilter').value = 'all';
+    currentPage = 1;
+    searchQuery = '';
+    document.getElementById('searchInput').value = '';
+    
+    // Highlight active card
+    document.querySelectorAll('#customStatusGrid .stat-card').forEach(c => c.classList.remove('active'));
+    if (event && event.target) {
+        const card = event.target.closest('.stat-card');
+        if (card) card.classList.add('active');
+    }
+    
+    loadInfluencersByStatus(statusName);
+}
+
+async function loadInfluencersByStatus(statusName) {
+    const tbody = document.getElementById('influencerTableBody');
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</td></tr>';
+    
+    const params = new URLSearchParams({ 
+        page: 1, 
+        search: '', 
+        response: 'all',
+        status: statusName,
+        per_page: 1000
+    });
+    const r = await fetch('/admin/influencers/api/list?' + params);
+    const d = await r.json();
+    
+    const filtered = d.influencers || [];
+    renderInfluencerRows(filtered);
+    document.getElementById('resultsCount').textContent = filtered.length + ' influencers';
+    updatePagination(filtered.length, 1);
 }
 
 function renderInfluencerRows(influencers) {
