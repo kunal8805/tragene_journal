@@ -92,7 +92,6 @@ def sitemap():
         {'loc': f"{base}/multi-account-trading-journal", 'priority': '0.8', 'changefreq': 'monthly'},
         {'loc': f"{base}/affordable-trading-journal", 'priority': '0.8', 'changefreq': 'monthly'},
         {'loc': f"{base}/ai-trading-journal", 'priority': '0.9', 'changefreq': 'weekly'},
-        {'loc': f"{base}/why-tragene-journal", 'priority': '0.8', 'changefreq': 'monthly'},
         {'loc': f"{base}/trading-journal-vs-excel", 'priority': '0.8', 'changefreq': 'monthly'},
         # 🧮 Free Trading Calculators
         {'loc': f"{base}/tools", 'priority': '0.8', 'changefreq': 'weekly'},
@@ -315,15 +314,6 @@ def ai_trading_journal():
         page_title='AI Trading Journal | AI-Powered Trade Analysis | Tragene Journal',
         page_description='AI trading journal that analyzes every trade. Get AI scores, strength/weakness detection, risk alerts, and personalized coaching. Smarter trading starts here.',
         page_keywords='ai trading journal, ai trade analysis, ai trading coach, ai trade review, artificial intelligence trading'
-    )
-
-
-@seo_bp.route('/why-tragene-journal')
-def why_tragene_journal():
-    return render_template('seo/why-tragene-journal.html',
-        page_title='Why Choose Tragene Journal? | AI Trading Journal Features',
-        page_description='Discover why traders choose Tragene Journal. AI analysis, free crypto sync, multi-account support, UPI payments, and affordable pricing.',
-        page_keywords='why tragene journal, tragene journal features, best trading journal features'
     )
 
 

@@ -769,3 +769,109 @@
     }
 </script>
 {% endblock %}
+<script>
+let tradeFormUploadInProgress = false;
+
+function showTradeUploadProgress(show, percent, text) {
+    let overlay = document.getElementById('tradeUploadOverlay');
+    if (show) {
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'tradeUploadOverlay';
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.7); z-index: 9999;
+                display: flex; align-items: center; justify-content: center;
+                flex-direction: column; color: white;
+            `;
+            overlay.innerHTML = `
+                <div style="background: #1a1a2e; padding: 40px; border-radius: 20px; text-align: center; max-width: 400px;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📊</div>
+                    <h3 style="margin-bottom: 15px;">Saving your trade...</h3>
+                    <div id="tradeUploadProgressText" style="font-size: 16px; margin-bottom: 20px;">${text || 'Starting...'}</div>
+                    <div style="width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden;">
+                        <div id="tradeUploadProgressBar" style="width: ${percent || 0}%; height: 100%; background: #00e676; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="margin-top: 20px; font-size: 14px; color: #ff6b6b;">⚠️ Don't close or refresh this page!</div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        overlay.style.display = 'flex';
+    } else if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+function updateTradeUploadProgress(percent, text) {
+    const bar = document.getElementById('tradeUploadProgressBar');
+    const progressText = document.getElementById('tradeUploadProgressText');
+    if (bar) bar.style.width = percent + '%';
+    if (progressText) progressText.textContent = text;
+}
+
+// Override form submission to use XHR with progress
+document.addEventListener('DOMContentLoaded', function() {
+    const tradeForm = document.querySelector('form[action*="/trade/add"], form[action*="/trade/save"]');
+    if (tradeForm) {
+        tradeForm.addEventListener('submit', function(e) {
+            if (tradeFormUploadInProgress) return;
+            if (tradeForm.querySelector('input[type="file"]') && tradeForm.querySelector('input[type="file"]').files.length > 0) {
+                e.preventDefault();
+                
+                const formData = new FormData(tradeForm);
+                const screenshotCount = tradeForm.querySelectorAll('input[type="file"]')[0].files.length;
+                
+                tradeFormUploadInProgress = true;
+                showTradeUploadProgress(true, 0, 'Uploading ' + screenshotCount + ' screenshot(s)...');
+                window.addEventListener('beforeunload', function(e) {
+                    e.preventDefault();
+                    e.returnValue = 'Upload in progress!';
+                    return 'Upload in progress!';
+                });
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', tradeForm.action);
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        updateTradeUploadProgress(percent, 'Uploading... ' + percent + '%');
+                    }
+                });
+                
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.redirect) {
+                                window.location.href = response.redirect;
+                            } else if (response.success) {
+                                window.location.href = '/user/trades';
+                            } else {
+                                showTradeUploadProgress(false);
+                                alert('Error: ' + (response.message || 'Failed to save trade'));
+                            }
+                        } catch(err) {
+                            // If response is HTML (redirect), just navigate
+                            window.location.href = '/user/trades';
+                        }
+                    } else {
+                        showTradeUploadProgress(false);
+                        alert('Error saving trade. Please try again.');
+                    }
+                    tradeFormUploadInProgress = false;
+                });
+                
+                xhr.addEventListener('error', function() {
+                    showTradeUploadProgress(false);
+                    alert('Network error. Please try again.');
+                    tradeFormUploadInProgress = false;
+                });
+                
+                xhr.send(formData);
+            }
+        });
+    }
+});
+</script>

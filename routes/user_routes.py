@@ -1672,6 +1672,111 @@ def generate_report(period):
 def diary():
     return render_template('user/diary.html', today=date.today().isoformat())
 
+@user_bp.route('/diary/save-instant', methods=['POST'])
+@login_required
+def save_diary_instant():
+    """Save diary entry text immediately, upload photos later"""
+    try:
+        entry_date = request.form.get('date')
+        title = request.form.get('title', '')
+        content = request.form.get('content', '')
+        mood = request.form.get('mood', '')
+
+        if not entry_date or not content or not content.strip():
+            return jsonify({'success': False, 'message': 'Date and content are required'}), 400
+
+        account_id = get_active_account_id()
+
+        # Save entry immediately
+        entry = DiaryEntry(
+            user_id=current_user.id,
+            account_id=account_id,
+            entry_date=datetime.strptime(entry_date, '%Y-%m-%d').date(),
+            title=title,
+            content=content,
+            mood=mood
+        )
+        db.session.add(entry)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'entry_id': entry.id,
+            'message': 'Entry saved!'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving diary entry instantly: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+@user_bp.route('/diary/<int:entry_id>/upload-images', methods=['POST'])
+@login_required
+def upload_diary_images(entry_id):
+    """Upload images for an existing diary entry"""
+    try:
+        account_id = get_active_account_id()
+        entry = DiaryEntry.query.filter_by(
+            id=entry_id,
+            user_id=current_user.id,
+            account_id=account_id
+        ).first()
+
+        if not entry:
+            return jsonify({'success': False, 'message': 'Entry not found'}), 404
+
+        uploaded_images = []
+        if 'images' in request.files:
+            files = request.files.getlist('images')
+            valid_files = [f for f in files if f and f.filename and f.filename != '']
+
+            # Check total size
+            total_size = 0
+            for file in valid_files[:3]:
+                file.seek(0, 2)
+                total_size += file.tell()
+                file.seek(0)
+
+            if total_size > 20 * 1024 * 1024:
+                return jsonify({'success': False, 'message': 'Total image size too large (max 20MB)'}), 400
+
+            for i, file in enumerate(valid_files[:3]):
+                try:
+                    filename_lower = file.filename.lower()
+                    if not any(filename_lower.endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                        continue
+
+                    upload_dir_full = os.path.join('static', 'uploads', 'diary', str(current_user.id))
+                    os.makedirs(upload_dir_full, exist_ok=True)
+
+                    filename, filepath = compress_image(file, upload_dir_full, f"diary_{entry.id}_{i}")
+
+                    image = DiaryImage(
+                        entry_id=entry.id,
+                        filename=filename,
+                        filepath=filepath.replace('\\', '/')
+                    )
+                    db.session.add(image)
+                    uploaded_images.append(filename)
+
+                except Exception as img_error:
+                    print(f"Error processing image {i}: {str(img_error)}")
+                    continue
+
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': f'{len(uploaded_images)} images uploaded!',
+            'images_uploaded': len(uploaded_images)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error uploading diary images: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
 @user_bp.route('/diary/save', methods=['POST'])
 @login_required
 def save_diary():
@@ -1680,9 +1785,12 @@ def save_diary():
         title = request.form.get('title', '')
         content = request.form.get('content', '')
         mood = request.form.get('mood', '')
+
+        if not entry_date:
+            return jsonify({'success': False, 'message': 'Date is required'}), 400
         
         account_id = get_active_account_id()
-        
+
         # Create entry
         entry = DiaryEntry(
             user_id=current_user.id,
@@ -1694,14 +1802,38 @@ def save_diary():
         )
         db.session.add(entry)
         db.session.flush()  # Get entry ID
-        
+
         # Handle image uploads
+        uploaded_images = []
         if 'images' in request.files:
             files = request.files.getlist('images')
-            for i, file in enumerate(files[:3]):  # Max 3 images
-                if file and file.filename and file.filename != '':
+            
+            # Filter out empty files
+            valid_files = [f for f in files if f and f.filename and f.filename != '']
+            
+            # Check total size (max 20MB total)
+            total_size = 0
+            for file in valid_files[:3]:
+                file.seek(0, 2)  # Seek to end
+                total_size += file.tell()
+                file.seek(0)  # Reset position
+            
+            if total_size > 20 * 1024 * 1024:  # 20MB
+                db.session.rollback()
+                return jsonify({'success': False, 'message': 'Total image size too large (max 20MB)'}), 400
+            
+            # Process each image
+            for i, file in enumerate(valid_files[:3]):  # Max 3 images
+                try:
+                    # Validate file type
+                    filename_lower = file.filename.lower()
+                    if not any(filename_lower.endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                        continue
+                    
                     # Compress and save
                     upload_dir_full = os.path.join('static', 'uploads', 'diary', str(current_user.id))
+                    os.makedirs(upload_dir_full, exist_ok=True)
+                    
                     filename, filepath = compress_image(file, upload_dir_full, f"diary_{entry.id}_{i}")
                     
                     # Save to database
@@ -1711,14 +1843,24 @@ def save_diary():
                         filepath=filepath.replace('\\', '/')
                     )
                     db.session.add(image)
-        
+                    uploaded_images.append(filename)
+                    
+                except Exception as img_error:
+                    print(f"Error processing image {i}: {str(img_error)}")
+                    continue  # Skip bad images, save the rest
+
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Diary entry saved successfully! 📖'})
         
+        return jsonify({
+            'success': True, 
+            'message': f'Diary entry saved successfully! ({len(uploaded_images)} images) 📖',
+            'images_uploaded': len(uploaded_images)
+        })
+
     except Exception as e:
         db.session.rollback()
         print(f"Error saving diary entry: {str(e)}")
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
 @user_bp.route('/diary/entries')
 @login_required

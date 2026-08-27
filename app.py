@@ -1,3 +1,4 @@
+import sys
 from flask import Flask, render_template, flash, redirect, url_for, request, session, Response, jsonify
 from extensions import db, login_manager, migrate, limiter
 import os
@@ -19,6 +20,7 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(basedir, 'trading_journal.db'))
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True, 'pool_recycle': 280}
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
     app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
     
@@ -81,22 +83,25 @@ def create_app():
     app.register_blueprint(mt5_receiver_bp)
     
     with app.app_context():
-        db_path = os.path.join(basedir, 'trading_journal.db')
-        if not os.path.exists(db_path):
-            db.create_all()
-            create_admin()
-            seed_template_rules()
-            seed_ai_plan_defaults()
-            seed_moderator_permissions()
-            seed_lead_statuses()
-            print("✅ Database created with all tables!")
+        if 'db' in sys.argv:
+            pass  # skip seeders during flask db migrate/upgrade so schema changes apply first
         else:
-            db.create_all()
-            seed_template_rules()
-            seed_ai_plan_defaults()
-            seed_moderator_permissions()
-            seed_lead_statuses()
-            migrate_existing_data()
+            db_path = os.path.join(basedir, 'trading_journal.db')
+            if not os.path.exists(db_path):
+                db.create_all()
+                create_admin()
+                seed_template_rules()
+                seed_ai_plan_defaults()
+                seed_moderator_permissions()
+                seed_lead_statuses()
+                print("✅ Database created with all tables!")
+            else:
+                db.create_all()
+                seed_template_rules()
+                seed_ai_plan_defaults()
+                seed_moderator_permissions()
+                seed_lead_statuses()
+                migrate_existing_data()
 
     @app.context_processor
     def inject_seo():
@@ -175,14 +180,13 @@ def create_app():
         
         # User is authenticated - check session version
         expected_version = current_user.session_version or 0
-        actual_version = session.get('session_version')
-        
-        if actual_version != expected_version:
-            # Invalid session - clean and redirect
+        if session.get('session_version') != expected_version:
+            resp = redirect(url_for('auth.login'))
             logout_user()
             session.clear()
-            flash('Your session has been updated. Please log in again.', 'info')
-            return redirect(url_for('auth.login'))
+            flash('Your session has expired. Please log in again.', 'warning')
+            resp.delete_cookie('remember_token')
+            return resp
 
     @app.before_request
     def check_redirects():
@@ -343,7 +347,7 @@ def create_app():
     # Start sync scheduler
     try:
         from services.sync_service import start_scheduler
-        start_scheduler()
+        start_scheduler(app)
     except Exception as e:
         print(f"⚠️  Cannot start scheduler: {e}")
     

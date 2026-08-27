@@ -331,23 +331,99 @@
         });
     }
 
+    let screenshotUploadInProgress = false;
+
+    function showUploadProgress(show) {
+        let progressDiv = document.getElementById('uploadProgress');
+        if (show) {
+            if (!progressDiv) {
+                progressDiv = document.createElement('div');
+                progressDiv.id = 'uploadProgress';
+                progressDiv.style.cssText = `
+                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    background: #1a1a2e; padding: 30px; border-radius: 15px;
+                    z-index: 9999; text-align: center; color: white;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                `;
+                progressDiv.innerHTML = `
+                    <div style="font-size: 36px; margin-bottom: 15px;">📸</div>
+                    <div id="uploadProgressText" style="margin-bottom: 15px;">Uploading screenshot...</div>
+                    <div style="width: 250px; height: 8px; background: #333; border-radius: 4px; overflow: hidden;">
+                        <div id="uploadProgressBar" style="width: 0%; height: 100%; background: #00e676; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 13px; color: #ff6b6b;">⚠️ Don't close this page!</div>
+                `;
+                document.body.appendChild(progressDiv);
+            }
+            progressDiv.style.display = 'block';
+        } else if (progressDiv) {
+            progressDiv.style.display = 'none';
+        }
+    }
+
+    function updateUploadProgress(percent) {
+        const bar = document.getElementById('uploadProgressBar');
+        const text = document.getElementById('uploadProgressText');
+        if (bar) bar.style.width = percent + '%';
+        if (text) text.textContent = 'Uploading... ' + percent + '%';
+    }
+
     function uploadScreenshot() {
+        if (screenshotUploadInProgress) return;
         const file = document.getElementById('fileInput').files[0];
         if(!file)return;
-        const fd=new FormData();fd.append('screenshot',file);
-        const zone=document.getElementById('uploadZone');zone.innerHTML='<span class="spinner-border spinner-border-sm"></span>';
-        fetch(`/user/trade/${tradeId}/upload-screenshot`,{method:'POST',body:fd})
-        .then(r=>r.json()).then(d=>{
-            if(d.success){
-                const grid=document.getElementById('screenshotGrid');
-                const el=document.createElement('div');el.className='screenshot-item';el.id='ss-'+d.screenshot.id;
-                el.innerHTML=`<img src="${d.screenshot.filepath}" onclick="viewImage('${d.screenshot.filepath}')" loading="lazy"><button class="delete-btn" onclick="deleteScreenshot(${d.screenshot.id})"><i class="bi bi-x"></i></button>`;
-                grid.insertBefore(el,zone);
-                if(grid.querySelectorAll('.screenshot-item').length>=3)zone.style.display='none';
-                else zone.innerHTML='<i class="bi bi-cloud-upload"></i><span>Add Screenshot</span>';
-                showToast('✅ Screenshot uploaded!','#00e676');
-            }else{zone.innerHTML='<i class="bi bi-cloud-upload"></i><span>Add Screenshot</span>';showToast('❌ '+d.message,'#ff5252');}
-        }).catch(()=>{zone.innerHTML='<i class="bi bi-cloud-upload"></i><span>Add Screenshot</span>';showToast('❌ Upload failed','#ff5252');});
+
+        screenshotUploadInProgress = true;
+        showUploadProgress(true);
+        window.addEventListener('beforeunload', function(e) {
+            e.preventDefault();
+            e.returnValue = 'Upload in progress!';
+            return 'Upload in progress!';
+        });
+
+        const fd = new FormData();
+        fd.append('screenshot', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/user/trade/${tradeId}/upload-screenshot`);
+
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                updateUploadProgress(percent);
+            }
+        });
+
+        xhr.addEventListener('load', function() {
+            try {
+                const d = JSON.parse(xhr.responseText);
+                if(d.success){
+                    const grid=document.getElementById('screenshotGrid');
+                    const zone=document.getElementById('uploadZone');
+                    const el=document.createElement('div');el.className='screenshot-item';el.id='ss-'+d.screenshot.id;
+                    el.innerHTML=`<img src="${d.screenshot.filepath}" onclick="viewImage('${d.screenshot.filepath}')" loading="lazy"><button class="delete-btn" onclick="deleteScreenshot(${d.screenshot.id})"><i class="bi bi-x"></i></button>`;
+                    grid.insertBefore(el,zone);
+                    if(grid.querySelectorAll('.screenshot-item').length>=3)zone.style.display='none';
+                    else zone.innerHTML='<i class="bi bi-cloud-upload"></i><span>Add Screenshot</span>';
+                    showToast('✅ Screenshot uploaded!','#00e676');
+                } else {
+                    showToast('❌ '+d.message,'#ff5252');
+                }
+            } catch(err) {
+                showToast('❌ Upload failed','#ff5252');
+            }
+            showUploadProgress(false);
+            screenshotUploadInProgress = false;
+            window.removeEventListener('beforeunload', arguments.callee);
+        });
+
+        xhr.addEventListener('error', function() {
+            showToast('❌ Network error','#ff5252');
+            showUploadProgress(false);
+            screenshotUploadInProgress = false;
+        });
+
+        xhr.send(fd);
         document.getElementById('fileInput').value='';
     }
     function deleteScreenshot(id){

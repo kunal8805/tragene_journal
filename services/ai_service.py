@@ -1926,7 +1926,7 @@ CONTENT: [the entry]"""
     for line in response.split('\n'):
         line_stripped = line.strip()
         if line_stripped.upper().startswith('TITLE:'):
-            title = line_stripped[6:].strip().strip('"').strip("'")
+            title = line_stripped[6:].strip().strip('"').strip("'")[:200]
         elif line_stripped.upper().startswith('MOOD:'):
             mood_raw = line_stripped[5:].strip().lower().strip('"').strip("'")
             if mood_raw in ['confident', 'cautious', 'frustrated', 'excited', 'neutral']:

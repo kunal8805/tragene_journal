@@ -776,26 +776,193 @@
     function closeImageOverlay() { document.getElementById('imageOverlay').classList.remove('show'); }
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImageOverlay(); });
 
+    let diaryUploadInProgress = false;
+
+    function showUploadOverlay(show) {
+        let overlay = document.getElementById('uploadOverlay');
+        if (show) {
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'uploadOverlay';
+                overlay.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.7); z-index: 9999;
+                    display: flex; align-items: center; justify-content: center;
+                    flex-direction: column; color: white; font-size: 18px;
+                `;
+                overlay.innerHTML = `
+                    <div style="background: #1a1a2e; padding: 40px; border-radius: 20px; text-align: center; max-width: 400px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">📖</div>
+                        <h3 style="margin-bottom: 15px;">Sealing your diary page...</h3>
+                        <div id="uploadProgressText" style="font-size: 16px; margin-bottom: 20px;">Starting upload...</div>
+                        <div style="width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden;">
+                            <div id="uploadProgressBar" style="width: 0%; height: 100%; background: #c9a84c; transition: width 0.3s;"></div>
+                        </div>
+                        <div style="margin-top: 20px; font-size: 14px; color: #ff6b6b;">
+                            ✅ Entry saved! Photos uploading...
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+            overlay.style.display = 'flex';
+        } else if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
+    function updateUploadProgress(percent, text) {
+        const progressBar = document.getElementById('uploadProgressBar');
+        const progressText = document.getElementById('uploadProgressText');
+        if (progressBar) progressBar.style.width = percent + '%';
+        if (progressText) progressText.textContent = text;
+    }
+
+    function saveDiaryEntryWithProgress(formData, imageCount) {
+        // This function is kept for compatibility but no longer used
+        return new Promise((resolve, reject) => {
+            resolve({success: true, message: 'Entry saved'});
+        });
+    }
+
+    function autoSaveDraft() {
+        const draft = {
+            date: document.getElementById('entryDate').value,
+            title: document.getElementById('entryTitle').value,
+            content: document.getElementById('entryContent').value,
+            mood: selectedMood || '',
+            timestamp: Date.now()
+        };
+        localStorage.setItem('diaryDraft', JSON.stringify(draft));
+    }
+
+    function loadDraft() {
+        const draft = localStorage.getItem('diaryDraft');
+        if (draft) {
+            try {
+                const data = JSON.parse(draft);
+                if (data.date) document.getElementById('entryDate').value = data.date;
+                if (data.title) document.getElementById('entryTitle').value = data.title;
+                if (data.content) document.getElementById('entryContent').value = data.content;
+                if (data.mood) {
+                    selectedMood = data.mood;
+                    document.querySelectorAll('.mood-stamp').forEach(b => {
+                        if (b.dataset.mood === data.mood) b.classList.add('active');
+                    });
+                }
+                return true;
+            } catch (e) {
+                console.error('Error loading draft:', e);
+            }
+        }
+        return false;
+    }
+
+    function clearDraft() {
+        localStorage.removeItem('diaryDraft');
+    }
+
+    // Auto-save draft only when user types
+    document.getElementById('entryContent').addEventListener('input', autoSaveDraft);
+    document.getElementById('entryTitle').addEventListener('input', autoSaveDraft);
+    document.getElementById('entryDate').addEventListener('change', autoSaveDraft);
+
+    // Auto-load draft silently without popup
+    loadDraft();
+
     document.getElementById('diaryForm').addEventListener('submit', async function (e) {
         e.preventDefault();
+        if (diaryUploadInProgress) return;
+
         const entryDate = document.getElementById('entryDate').value;
         const entryContent = document.getElementById('entryContent').value;
         if (!entryDate) { alert('Please select a date'); return; }
         if (!entryContent.trim()) { alert('Please write something in your diary'); return; }
 
-        const formData = new FormData();
-        formData.append('date', entryDate);
-        formData.append('title', document.getElementById('entryTitle').value);
-        formData.append('content', entryContent);
-        formData.append('mood', selectedMood);
-        imageFiles.forEach(file => formData.append('images', file));
+        const imageCount = imageFiles.length;
+        diaryUploadInProgress = true;
+        showUploadOverlay(true);
 
         try {
-            const response = await fetch('/user/diary/save', { method: 'POST', body: formData });
-            const result = await response.json();
-            if (result.success) { clearForm(); loadEntries(); showEntries(); }
-            else { alert('Error: ' + result.message); }
-        } catch (error) { alert('Error saving entry: ' + error.message); }
+            // STEP 1: Save entry text immediately (fast, no images)
+            const entryData = new FormData();
+            entryData.append('date', entryDate);
+            entryData.append('title', document.getElementById('entryTitle').value);
+            entryData.append('content', entryContent);
+            entryData.append('mood', selectedMood);
+
+            updateUploadProgress(10, 'Saving your entry...');
+            
+            const entryResponse = await fetch('/user/diary/save-instant', {
+                method: 'POST',
+                body: entryData
+            });
+            const entryResult = await entryResponse.json();
+
+            if (!entryResult.success) {
+                alert('Error: ' + entryResult.message);
+                showUploadOverlay(false);
+                return;
+            }
+
+            // Entry is saved! Now upload photos if any
+            if (imageCount > 0) {
+                updateUploadProgress(20, 'Entry saved! Uploading ' + imageCount + ' photo(s)...');
+                
+                const imageData = new FormData();
+                imageFiles.forEach(file => imageData.append('images', file));
+                
+                // Use XHR for photo upload with progress
+                const photoResult = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', `/user/diary/${entryResult.entry_id}/upload-images`);
+                    
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percent = 20 + Math.round((e.loaded / e.total) * 80);
+                            updateUploadProgress(percent, 'Uploading photo ' + Math.min(Math.ceil(e.loaded / (e.total / imageCount)), imageCount) + ' of ' + imageCount + '...');
+                        }
+                    });
+                    
+                    xhr.addEventListener('load', function() {
+                        try {
+                            resolve(JSON.parse(xhr.responseText));
+                        } catch(err) {
+                            reject(new Error('Invalid response'));
+                        }
+                    });
+                    
+                    xhr.addEventListener('error', function() {
+                        reject(new Error('Network error'));
+                    });
+                    
+                    xhr.send(imageData);
+                });
+                
+                updateUploadProgress(100, '✅ Entry saved with ' + photoResult.images_uploaded + ' photo(s)!');
+            } else {
+                updateUploadProgress(100, '✅ Entry saved successfully!');
+            }
+
+            // Success - clear everything
+            setTimeout(() => {
+                clearDraft();
+                clearForm();
+                loadEntries();
+                showEntries();
+                showUploadOverlay(false);
+            }, 800);
+
+        } catch (error) {
+            alert('Entry saved, but photo upload failed. You can add photos later.');
+            showUploadOverlay(false);
+            clearDraft();
+            clearForm();
+            loadEntries();
+            showEntries();
+        } finally {
+            diaryUploadInProgress = false;
+        }
     });
 
     function clearForm() {
