@@ -494,8 +494,9 @@ const accent  = '#00e5ff';
 const violet  = '#8b5cf6';
 const green   = '#00ffa3';
 const red     = '#ff3b5c';
-const gridCol = 'rgba(255,255,255,0.05)';
-const tickCol = '#64748b';
+const isLightTheme = document.documentElement.getAttribute('data-theme') === 'light';
+const gridCol = isLightTheme ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
+const tickCol = isLightTheme ? '#475569' : '#94a3b8';
 
 const baseOptions = {
     responsive: true, maintainAspectRatio: false,

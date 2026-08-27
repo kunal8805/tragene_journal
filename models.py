@@ -267,54 +267,12 @@ class Trade(db.Model):
     screenshot_path = db.Column(db.String(500))
     import_source = db.Column(db.String(20), default='manual')
     broker = db.Column(db.String(100))
+    platform_ticket = db.Column(db.String(50), nullable=True)  # MT5/broker deal ticket, for auto-sync dedup only
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Screenshots relationship defined in TradeScreenshot class only
-    
-    def calculate_pnl(self):
-        """Calculate P&L based on market type"""
-        if self.exit_price and self.entry_price:
-            symbol_upper = self.symbol.upper() if self.symbol else ''
-            market_type = detect_market(self.symbol)
-            
-            if market_type == 'indian_stock':
-                pip_multiplier, value_per_pip = 1, 1
-            elif market_type == 'crypto':
-                pip_multiplier, value_per_pip = 1, 1
-            elif 'XAU' in symbol_upper or 'GOLD' in symbol_upper:
-                pip_multiplier, value_per_pip = 100, 10
-            elif any(x in symbol_upper for x in ['US30', 'NAS100', 'NAS', 'SPX', 'DJI', 'DAX', 'GER30', 'UK100']):
-                pip_multiplier, value_per_pip = 1, 10
-            elif 'JPY' in symbol_upper:
-                pip_multiplier, value_per_pip = 100, 10
-            else:
-                pip_multiplier, value_per_pip = 10000, 10
-            
-            if self.trade_type == 'buy':
-                self.profit_loss_pips = round((self.exit_price - self.entry_price) * pip_multiplier, 2)
-            else:
-                self.profit_loss_pips = round((self.entry_price - self.exit_price) * pip_multiplier, 2)
-            
-            self.profit_loss = round(self.profit_loss_pips * self.quantity * value_per_pip, 2)
-            self.is_win = self.profit_loss > 0
-            
-            # Net P&L after charges (for Indian market)
-            if market_type == 'indian_stock':
-                total_charges = (self.brokerage or 0) + (self.taxes or 0) + (self.other_charges or 0)
-                self.net_pnl_after_charges = round(self.profit_loss - total_charges, 2)
-            
-            # Risk:Reward
-            if self.stop_loss and self.take_profit and self.entry_price:
-                if self.trade_type == 'buy':
-                    risk = self.entry_price - self.stop_loss
-                    reward = self.take_profit - self.entry_price
-                else:
-                    risk = self.stop_loss - self.entry_price
-                    reward = self.entry_price - self.take_profit
-                if risk > 0 and reward > 0:
-                    self.risk_reward_ratio = round(reward / risk, 2)
 
 
 class TradeScreenshot(db.Model):

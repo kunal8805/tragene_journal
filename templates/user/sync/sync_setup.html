@@ -11,8 +11,8 @@
     }
     .market-btn {
         flex: 1; min-width: 100px; padding: 16px 12px; border-radius: 14px;
-        border: 2px solid rgba(255,255,255,0.06); background: rgba(15,23,42,0.5);
-        color: #94a3b8; cursor: pointer; text-align: center;
+        border: 1px solid var(--border-color); background: var(--bg-card);
+        color: var(--text-secondary); cursor: pointer; text-align: center;
         transition: all 0.25s; font-weight: 600; font-size: 0.82rem;
         font-family: 'Space Grotesk', sans-serif; backdrop-filter: blur(10px);
         position: relative;
@@ -20,9 +20,9 @@
     .market-btn:hover { border-color: rgba(38,166,154,0.3); }
     .market-btn.active { border-color: var(--accent); background: rgba(38,166,154,0.08); color: var(--accent); box-shadow: 0 0 20px rgba(38,166,154,0.1); }
     .market-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .market-btn:disabled:hover { border-color: rgba(255,255,255,0.06); }
+    .market-btn:disabled:hover { border-color: var(--border-color); }
     .market-btn .market-icon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
-    .market-btn .market-desc { font-size: 0.6rem; color: #64748b; margin-top: 2px; }
+    .market-btn .market-desc { font-size: 0.6rem; color: var(--text-muted); margin-top: 2px; }
     .market-btn .locked-badge {
         display: block; font-size: 0.55rem; color: #ffb300; margin-top: 3px;
         font-weight: 700; letter-spacing: 0.5px;
@@ -46,35 +46,34 @@
     .btn-upgrade-sm:hover { opacity: 0.9; color: #000; }
     
     .setup-card {
-        background: rgba(15,23,42,0.5); border: 1px solid rgba(38,166,154,0.12);
+        background: var(--bg-card); border: 1px solid var(--border-color);
         border-radius: 16px; padding: 24px; backdrop-filter: blur(10px); margin-bottom: 16px;
     }
     .setup-card h6 {
         font-family: 'Space Grotesk', sans-serif; font-weight: 700;
-        font-size: 0.82rem; color: #e0f0ed; margin-bottom: 16px;
+        font-size: 0.82rem; color: var(--text-primary); margin-bottom: 16px;
         text-transform: uppercase; letter-spacing: 0.5px;
     }
     
     .form-group { margin-bottom: 14px; position: relative; }
     .form-group label {
-        display: block; font-size: 0.65rem; color: #64748b;
+        display: block; font-size: 0.65rem; color: var(--text-muted);
         text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
         font-weight: 700; font-family: 'JetBrains Mono', monospace;
     }
     .form-group input, .form-group select {
-        width: 100%; padding: 11px 14px; background: rgba(15,23,42,0.8);
-        border: 1px solid rgba(255,255,255,0.08); color: #e0f0ed;
+        width: 100%; padding: 11px 14px; background: var(--bg-input);
+        border: 1px solid var(--border-color); color: var(--text-primary);
         border-radius: 10px; font-size: 0.82rem; font-family: 'Inter', sans-serif;
     }
     .form-group input:focus, .form-group select:focus {
         border-color: var(--accent); outline: none;
         box-shadow: 0 0 0 3px rgba(38,166,154,0.08);
     }
-    .form-group input::placeholder { color: #475569; }
-    .form-group select option { background: #0f172a; color: #e0f0ed; }
+    .form-group input::placeholder { color: var(--text-muted); }
     
     .form-group .hint {
-        font-size: 0.62rem; color: #64748b; margin-top: 4px;
+        font-size: 0.62rem; color: var(--text-muted); margin-top: 4px;
     }
     .form-group .hint.warn { color: #ffb300; }
     .form-group .hint.success { color: #00e676; }
@@ -83,16 +82,16 @@
     .exchange-dropdown {
         position: absolute; top: 100%; left: 0; right: 0;
         max-height: 250px; overflow-y: auto;
-        background: rgba(15,23,42,0.98); 
-        border: 1px solid rgba(255,255,255,0.1);
+        background: var(--bg-card); 
+        border: 1px solid var(--border-color);
         border-radius: 10px; margin-top: 4px;
         z-index: 100; display: none;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        box-shadow: var(--shadow-lg);
     }
     .exchange-dropdown.show { display: block; }
     .exchange-dropdown-item {
         padding: 10px 14px; cursor: pointer; font-size: 0.75rem;
-        color: #e0f0ed; border-bottom: 1px solid rgba(255,255,255,0.03);
+        color: var(--text-primary); border-bottom: 1px solid var(--border-color);
         transition: all 0.15s; text-transform: capitalize;
     }
     .exchange-dropdown-item:hover { background: rgba(38,166,154,0.1); }
@@ -106,8 +105,8 @@
         gap: 8px; margin-bottom: 16px;
     }
     .platform-chip {
-        padding: 12px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
-        background: rgba(15,23,42,0.5); color: #94a3b8; cursor: pointer;
+        padding: 12px 10px; border-radius: 10px; border: 1px solid var(--border-color);
+        background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
         text-align: center; transition: all 0.2s; font-size: 0.72rem; font-weight: 600;
     }
     .platform-chip:hover { border-color: rgba(38,166,154,0.3); }

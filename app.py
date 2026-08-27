@@ -6,20 +6,27 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from mt5_receiver import mt5_receiver_bp
+
 def create_app():
     app = Flask(__name__)
     
     basedir = os.path.abspath(os.path.dirname(__file__))
+    
+    # Check if production (HTTPS)
+    is_production = os.environ.get('FLASK_ENV', 'development') == 'production'
     
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-me')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(basedir, 'trading_journal.db'))
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
     app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
-    app.config['SESSION_COOKIE_SECURE'] = True
+    
+    # FIX: Secure cookies only in production (HTTPS)
+    app.config['SESSION_COOKIE_SECURE'] = is_production
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['REMEMBER_COOKIE_SECURE'] = True
+    app.config['REMEMBER_COOKIE_SECURE'] = is_production
     app.config['REMEMBER_COOKIE_HTTPONLY'] = True
     app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
     app.config['RATELIMIT_STORAGE_URI'] = os.environ.get('RATELIMIT_STORAGE_URI', 'redis://localhost:6379')
@@ -49,16 +56,16 @@ def create_app():
             return None
     
     from auth import auth_bp
-    from user_routes import user_bp
-    from admin_routes import admin_bp
-    from tools import tools_bp
-    from ai_routes import ai_bp
-    from payment_routes import payment_bp
-    from blog_routes import blog_bp
-    from seo_routes import seo_bp
-    from moderator_routes import moderator_bp
-    from coupon_routes import coupon_bp
-    from lead_routes import lead_bp
+    from routes.user_routes import user_bp
+    from routes.admin_routes import admin_bp
+    from services.tools import tools_bp
+    from routes.ai_routes import ai_bp
+    from routes.payment_routes import payment_bp
+    from routes.blog_routes import blog_bp
+    from routes.seo_routes import seo_bp
+    from routes.moderator_routes import moderator_bp
+    from routes.coupon_routes import coupon_bp
+    from routes.lead_routes import lead_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
@@ -71,6 +78,7 @@ def create_app():
     app.register_blueprint(moderator_bp)
     app.register_blueprint(coupon_bp)
     app.register_blueprint(lead_bp)
+    app.register_blueprint(mt5_receiver_bp)
     
     with app.app_context():
         db_path = os.path.join(basedir, 'trading_journal.db')
@@ -112,7 +120,6 @@ def create_app():
 
     @app.context_processor
     def inject_moderator_permissions():
-        """Make moderator permissions available in all templates"""
         from models import Moderator
         
         mod_id = session.get('moderator_id')
@@ -129,21 +136,52 @@ def create_app():
         return {
             'is_moderator': False,
             'moderator': None,
-            'can_access': lambda key: True  # Admin sees everything
+            'can_access': lambda key: True
         }
 
     @app.before_request
-    def enforce_session_version():
+    def cleanup_and_enforce_session():
+        """Clean invalid sessions and enforce session version - prevents redirect loops"""
         from flask_login import current_user, logout_user
-        if request.path.startswith('/static/') or not current_user.is_authenticated:
+        
+        # Skip static files
+        if request.path.startswith('/static/'):
             return
+        
+        # Skip auth pages to prevent loops
+        if request.path.startswith('/login') or request.path.startswith('/register') or \
+           request.path.startswith('/logout') or request.path.startswith('/verify-email') or \
+           request.path.startswith('/resend-verification'):
+            return
+        
+        # Skip API endpoints that don't need session
+        if request.path.startswith('/api/mt5') or request.path.startswith('/ads.txt'):
+            return
+        
+        # Skip moderator sessions
         if session.get('is_moderator'):
             return
+        
+        # If not authenticated, check for stale session data
+        if not current_user.is_authenticated:
+            # Check if we have stale session data
+            if session and ('session_version' in session or '_user_id' in session or '_fresh' in session):
+                # Public pages that don't need cleanup
+                public_paths = ['/', '/home', '/about', '/terms', '/privacy', 
+                               '/refund-policy', '/refund', '/faq', '/contact']
+                if request.path not in public_paths and not request.path.startswith('/blog'):
+                    session.clear()
+            return
+        
+        # User is authenticated - check session version
         expected_version = current_user.session_version or 0
-        if session.get('session_version') != expected_version:
+        actual_version = session.get('session_version')
+        
+        if actual_version != expected_version:
+            # Invalid session - clean and redirect
             logout_user()
             session.clear()
-            flash('Your session has expired. Please log in again.', 'warning')
+            flash('Your session has been updated. Please log in again.', 'info')
             return redirect(url_for('auth.login'))
 
     @app.before_request
@@ -179,7 +217,9 @@ def create_app():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        # Only add HSTS in production
+        if is_production:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         return response
     
@@ -189,13 +229,13 @@ def create_app():
     def home():
         return render_template('index.html')
     
-    # ===== ADS.TXT FOR GOOGLE ADSENSE =====
+    # ===== ADS.TXT =====
     @app.route('/ads.txt')
     def ads_txt():
         content = "google.com, pub-4811775453229832, DIRECT, f08c47fec0942fa0"
         return Response(content, mimetype='text/plain')
     
-    # ===== LEGAL AND STATIC PAGES =====
+    # ===== LEGAL PAGES =====
     @app.route('/terms')
     def terms():
         return render_template('terms.html', now=datetime.now())
@@ -242,7 +282,7 @@ def create_app():
             db.session.add(contact)
             db.session.commit()
             
-            flash('Your message has been sent successfully! Our support team will get back to you soon.', 'success')
+            flash('Your message has been sent successfully!', 'success')
             return redirect(url_for('contact'))
             
         except Exception as e:
@@ -255,16 +295,11 @@ def create_app():
     def about():
         return render_template('about.html')
     
-    # ═══════════════════════════════════════════════════════════
-    # 🔄 MT5 VPS SYNC WEBHOOK (NEW)
-    # ═══════════════════════════════════════════════════════════
-    
+    # ===== MT5 SYNC WEBHOOK =====
     @app.route('/api/mt5/sync', methods=['POST'])
     def mt5_sync_webhook():
-        """Receive MT5 trade data from VPS sync server"""
-        from sync_service import process_mt5_trade_data
+        from services.sync_service import process_mt5_trade_data
         
-        # Verify internal key
         api_key = request.headers.get('X-Internal-Key')
         expected_key = os.environ.get('VPS_INTERNAL_KEY', 'TGF_INT_xK92mQ27pL38nR4')
         
@@ -305,13 +340,12 @@ def create_app():
             traceback.print_exc()
             return jsonify({'status': 'error', 'message': f'Server error: {str(e)[:200]}'}), 500
     
-    # ═══════════════════════════════════════════════════════════
-    # END MT5 VPS SYNC WEBHOOK
-    # ═══════════════════════════════════════════════════════════
-    
     # Start sync scheduler
-    from sync_service import start_scheduler
-    start_scheduler()
+    try:
+        from services.sync_service import start_scheduler
+        start_scheduler()
+    except Exception as e:
+        print(f"⚠️  Cannot start scheduler: {e}")
     
     return app
 
@@ -454,15 +488,14 @@ def seed_template_rules():
 
 def seed_ai_plan_defaults():
     try:
-        from ai_service import seed_plan_defaults
+        from services.ai_service import seed_plan_defaults
         seed_plan_defaults()
     except ImportError:
         print("⚠️ AI service not available - skipping AI plan defaults")
 
 def seed_moderator_permissions():
-    """Seed default permissions for moderator system"""
     try:
-        from moderator_routes import seed_default_permissions
+        from routes.moderator_routes import seed_default_permissions
         seed_default_permissions()
         print("✅ Moderator permissions seeded!")
     except Exception as e:
@@ -478,7 +511,7 @@ def migrate_existing_data():
             ~User.accounts.any()
         ).all()
     except Exception as e:
-        print(f"⚠️  Could not check accounts (this is normal if tables just created): {e}")
+        print(f"⚠️  Could not check accounts: {e}")
         users_without_accounts = []
     
     try:
@@ -530,12 +563,11 @@ def migrate_existing_data():
                 print(f"   ✅ Migrated: {user.username}")
             
             db.session.commit()
-            print(f"\n✅ Migration complete! {len(users_without_accounts)} users updated.\n")
+            print(f"\n✅ Migration complete!")
             
         except Exception as e:
             db.session.rollback()
             print(f"\n❌ Migration error: {str(e)}")
-            print("   Check the error above for details.\n")
     else:
         print("✅ No migration needed - database is up to date.\n")
     

@@ -15,10 +15,15 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    # If already authenticated, redirect
     if current_user.is_authenticated:
         if current_user.is_admin:
             return redirect(url_for('admin.dashboard'))
         return redirect(url_for('user.dashboard'))
+    
+    # Clean stale session data
+    if session and not session.get('is_moderator'):
+        session.clear()
     
     if request.method == 'POST':
         username = request.form.get('username')
@@ -113,6 +118,8 @@ def register():
         user.current_account_id = account.id
         db.session.commit()
         
+        # Clear any existing session and set new one
+        session.clear()
         session.permanent = True
         session['session_version'] = user.session_version or 0
         login_user(user, remember=True)
@@ -141,6 +148,10 @@ def login():
         if current_user.is_admin:
             return redirect(url_for('admin.dashboard'))
         return redirect(url_for('user.dashboard'))
+    
+    # Clean stale session data (but keep moderator session)
+    if session and not session.get('is_moderator'):
+        session.clear()
     
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
@@ -175,7 +186,7 @@ def login():
             moderator.last_login_at = datetime.utcnow()
             moderator.last_login_ip = request.remote_addr
             
-            from moderator_routes import log_activity
+            from routes.moderator_routes import log_activity
             log_activity(moderator.id, 'login', 'moderator', moderator.id, 
                         f'Logged in from {request.remote_addr}')
             

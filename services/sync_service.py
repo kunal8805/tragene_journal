@@ -12,6 +12,10 @@ from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 from extensions import db
 from models import SyncConnection, Trade, detect_market
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # ═══════════════════════════════════════════════════════════
 # 🔐 ENCRYPTION SETUP
@@ -671,12 +675,19 @@ _scheduler = None
 
 def sync_with_context(app):
     """Wrapper to run sync inside app context"""
+    if app is None:
+        print("⚠️  No app context available for sync")
+        return
     with app.app_context():
         sync_all_active_connections()
 
 def start_scheduler(app=None):
     """Start background sync scheduler — runs every 5 minutes"""
     global _scheduler
+    
+    if app is None:
+        print("⚠️  Cannot start scheduler: No app provided")
+        return
     
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
@@ -705,11 +716,12 @@ def stop_scheduler():
         print("🛑 Sync scheduler stopped")
 
 # -----------------------------------------------------------
-# ?? VPS COMMUNICATION (MT4/MT5 Sync)
+# 🔄 VPS COMMUNICATION (MT4/MT5 Sync)
 # -----------------------------------------------------------
 
-VPS_URL = os.environ.get('VPS_SYNC_URL', 'http://your-vps-ip:5002')
-VPS_INTERNAL_KEY = os.environ.get('VPS_INTERNAL_KEY', 'TGF_INT_xK92mQ27pL38nR4')
+# Fixed VPS URL and API key
+VPS_URL = os.environ.get('VPS_SYNC_URL', 'http://localhost:5002')
+VPS_INTERNAL_KEY = os.environ.get('VPS_INTERNAL_KEY', 'Hg7kLm9pQr2xYw4zNc8vBd5fJh3nMs6tUy1aXe0i')
 
 
 def generate_sync_id(user_id, account_id):
@@ -736,6 +748,11 @@ def send_mt_credentials_to_vps(connection):
             'mt5_server': connection.server_name
         }
         
+        print(f"📤 Sending to VPS: {VPS_URL}/api/add_credential")
+        print(f"   Sync ID: {connection.sync_id}")
+        print(f"   Login: {connection.mt_account_number}")
+        print(f"   Server: {connection.server_name}")
+        
         resp = requests.post(
             f"{VPS_URL}/api/add_credential",
             json=payload,
@@ -743,18 +760,25 @@ def send_mt_credentials_to_vps(connection):
             timeout=15
         )
         
+        print(f"   VPS Response: {resp.status_code}")
+        
         if resp.status_code == 200:
             data = resp.json()
             if data.get('status') == 'ok':
+                print(f"   ✅ VPS accepted credentials")
                 return True, None
             else:
+                print(f"   ❌ VPS error: {data.get('message')}")
                 return False, data.get('message', 'VPS rejected credentials')
         else:
+            print(f"   ❌ VPS returned: {resp.status_code}")
             return False, f"VPS returned: {resp.status_code}"
             
     except requests.exceptions.ConnectionError:
+        print(f"   ❌ Cannot connect to VPS at {VPS_URL}")
         return False, "VPS server unreachable. Check VPS is running."
     except Exception as e:
+        print(f"   ❌ Error: {str(e)}")
         return False, str(e)[:200]
 
 
@@ -762,14 +786,16 @@ def remove_mt_credentials_from_vps(sync_id):
     """Remove credentials from VPS when user deletes connection"""
     import requests
     try:
-        requests.post(
+        resp = requests.post(
             f"{VPS_URL}/api/delete_by_sync_id",
             json={'sync_id': sync_id},
             headers={'X-Internal-Key': VPS_INTERNAL_KEY},
             timeout=10
         )
-        return True
-    except:
+        print(f"🗑️ VPS delete response: {resp.status_code}")
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"❌ VPS delete error: {e}")
         return False
 
 
@@ -777,14 +803,16 @@ def pause_mt_on_vps(sync_id):
     """Pause sync on VPS"""
     import requests
     try:
-        requests.post(
+        resp = requests.post(
             f"{VPS_URL}/api/pause_by_sync_id",
             json={'sync_id': sync_id},
             headers={'X-Internal-Key': VPS_INTERNAL_KEY},
             timeout=10
         )
-        return True
-    except:
+        print(f"⏸️ VPS pause response: {resp.status_code}")
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"❌ VPS pause error: {e}")
         return False
 
 
@@ -792,14 +820,16 @@ def resume_mt_on_vps(sync_id):
     """Resume sync on VPS"""
     import requests
     try:
-        requests.post(
+        resp = requests.post(
             f"{VPS_URL}/api/resume_by_sync_id",
             json={'sync_id': sync_id},
             headers={'X-Internal-Key': VPS_INTERNAL_KEY},
             timeout=10
         )
-        return True
-    except:
+        print(f"▶️ VPS resume response: {resp.status_code}")
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"❌ VPS resume error: {e}")
         return False
 
 
@@ -832,13 +862,13 @@ def process_mt5_trade_data(payload):
             
             symbol = trade_data.get('symbol', 'UNKNOWN')
             trade_type = 'buy' if trade_data.get('type') in [0, 2] else 'sell'
-            open_price = trade_data.get('open_price', 0) or 0
-            close_price = trade_data.get('close_price', 0) or 0
-            lots = trade_data.get('lots', 1.0) or 1.0
+            open_price = trade_data.get('entry_price', trade_data.get('open_price', 0)) or 0
+            close_price = trade_data.get('exit_price', trade_data.get('close_price', 0)) or 0
+            lots = trade_data.get('lots', trade_data.get('volume', 1.0)) or 1.0
             profit = trade_data.get('profit')
             sl = trade_data.get('sl')
             tp = trade_data.get('tp')
-            close_time = trade_data.get('close_time')
+            close_time = trade_data.get('close_time', trade_data.get('exit_time'))
             
             trade = Trade(
                 user_id=connection.user_id,
@@ -865,7 +895,7 @@ def process_mt5_trade_data(payload):
             trades_added += 1
             
         except Exception as e:
-            print(f"?? Error mapping MT5 trade: {e}")
+            print(f"⚠️ Error mapping MT5 trade: {e}")
             continue
     
     connection.last_synced_at = datetime.utcnow()
@@ -876,5 +906,5 @@ def process_mt5_trade_data(payload):
     connection.sync_count = (connection.sync_count or 0) + 1
     db.session.commit()
     
-    print(f"? MT5 data processed: {sync_id} ? {trades_added} new trades")
+    print(f"✅ MT5 data processed: {sync_id} → {trades_added} new trades")
     return {'success': True, 'trades_added': trades_added}

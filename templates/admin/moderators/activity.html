@@ -6,14 +6,14 @@
 <style>
     .log-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
     .log-table th {
-        background: rgba(15,23,42,0.8); color: #64748b; font-size: 0.62rem;
+        background: var(--bg-body); color: var(--text-muted); font-size: 0.62rem;
         text-transform: uppercase; letter-spacing: 0.8px; padding: 12px 10px;
-        text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05);
+        text-align: left; border-bottom: 1px solid var(--border-color);
         font-family: 'JetBrains Mono', monospace;
     }
     .log-table td {
-        padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03);
-        color: #94a3b8; vertical-align: middle;
+        padding: 10px; border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary); vertical-align: middle;
     }
     .log-table tr:hover { background: rgba(38,166,154,0.02); }
     .badge-action {
@@ -30,13 +30,13 @@
         display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
     }
     .filter-bar select, .filter-bar input {
-        padding: 8px 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08);
-        color: #e0f0ed; border-radius: 8px; font-size: 0.72rem;
+        padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color);
+        color: var(--text-primary); border-radius: 8px; font-size: 0.72rem;
     }
     .btn-back {
         padding: 7px 16px; border-radius: 8px; font-size: 0.7rem;
-        font-weight: 600; text-decoration: none; border: 1px solid rgba(255,255,255,0.08);
-        background: rgba(255,255,255,0.03); color: #94a3b8;
+        font-weight: 600; text-decoration: none; border: 1px solid var(--border-color);
+        background: var(--bg-card); color: var(--text-secondary);
         font-family: 'Space Grotesk', sans-serif;
     }
     .btn-back:hover { background: rgba(38,166,154,0.1); color: var(--accent); }
@@ -81,7 +81,7 @@
             {% for log in logs.items %}
             <tr>
                 <td style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;">{{ log.created_at.strftime('%d %b %Y, %H:%M:%S') }}</td>
-                <td><strong style="color:#e0f0ed;">{{ log.moderator.full_name }}</strong></td>
+                <td><strong style="color:var(--text-primary);">{{ log.moderator.full_name }}</strong></td>
                 <td><span class="badge-action {{ log.action_type }}">{{ log.action_type.upper() }}</span></td>
                 <td>{{ log.target_type }} #{{ log.target_id }}</td>
                 <td>{{ log.description[:100] }}</td>

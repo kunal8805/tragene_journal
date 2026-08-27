@@ -10,7 +10,7 @@ from models import (
     Subscription, Payment, DiaryEntry, SyncConnection,
     Moderator, ModeratorPermission
 )
-from ai_service import estimate_tokens, estimate_cost
+from services.ai_service import estimate_tokens, estimate_cost
 from datetime import datetime, date, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
@@ -749,7 +749,7 @@ def api_admin_ticket_reply(ticket_number):
         file = request.files['attachment']
         if file and file.filename:
             try:
-                from user_routes import compress_image
+                from routes.user_routes import compress_image
                 upload_dir = os.path.join('static', 'uploads', 'tickets', str(ticket.id))
                 filename, filepath = compress_image(file, upload_dir, f"ticket_{ticket.id}_admin")
                 reply.attachment_url = filepath
@@ -1195,7 +1195,7 @@ def api_extend_purchase_control(control_id):
 def admin_sync():
     """Admin sync management panel"""
     from models import SyncConnection, User
-    from sync_service import get_all_connections_stats
+    from services.sync_service import get_all_connections_stats
     
     stats = get_all_connections_stats()
     
@@ -1213,7 +1213,7 @@ def admin_sync():
 @admin_required
 def admin_stop_sync(connection_id):
     """Admin stops a sync connection"""
-    from sync_service import admin_stop_connection
+    from services.sync_service import admin_stop_connection
     
     # Get admin_id - works for both super admin and moderator
     admin_id = current_user.id if current_user.is_authenticated else session.get('moderator_id')
@@ -1233,7 +1233,7 @@ def admin_stop_sync(connection_id):
 @admin_required
 def admin_start_sync(connection_id):
     """Admin re-enables a sync connection"""
-    from sync_service import admin_start_connection
+    from services.sync_service import admin_start_connection
     
     success = admin_start_connection(connection_id)
     
@@ -1248,7 +1248,7 @@ def admin_start_sync(connection_id):
 @admin_required
 def admin_stop_all_user_sync(user_id):
     """Admin stops all connections for a user"""
-    from sync_service import admin_stop_all_user_connections
+    from services.sync_service import admin_stop_all_user_connections
     
     admin_id = current_user.id if current_user.is_authenticated else session.get('moderator_id')
     
@@ -1263,7 +1263,7 @@ def admin_stop_all_user_sync(user_id):
 @admin_required
 def admin_user_sync_logs(user_id):
     """Get sync logs for a specific user (JSON)"""
-    from sync_service import get_user_sync_stats
+    from services.sync_service import get_user_sync_stats
     
     stats = get_user_sync_stats(user_id)
     return jsonify(stats)

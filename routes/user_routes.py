@@ -9,7 +9,7 @@ import io
 import os
 from werkzeug.utils import secure_filename
 from sqlalchemy import func
-from sync_service import can_create_sync, encrypt, decrypt, sync_connection, test_connection, generate_sync_id, send_mt_credentials_to_vps, remove_mt_credentials_from_vps, pause_mt_on_vps, resume_mt_on_vps
+from services.sync_service import can_create_sync, encrypt, decrypt, sync_connection, test_connection, generate_sync_id, send_mt_credentials_to_vps, remove_mt_credentials_from_vps, pause_mt_on_vps, resume_mt_on_vps
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 # ═══════════════════════════════════════════════════════════
@@ -1254,7 +1254,7 @@ def ai_report():
 @require_daily_ai_quota
 def analyse_page(page_key):
     """View or trigger per-page AI analysis"""
-    from ai_service import analyse_page as run_analysis
+    from services.ai_service import analyse_page as run_analysis
     from models import AIPageAnalysis
     
     account_id = get_active_account_id()
@@ -1822,7 +1822,7 @@ def auto_write_diary():
     if not account_id:
         return jsonify({'success': False, 'message': 'No active account.'})
     
-    from ai_service import auto_write_diary as generate_diary
+    from services.ai_service import auto_write_diary as generate_diary
     result = generate_diary(current_user, account_id)
     
     return jsonify(result)
@@ -2309,7 +2309,7 @@ Give a SHORT analysis (4-6 lines):
 
 Be direct and cite the actual numbers from this trade. No generic advice."""
 
-    from ai_service import call_ai_api, clean_ai_response, SYSTEM_PROMPT
+    from services.ai_service import call_ai_api, clean_ai_response, SYSTEM_PROMPT
     
     result = call_ai_api(
         prompt=trade_context,
@@ -2383,7 +2383,7 @@ Rules:
 - Cite the trade's actual numbers
 - If asked about other trades, say you can only see this one"""
 
-    from ai_service import call_ai_api, clean_ai_response
+    from services.ai_service import call_ai_api, clean_ai_response
     
     # Build messages for API
     messages = [{"role": "system", "content": "You are a trading coach analyzing ONE specific trade. Only reference this trade's data."}]
@@ -2530,7 +2530,7 @@ def sync_connect():
                 platform = custom_exchange
         
         # Test connection first
-        from sync_service import test_connection
+        from services.sync_service import test_connection
         success, message = test_connection(
             market='crypto',
             platform=platform,
@@ -2615,7 +2615,7 @@ def sync_fetch_now(connection_id):
         user_id=current_user.id
     ).first_or_404()
     
-    from sync_service import sync_connection
+    from services.sync_service import sync_connection
     result = sync_connection(connection.id)
     
     if result['success']:

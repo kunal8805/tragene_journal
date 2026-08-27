@@ -5,14 +5,14 @@
 
 <style>
     .detail-card {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(38, 166, 154, 0.12);
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
         border-radius: 16px; padding: 20px; margin-bottom: 16px;
         backdrop-filter: blur(10px);
     }
     .detail-card h6 {
         font-family: 'Space Grotesk', sans-serif; font-weight: 700;
-        font-size: 0.8rem; margin-bottom: 14px; color: #e0f0ed;
+        font-size: 0.8rem; margin-bottom: 14px; color: var(--text-primary);
         text-transform: uppercase; letter-spacing: 0.5px;
         display: flex; align-items: center; gap: 8px;
     }
@@ -23,12 +23,12 @@
         gap: 14px;
     }
     .detail-item small {
-        color: #64748b; font-size: 0.62rem;
+        color: var(--text-muted); font-size: 0.62rem;
         text-transform: uppercase; letter-spacing: 0.8px; display: block;
         font-family: 'JetBrains Mono', monospace;
     }
     .detail-item strong {
-        color: #e0f0ed; font-size: 0.85rem; font-weight: 600;
+        color: var(--text-primary); font-size: 0.85rem; font-weight: 600;
     }
     
     .pnl-big {
@@ -49,8 +49,8 @@
     .tag-badge {
         display: inline-block; padding: 4px 10px; border-radius: 15px;
         font-size: 0.68rem; font-weight: 600;
-        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-        color: #94a3b8; margin: 2px;
+        background: var(--bg-body); border: 1px solid var(--border-color);
+        color: var(--text-secondary); margin: 2px;
     }
     
     .screenshot-grid {
@@ -59,7 +59,7 @@
     }
     .screenshot-item {
         position: relative; border-radius: 10px; overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.06); aspect-ratio: 16/10;
+        border: 1px solid var(--border-color); aspect-ratio: 16/10;
     }
     .screenshot-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
     .screenshot-item .delete-btn {
@@ -72,11 +72,11 @@
     .screenshot-item:hover .delete-btn { opacity: 1; }
     
     .upload-zone {
-        border: 2px dashed rgba(255,255,255,0.08); border-radius: 10px;
+        border: 2px dashed var(--border-color); border-radius: 10px;
         padding: 20px; text-align: center; cursor: pointer;
         aspect-ratio: 16/10; display: flex; flex-direction: column;
         align-items: center; justify-content: center; transition: all 0.2s;
-        font-size: 0.68rem; color: #64748b;
+        font-size: 0.68rem; color: var(--text-muted);
     }
     .upload-zone:hover { border-color: var(--accent); background: rgba(38,166,154,0.03); }
     .upload-zone i { font-size: 1.4rem; margin-bottom: 4px; }
@@ -88,8 +88,8 @@
     }
     
     .notes-textarea {
-        width: 100%; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08);
-        color: #e0f0ed; border-radius: 8px; padding: 12px;
+        width: 100%; background: var(--bg-input); border: 1px solid var(--border-color);
+        color: var(--text-primary); border-radius: 8px; padding: 12px;
         font-size: 0.82rem; resize: vertical; min-height: 80px;
     }
     .notes-textarea:focus { border-color: var(--accent); outline: none; }
@@ -122,12 +122,12 @@
         line-height: 1.5; margin-bottom: 8px; max-width: 90%;
     }
     .ai-msg.user { background: var(--accent); color: #000; margin-left: auto; }
-    .ai-msg.ai { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: #e0f0ed; }
-    .ai-msg.system { background: transparent; color: #64748b; font-style: italic; text-align: center; max-width: 100%; }
+    .ai-msg.ai { background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-primary); }
+    .ai-msg.system { background: transparent; color: var(--text-muted); font-style: italic; text-align: center; max-width: 100%; }
     .ai-input-row { display: flex; gap: 8px; }
     .ai-input-row input {
-        flex: 1; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08);
-        color: #e0f0ed; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem;
+        flex: 1; background: var(--bg-input); border: 1px solid var(--border-color);
+        color: var(--text-primary); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem;
     }
     .ai-input-row input:focus { border-color: #8b5cf6; outline: none; }
     .btn-ai-send { background: #8b5cf6; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 0.78rem; cursor: pointer; }
@@ -239,7 +239,7 @@
                 <h6 style="margin:0;"><i class="bi bi-journal-text"></i> Notes</h6>
                 <button class="btn btn-sm btn-outline-secondary" id="editNotesBtn" onclick="toggleEditNotes()" style="border-radius:8px;"><i class="bi bi-pencil"></i> Edit</button>
             </div>
-            <div id="notesDisplay" style="color:{{ '#e0f0ed' if trade.notes else '#64748b' }};font-size:0.82rem;line-height:1.6;">{{ trade.notes if trade.notes else 'No notes added.' }}</div>
+            <div id="notesDisplay" style="color:{{ 'var(--text-primary)' if trade.notes else 'var(--text-muted)' }};font-size:0.82rem;line-height:1.6;">{{ trade.notes if trade.notes else 'No notes added.' }}</div>
             <div id="notesEditor" style="display:none;">
                 <textarea id="notesTextarea" class="notes-textarea">{{ trade.notes if trade.notes else '' }}</textarea>
                 <div class="mt-2 d-flex gap-2">
@@ -282,7 +282,7 @@
         <!-- Quick Stats -->
         <div class="detail-card">
             <h6><i class="bi bi-bar-chart"></i> Quick Stats</h6>
-            <div style="font-size:0.78rem;color:#94a3b8;">
+            <div style="font-size:0.78rem;color:var(--text-secondary);">
                 {% if trade.profit_loss is not none and trade.profit_loss > 0 %}<div class="mb-1">✅ Winning trade</div>{% elif trade.profit_loss is not none and trade.profit_loss < 0 %}<div class="mb-1">❌ Losing trade</div>{% endif %}
                 {% if trade.stop_loss %}<div class="mb-1">🛡 Stop Loss: Set</div>{% else %}<div class="mb-1">⚠️ Stop Loss: Not set</div>{% endif %}
                 {% if trade.take_profit %}<div class="mb-1">🎯 Take Profit: Set</div>{% else %}<div class="mb-1">⚠️ Take Profit: Not set</div>{% endif %}
@@ -292,7 +292,7 @@
 
         <!-- AI Trade Analysis -->
         <div class="ai-section">
-            <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.8rem;margin-bottom:12px;color:#e0f0ed;">🤖 AI Trade Analysis</h6>
+            <h6 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.8rem;margin-bottom:12px;color:var(--text-primary);">🤖 AI Trade Analysis</h6>
             <div class="ai-chat-area" id="aiChatArea">
                 <div class="ai-msg system" id="aiPlaceholder">Click analyze to get AI insights on this trade.</div>
                 <div id="aiMessages"></div>

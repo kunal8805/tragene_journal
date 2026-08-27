@@ -55,8 +55,8 @@
         display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
     }
     .search-bar input, .search-bar select {
-        padding: 8px 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08);
-        color: #e0f0ed; border-radius: 8px; font-size: 0.72rem;
+        padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color);
+        color: var(--text-primary); border-radius: 8px; font-size: 0.72rem;
     }
     .search-bar input { flex: 1; min-width: 200px; }
     .search-bar input:focus, .search-bar select:focus { border-color: var(--accent); outline: none; }
@@ -89,7 +89,7 @@
 <!-- Stats -->
 <div class="admin-stats">
     <div class="admin-stat">
-        <div class="as-value" style="color:#e0f0ed;">{{ stats.total }}</div>
+        <div class="as-value" style="color:var(--text-primary);">{{ stats.total }}</div>
         <div class="as-label">Total Connections</div>
     </div>
     <div class="admin-stat">
@@ -169,7 +169,7 @@
                 data-platform="{{ conn.platform }}"
                 data-search="{{ user.email }} {{ conn.platform }} {{ conn.label or '' }} {{ conn.sync_status }} {{ conn.sync_id or '' }}">
                 <td>
-                    <strong style="color:#e0f0ed;">{{ user.email }}</strong>
+                    <strong style="color:var(--text-primary);">{{ user.email }}</strong>
                     <div style="font-size:0.62rem;color:#64748b;">ID: {{ user.id }}</div>
                 </td>
                 <td><span class="badge-status" style="background:rgba(139,92,246,0.1);color:#8b5cf6;">{{ user.subscription_tier.upper() }}</span></td>
@@ -200,7 +200,7 @@
                     {{ conn.last_synced_at.strftime('%d %b %H:%M') if conn.last_synced_at else 'Never' }}
                 </td>
                 <td>
-                    <strong style="color:#e0f0ed;">{{ conn.total_trades_fetched or 0 }}</strong>
+                    <strong style="color:var(--text-primary);">{{ conn.total_trades_fetched or 0 }}</strong>
                     <div style="font-size:0.55rem;color:#64748b;">{{ conn.sync_count or 0 }} syncs</div>
                 </td>
                 <td>
@@ -231,7 +231,7 @@
 <div class="modal-overlay" id="userLogsModal">
     <div class="modal-content">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-            <h6 style="font-family:'Space Grotesk',sans-serif;color:#e0f0ed;">📋 Sync Logs: <span id="modalUserEmail"></span></h6>
+            <h6 style="font-family:'Space Grotesk',sans-serif;color:var(--text-primary);">📋 Sync Logs: <span id="modalUserEmail"></span></h6>
             <button onclick="closeModal()" style="background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer;">&times;</button>
         </div>
         <div id="modalLogContent">Loading...</div>
@@ -266,7 +266,7 @@
                     document.getElementById('modalLogContent').innerHTML = data.connections.map(c => `
                         <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;margin-bottom:8px;">
                             <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <strong style="color:#e0f0ed;font-size:0.78rem;">${c.platform.toUpperCase()} · ${c.market}</strong>
+                                <strong style="color:var(--text-primary);font-size:0.78rem;">${c.platform.toUpperCase()} · ${c.market}</strong>
                                 <span class="badge-status ${c.status}">${c.status.toUpperCase()}</span>
                             </div>
                             <div style="font-size:0.65rem;color:#64748b;margin-top:4px;">

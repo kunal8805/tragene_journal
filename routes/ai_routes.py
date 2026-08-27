@@ -12,7 +12,7 @@ from models import (
     AIChatSession, AIChatMessage
 )
 from rate_limits import ai_rate_limit_key, require_daily_ai_quota
-from ai_service import (
+from services.ai_service import (
     generate_report, coach_chat, analyze_goal, suggest_goals,
     get_user_reports, get_unanalyzed_count,
     estimate_tokens, estimate_cost, seed_plan_defaults,

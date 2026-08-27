@@ -80,28 +80,87 @@
             --shadow: 0 4px 16px rgba(0,0,0,0.4);
             --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
             --overlay: rgba(0,0,0,0.75);
+            --bs-body-bg: #080c14;
+            --bs-body-color: #e8ecf4;
+            --bs-card-bg: #111827;
+            --bs-border-color: #1e293b;
+            --bs-heading-color: #e8ecf4;
+            --bs-secondary-color: #94a3b8;
         }
 
         [data-theme="light"] {
-            --bg-body: #f1f5f9;
+            --bg-body: #f8fafc;
             --bg-sidebar: #ffffff;
             --bg-card: #ffffff;
-            --bg-card-hover: #f8fafc;
+            --bg-card-hover: #f1f5f9;
             --bg-topbar: #ffffff;
-            --bg-input: #f8fafc;
-            --border-color: #e2e8f0;
-            --border-light: rgba(0,0,0,0.05);
+            --bg-input: #ffffff;
+            --border-color: #cbd5e1;
+            --border-light: rgba(0,0,0,0.06);
             --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #94a3b8;
-            --sidebar-hover: rgba(38,166,154,0.06);
-            --btn-outline: #e2e8f0;
-            --btn-outline-text: #475569;
-            --badge-bg: #f1f5f9;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --sidebar-hover: rgba(38,166,154,0.08);
+            --btn-outline: #cbd5e1;
+            --btn-outline-text: #334155;
+            --badge-bg: #e2e8f0;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
             --shadow: 0 4px 16px rgba(0,0,0,0.06);
             --shadow-lg: 0 8px 32px rgba(0,0,0,0.08);
             --overlay: rgba(0,0,0,0.5);
+            --bs-body-bg: #f8fafc;
+            --bs-body-color: #0f172a;
+            --bs-card-bg: #ffffff;
+            --bs-border-color: #cbd5e1;
+            --bs-heading-color: #0f172a;
+            --bs-secondary-color: #334155;
+        }
+
+        /* Global Theme Overrides for Components & Form Elements */
+        .form-control, .form-select, input[type="text"], input[type="number"], input[type="date"], input[type="password"], input[type="email"], textarea, select {
+            background-color: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+        }
+        .form-control:focus, .form-select:focus, input:focus, textarea:focus, select:focus {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 0.2rem rgba(38,166,154,0.2) !important;
+        }
+        option {
+            background-color: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+        }
+        .modal-content {
+            background-color: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        .modal-header, .modal-footer {
+            border-color: var(--border-color) !important;
+        }
+        .table {
+            color: var(--text-primary) !important;
+            --bs-table-bg: transparent !important;
+            --bs-table-color: var(--text-primary) !important;
+        }
+        .table thead th {
+            background: var(--bg-body) !important;
+            color: var(--text-muted) !important;
+            border-bottom: 2px solid var(--border-color) !important;
+        }
+        .table td, .table th {
+            border-color: var(--border-color) !important;
+            color: var(--text-primary);
+        }
+        .table tbody tr:hover {
+            background-color: var(--sidebar-hover) !important;
+        }
+        .form-label, label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -648,34 +707,74 @@
 <script>
     let currentSessionId = null;
     
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('show'); }
-    document.querySelectorAll('.sidebar .nav-link').forEach(l => l.addEventListener('click', () => { if (window.innerWidth <= 992) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); } }));
-    
+    // ========== THEME MANAGEMENT (FIXED) ==========
     function toggleTheme() {
-        const h = document.documentElement, i = document.getElementById('themeIcon');
-        const next = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        h.setAttribute('data-theme', next);
-        i.className = next === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun-fill';
-        localStorage.setItem('theme', next);
+        const html = document.documentElement;
+        const icon = document.getElementById('themeIcon');
+        const currentTheme = html.getAttribute('data-theme');
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        html.setAttribute('data-theme', nextTheme);
+        if (icon) {
+            icon.className = nextTheme === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun-fill';
+        }
+        localStorage.setItem('theme', nextTheme);
     }
     
-    (function() {
-        const st = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', st);
-        document.addEventListener('DOMContentLoaded', () => {
+    // Initialize theme immediately to prevent flash
+    (function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        function updateThemeIcon() {
             const icon = document.getElementById('themeIcon');
-            if (icon) icon.className = st === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun-fill';
-        });
+            if (icon) {
+                icon.className = savedTheme === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun-fill';
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateThemeIcon);
+        } else {
+            updateThemeIcon();
+        }
     })();
     
+    // ========== SIDEBAR ==========
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('show');
+    }
+    
+    document.querySelectorAll('.sidebar .nav-link').forEach(l => {
+        l.addEventListener('click', () => {
+            if (window.innerWidth <= 992) {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebarOverlay').classList.remove('show');
+            }
+        });
+    });
+    
+    // ========== ACCOUNT SWITCHER ==========
     function loadAccounts() {
         fetch('/user/api/accounts').then(r => r.json()).then(a => {
-            const l = document.getElementById('accountDropdownList'), n = document.getElementById('currentAccountName'),
-                  ml = document.getElementById('mobileAccountList'), mn = document.getElementById('mobileAccountName');
+            const l = document.getElementById('accountDropdownList');
+            const n = document.getElementById('currentAccountName');
+            const ml = document.getElementById('mobileAccountList');
+            const mn = document.getElementById('mobileAccountName');
+            
             let h = '';
             a.forEach(acc => {
-                if (acc.is_current) { n.textContent = acc.name; mn.textContent = acc.name; }
-                h += '<div class="account-item ' + (acc.is_current ? 'active' : '') + '" onclick="switchAccount(' + acc.id + ')"><div class="acc-info"><span class="acc-name">' + (acc.is_current ? '<i class="bi bi-check-circle-fill me-1"></i>' : '') + acc.name + '</span><span class="acc-meta"><span>' + acc.trade_count + ' trades</span><span class="acc-badge ' + acc.account_type + '">' + acc.account_type.toUpperCase() + '</span></span></div></div>';
+                if (acc.is_current) {
+                    n.textContent = acc.name;
+                    mn.textContent = acc.name;
+                }
+                h += '<div class="account-item ' + (acc.is_current ? 'active' : '') + '" onclick="switchAccount(' + acc.id + ')">' +
+                     '<div class="acc-info">' +
+                     '<span class="acc-name">' + (acc.is_current ? '<i class="bi bi-check-circle-fill me-1"></i>' : '') + acc.name + '</span>' +
+                     '<span class="acc-meta"><span>' + acc.trade_count + ' trades</span>' +
+                     '<span class="acc-badge ' + acc.account_type + '">' + acc.account_type.toUpperCase() + '</span></span>' +
+                     '</div></div>';
             });
             h += '<div class="account-dropdown-footer"><a href="/user/settings#accounts"><i class="bi bi-gear"></i> Manage Accounts</a></div>';
             l.innerHTML = h;
@@ -683,30 +782,34 @@
         });
     }
     
-    function switchAccount(id) { fetch('/user/switch-account/' + id, { method: 'POST' }).then(r => { if (r.ok) location.reload(); }); }
+    function switchAccount(id) {
+        fetch('/user/switch-account/' + id, { method: 'POST' }).then(r => {
+            if (r.ok) location.reload();
+        });
+    }
     
+    // ========== TOKEN MANAGEMENT ==========
     function loadTokens() {
-    fetch('/ai/token-info').then(r => r.json()).then(d => {
-        const dot = document.getElementById('tokenDot'), text = document.getElementById('tokenText');
-        
-        if (d.is_banned) {
-            dot.className = 'token-dot low';
-            text.textContent = '🚫 Banned';
-            return;
-        }
-        
-        if (d.is_paid || d.plan === 'pro' || d.plan === 'elite') {
-            // Paid users - show unlimited
-            dot.className = 'token-dot good';
-            text.textContent = '🪙 Unlimited AI';
-        } else {
-            // Free users - show remaining
-            const pct = d.limit > 0 ? (d.used / d.limit) * 100 : 0;
-            dot.className = 'token-dot ' + (pct > 80 ? 'low' : pct > 50 ? 'warn' : 'good');
-            text.textContent = '🪙 ' + d.remaining.toLocaleString() + ' left';
-        }
-    });
-}
+        fetch('/ai/token-info').then(r => r.json()).then(d => {
+            const dot = document.getElementById('tokenDot');
+            const text = document.getElementById('tokenText');
+            
+            if (d.is_banned) {
+                dot.className = 'token-dot low';
+                text.textContent = '🚫 Banned';
+                return;
+            }
+            
+            if (d.is_paid || d.plan === 'pro' || d.plan === 'elite') {
+                dot.className = 'token-dot good';
+                text.textContent = '🪙 Unlimited AI';
+            } else {
+                const pct = d.limit > 0 ? (d.used / d.limit) * 100 : 0;
+                dot.className = 'token-dot ' + (pct > 80 ? 'low' : pct > 50 ? 'warn' : 'good');
+                text.textContent = '🪙 ' + d.remaining.toLocaleString() + ' left';
+            }
+        });
+    }
     
     function showUpgradeAlert(f) {
         if (confirm('🔒 ' + f + ' is an Elite plan feature.\n\nUpgrade to Elite (₹799/mo) to unlock:\n• AI Coach\n• Goals & Planner\n• Strategy Builder\n• Unlimited AI tokens\n\nGo to Subscription page?')) {
@@ -715,47 +818,96 @@
     }
     
     async function resendVerification() {
-        const btn = document.getElementById('btnResendVerify'), text = document.getElementById('resendText'),
-              spinner = document.getElementById('resendSpinner'), banner = document.getElementById('verifyBanner');
+        const btn = document.getElementById('btnResendVerify');
+        const text = document.getElementById('resendText');
+        const spinner = document.getElementById('resendSpinner');
+        const banner = document.getElementById('verifyBanner');
         if (!btn || !text || !banner) return;
-        btn.disabled = true; text.textContent = 'Sending...'; spinner.style.display = 'inline-block';
+        btn.disabled = true;
+        text.textContent = 'Sending...';
+        spinner.style.display = 'inline-block';
         try {
             const r = await fetch('/resend-verification', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             const d = await r.json();
             if (d.success) {
                 banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;width:100%;"><span style="font-size:0.8rem;color:var(--green);font-weight:600;"><i class="bi bi-check-circle-fill"></i> ' + d.message + '</span></div>';
-                banner.style.background = 'rgba(0,200,83,0.08)'; banner.style.borderColor = 'rgba(0,200,83,0.25)';
+                banner.style.background = 'rgba(0,200,83,0.08)';
+                banner.style.borderColor = 'rgba(0,200,83,0.25)';
                 setTimeout(() => { banner.style.opacity = '0'; banner.style.maxHeight = '0'; banner.style.margin = '0'; banner.style.padding = '0'; banner.style.border = '0'; banner.style.overflow = 'hidden'; setTimeout(() => { if (banner.parentNode) banner.remove(); }, 500); }, 5000);
-            } else { text.textContent = '📧 Resend Verification Email'; spinner.style.display = 'none'; btn.disabled = false; alert(d.message || 'Failed.'); }
-        } catch (e) { text.textContent = '📧 Resend Verification Email'; spinner.style.display = 'none'; btn.disabled = false; alert('Connection error.'); }
+            } else {
+                text.textContent = '📧 Resend Verification Email';
+                spinner.style.display = 'none';
+                btn.disabled = false;
+                alert(d.message || 'Failed.');
+            }
+        } catch (e) {
+            text.textContent = '📧 Resend Verification Email';
+            spinner.style.display = 'none';
+            btn.disabled = false;
+            alert('Connection error.');
+        }
     }
     
-    function toggleAIAssistant() { document.getElementById('aiWidget').classList.toggle('show'); document.getElementById('aiWidgetOverlay').classList.toggle('show'); if (document.getElementById('aiWidget').classList.contains('show')) document.getElementById('widgetInput').focus(); }
-    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+    function toggleAIAssistant() {
+        document.getElementById('aiWidget').classList.toggle('show');
+        document.getElementById('aiWidgetOverlay').classList.toggle('show');
+        if (document.getElementById('aiWidget').classList.contains('show')) {
+            document.getElementById('widgetInput').focus();
+        }
+    }
+    
+    function escapeHtml(t) {
+        const d = document.createElement('div');
+        d.textContent = t;
+        return d.innerHTML;
+    }
     
     function appendWidgetMessage(c, r) {
-        const m = document.getElementById('widgetMessages'), e = m.querySelector('.ai-widget-empty');
+        const m = document.getElementById('widgetMessages');
+        const e = m.querySelector('.ai-widget-empty');
         if (e) m.innerHTML = '';
         const d = document.createElement('div');
         d.className = 'widget-msg ' + r;
         d.innerHTML = '<div class="wm-avatar ' + (r === 'user' ? 'user-av' : 'ai-av') + '">' + (r === 'user' ? '👤' : '🧠') + '</div><div class="wm-bubble">' + escapeHtml(c) + '</div>';
-        m.appendChild(d); m.scrollTop = m.scrollHeight;
+        m.appendChild(d);
+        m.scrollTop = m.scrollHeight;
     }
     
-    function timeAgo(d) { const n = new Date(), diff = Math.floor((n - d) / 1000); if (diff < 60) return 'just now'; if (diff < 3600) return Math.floor(diff / 60) + 'm ago'; if (diff < 86400) return Math.floor(diff / 3600) + 'h ago'; if (diff < 604800) return Math.floor(diff / 86400) + 'd ago'; return d.toLocaleDateString(); }
-    function openHistoryModal() { document.getElementById('historyModal').classList.add('show'); loadHistoryList(); }
-    function closeHistoryModal() { document.getElementById('historyModal').classList.remove('show'); }
+    function timeAgo(d) {
+        const n = new Date();
+        const diff = Math.floor((n - d) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+        return d.toLocaleDateString();
+    }
+    
+    function openHistoryModal() {
+        document.getElementById('historyModal').classList.add('show');
+        loadHistoryList();
+    }
+    
+    function closeHistoryModal() {
+        document.getElementById('historyModal').classList.remove('show');
+    }
     
     function loadHistoryList() {
         const l = document.getElementById('historyList');
         l.innerHTML = '<div class="history-empty">Loading...</div>';
         fetch('/ai/chat/sessions').then(r => r.json()).then(d => {
-            if (!d.sessions || d.sessions.length === 0) { l.innerHTML = '<div class="history-empty"><div class="empty-icon">📭</div>No chats yet.<br><small>Start a new chat!</small></div>'; return; }
+            if (!d.sessions || d.sessions.length === 0) {
+                l.innerHTML = '<div class="history-empty"><div class="empty-icon">📭</div>No chats yet.<br><small>Start a new chat!</small></div>';
+                return;
+            }
             l.innerHTML = d.sessions.map(s => '<div class="history-item ' + (s.id === currentSessionId ? 'active' : '') + '"><div class="history-item-info" onclick="loadSessionFromHistory(' + s.id + ')"><div class="history-item-title">' + (s.id === currentSessionId ? '🟢 ' : '💬 ') + escapeHtml(s.title) + '</div><div class="history-item-meta">' + s.message_count + ' messages · ' + timeAgo(new Date(s.updated_at || s.created_at)) + '</div></div><span class="history-item-delete" onclick="event.stopPropagation();deleteSession(' + s.id + ')">🗑️</span></div>').join('');
         });
     }
     
-    function loadSessionFromHistory(id) { closeHistoryModal(); loadSession(id); }
+    function loadSessionFromHistory(id) {
+        closeHistoryModal();
+        loadSession(id);
+    }
     
     function loadSession(sid) {
         currentSessionId = sid;
@@ -763,44 +915,86 @@
         m.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">Loading...</div>';
         fetch('/ai/chat/sessions/' + sid + '/messages').then(r => r.json()).then(d => {
             m.innerHTML = '';
-            if (d.messages && d.messages.length > 0) d.messages.forEach(msg => appendWidgetMessage(msg.content, msg.role));
-            else m.innerHTML = '<div class="ai-widget-empty"><div class="empty-icon">💬</div><p>No messages yet.</p></div>';
+            if (d.messages && d.messages.length > 0) {
+                d.messages.forEach(msg => appendWidgetMessage(msg.content, msg.role));
+            } else {
+                m.innerHTML = '<div class="ai-widget-empty"><div class="empty-icon">💬</div><p>No messages yet.</p></div>';
+            }
             m.scrollTop = m.scrollHeight;
-        }).catch(() => { m.innerHTML = '<div class="ai-widget-empty"><p style="color:var(--text-muted);">Failed to load.</p></div>'; });
+        }).catch(() => {
+            m.innerHTML = '<div class="ai-widget-empty"><p style="color:var(--text-muted);">Failed to load.</p></div>';
+        });
     }
     
-    function newChat() { currentSessionId = null; document.getElementById('widgetMessages').innerHTML = '<div class="ai-widget-empty"><div class="empty-icon">🧠</div><p>New chat! Ask me anything about your trading.</p></div>'; document.getElementById('widgetInput').focus(); }
+    function newChat() {
+        currentSessionId = null;
+        document.getElementById('widgetMessages').innerHTML = '<div class="ai-widget-empty"><div class="empty-icon">🧠</div><p>New chat! Ask me anything about your trading.</p></div>';
+        document.getElementById('widgetInput').focus();
+    }
     
     function deleteSession(sid) {
         if (!confirm('Delete this chat permanently?')) return;
         fetch('/ai/chat/sessions/' + sid + '/delete', { method: 'POST' }).then(r => r.json()).then(d => {
-            if (d.success) { if (currentSessionId === sid) newChat(); loadHistoryList(); loadTokens(); }
+            if (d.success) {
+                if (currentSessionId === sid) newChat();
+                loadHistoryList();
+                loadTokens();
+            }
         });
     }
     
     function sendWidgetMessage() {
-        const i = document.getElementById('widgetInput'), q = i.value.trim();
+        const i = document.getElementById('widgetInput');
+        const q = i.value.trim();
         if (!q) return;
         const m = document.getElementById('widgetMessages');
-        appendWidgetMessage(q, 'user'); i.value = '';
-        const tid = 'typing-' + Date.now(), td = document.createElement('div');
-        td.className = 'widget-msg ai'; td.id = tid;
+        appendWidgetMessage(q, 'user');
+        i.value = '';
+        const tid = 'typing-' + Date.now();
+        const td = document.createElement('div');
+        td.className = 'widget-msg ai';
+        td.id = tid;
         td.innerHTML = '<div class="wm-avatar ai-av">🧠</div><div class="wm-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
-        m.appendChild(td); m.scrollTop = m.scrollHeight;
-        const b = document.getElementById('widgetSendBtn'); b.disabled = true; i.disabled = true;
-        fetch('/ai/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: q, session_id: currentSessionId }) })
-            .then(r => r.json()).then(d => {
-                const el = document.getElementById(tid); if (el) el.remove();
-                if (d.success) { currentSessionId = d.session_id; appendWidgetMessage(d.response, 'ai'); loadTokens(); }
-                else appendWidgetMessage(d.message || 'Sorry, something went wrong.', 'ai');
-            }).catch(() => { const el = document.getElementById(tid); if (el) el.remove(); appendWidgetMessage('Connection error.', 'ai'); })
-            .finally(() => { b.disabled = false; i.disabled = false; m.scrollTop = m.scrollHeight; i.focus(); });
+        m.appendChild(td);
+        m.scrollTop = m.scrollHeight;
+        const b = document.getElementById('widgetSendBtn');
+        b.disabled = true;
+        i.disabled = true;
+        fetch('/ai/chat/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: q, session_id: currentSessionId })
+        })
+        .then(r => r.json())
+        .then(d => {
+            const el = document.getElementById(tid);
+            if (el) el.remove();
+            if (d.success) {
+                currentSessionId = d.session_id;
+                appendWidgetMessage(d.response, 'ai');
+                loadTokens();
+            } else {
+                appendWidgetMessage(d.message || 'Sorry, something went wrong.', 'ai');
+            }
+        })
+        .catch(() => {
+            const el = document.getElementById(tid);
+            if (el) el.remove();
+            appendWidgetMessage('Connection error.', 'ai');
+        })
+        .finally(() => {
+            b.disabled = false;
+            i.disabled = false;
+            m.scrollTop = m.scrollHeight;
+            i.focus();
+        });
     }
     
     const ANALYSE_LOADING_MESSAGES = ["Reading your trades...", "Crunching your win rate...", "Spotting risk patterns...", "Checking stop-loss discipline...", "Finding your biggest wins & losses...", "Writing up your report..."];
     
     function startAnalyseLoading(el) {
-        const o = document.getElementById('analyseLoadingOverlay'), s = document.getElementById('analyseLoadingSub');
+        const o = document.getElementById('analyseLoadingOverlay');
+        const s = document.getElementById('analyseLoadingSub');
         if (el) el.classList.add('is-loading');
         o.classList.add('show');
         let i = 0;
@@ -815,14 +1009,30 @@
     
     // Auto-hide flash messages
     document.addEventListener('DOMContentLoaded', function() {
-        loadAccounts(); loadTokens();
+        loadAccounts();
+        loadTokens();
         const flashes = document.getElementById('flashContainer');
-        if (flashes) { setTimeout(() => { flashes.style.transition = 'opacity 0.5s ease'; flashes.style.opacity = '0'; setTimeout(() => { if (flashes.parentNode) flashes.remove(); }, 500); }, 4000); }
+        if (flashes) {
+            setTimeout(() => {
+                flashes.style.transition = 'opacity 0.5s ease';
+                flashes.style.opacity = '0';
+                setTimeout(() => { if (flashes.parentNode) flashes.remove(); }, 500);
+            }, 4000);
+        }
     });
     
-    document.getElementById('historyModal').addEventListener('click', function(e) { if (e.target === this) closeHistoryModal(); });
+    document.getElementById('historyModal').addEventListener('click', function(e) {
+        if (e.target === this) closeHistoryModal();
+    });
+    
     document.getElementById('accountSwitcherBtn').addEventListener('click', loadAccounts);
-    document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && window.innerWidth <= 992) { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); } });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && window.innerWidth <= 992) {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('show');
+        }
+    });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
