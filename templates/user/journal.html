@@ -725,7 +725,12 @@
     {% if trades %}
     {% set wins = trades|selectattr('is_win', 'equalto', true)|list %}
     {% set losses = trades|selectattr('is_win', 'equalto', false)|selectattr('profit_loss', 'ne', none)|list %}
-    {% set total_pnl = trades|sum(attribute='profit_loss') %}
+    {% set total_pnl = 0 %}
+{% for trade in trades %}
+    {% if trade.profit_loss is not none %}
+        {% set total_pnl = total_pnl + trade.profit_loss %}
+    {% endif %}
+{% endfor %}
     {% set wr = (wins|length / trades|length * 100)|round(1) if trades|length > 0 else 0 %}
     <div class="quick-stats">
         <div class="quick-stat">

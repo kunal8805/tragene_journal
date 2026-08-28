@@ -309,11 +309,17 @@
                     <span class="floating-label">Exit Price</span>
                     <input type="number" name="exit_price" id="exitPrice" step="0.00001" oninput="previewPnL()">
                 </div>
+                    <div class="mb-3">
+                        <label class="form-label">P&L (Auto-calculated, editable)</label>
+                        <input type="number" name="profit_loss" id="profitLoss" class="form-control" step="0.01" placeholder="Auto-calculates from Entry/Exit prices" style="font-weight: 600;">
+                        <small style="color: #00e676;">✅ Auto-calculates when you enter Entry & Exit prices. You can override manually.</small>
+                    </div>
+
             </div>
             <div class="col-md-4">
                 <div class="form-floating-custom">
                     <span class="floating-label" id="quantityLabel">Lot Size</span>
-                    <input type="number" name="quantity" id="quantity" value="1.0" step="0.01" min="0.01" oninput="previewPnL()">
+                    <input type="number" name="quantity" id="lotSize" oninput="autoCalculatePnL()" id="quantity" value="1.0" step="0.01" min="0.01" oninput="previewPnL()">
                 </div>
             </div>
             <div class="col-md-4">
@@ -329,7 +335,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="pnl-preview neutral" id="pnlPreview">—</div>
+                <input type="number" name="profit_loss" id="pnlPreview" class="pnl-preview-input" step="0.01" placeholder="Auto-calculated, editable" style="font-weight: 600; font-size: 18px; border: 2px solid #00e676; border-radius: 8px; padding: 8px; background: transparent; color: #00e676; width: 100%;">
             </div>
         </div>
         
@@ -710,6 +716,120 @@
     });
 
     // 🆕 SCREENSHOT UPLOAD FUNCTIONS
+    let tradeFormUploadInProgress = false;
+
+    function showTradeUploadProgress(show, percent, text) {
+        let overlay = document.getElementById('tradeUploadOverlay');
+        if (show) {
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'tradeUploadOverlay';
+                overlay.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.7); z-index: 9999;
+                    display: flex; align-items: center; justify-content: center;
+                    flex-direction: column; color: white;
+                `;
+                overlay.innerHTML = `
+                    <div style="background: #1a1a2e; padding: 40px; border-radius: 20px; text-align: center; max-width: 400px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">📊</div>
+                        <h3 style="margin-bottom: 15px;">Saving your trade...</h3>
+                        <div id="tradeUploadProgressText" style="font-size: 16px; margin-bottom: 20px;">${text || 'Starting...'}</div>
+                        <div style="width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden;">
+                            <div id="tradeUploadProgressBar" style="width: ${percent || 0}%; height: 100%; background: #00e676; transition: width 0.3s;"></div>
+                        </div>
+                        <div style="margin-top: 20px; font-size: 14px; color: #00e676;">
+                            ✅ Saving trade. Photos uploading...
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+            overlay.style.display = 'flex';
+        } else if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
+    function updateTradeUploadProgress(percent, text) {
+        const bar = document.getElementById('tradeUploadProgressBar');
+        const progressText = document.getElementById('tradeUploadProgressText');
+        if (bar) bar.style.width = percent + '%';
+        if (progressText) progressText.textContent = text;
+    }
+
+    // Override form submission to show progress when screenshots are attached
+    document.addEventListener('DOMContentLoaded', function() {
+        const tradeForm = document.querySelector('form');
+        if (tradeForm) {
+            tradeForm.addEventListener('submit', function(e) {
+                if (tradeFormUploadInProgress) return;
+                
+                const screenshot1 = document.getElementById('screenshotInput1');
+                const screenshot2 = document.getElementById('screenshotInput2');
+                const hasScreenshots = (screenshot1 && screenshot1.files.length > 0) || 
+                                      (screenshot2 && screenshot2.files.length > 0);
+                
+                if (hasScreenshots) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(tradeForm);
+                    const screenshotCount = (screenshot1.files.length > 0 ? 1 : 0) + (screenshot2.files.length > 0 ? 1 : 0);
+                    
+                    tradeFormUploadInProgress = true;
+                    showTradeUploadProgress(true, 0, `Uploading ${screenshotCount} screenshot(s)...`);
+                    
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', tradeForm.action || window.location.href);
+                    
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            updateTradeUploadProgress(percent, `Uploading... ${percent}%`);
+                        }
+                    });
+                    
+                    xhr.addEventListener('load', function() {
+                        if (xhr.status === 200 || xhr.status === 302) {
+                            // Check if response is JSON or HTML
+                            const contentType = xhr.getResponseHeader('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.redirect) {
+                                        window.location.href = response.redirect;
+                                    } else if (response.success) {
+                                        window.location.href = '/user/journal';
+                                    } else {
+                                        showTradeUploadProgress(false);
+                                        alert('Error: ' + (response.message || 'Failed to save trade'));
+                                    }
+                                } catch(err) {
+                                    window.location.href = '/user/journal';
+                                }
+                            } else {
+                                // HTML response = successful redirect
+                                window.location.href = '/user/journal';
+                            }
+                        } else {
+                            showTradeUploadProgress(false);
+                            alert('Error saving trade. Please try again.');
+                        }
+                        tradeFormUploadInProgress = false;
+                    });
+                    
+                    xhr.addEventListener('error', function() {
+                        showTradeUploadProgress(false);
+                        alert('Network error. Please try again.');
+                        tradeFormUploadInProgress = false;
+                    });
+                    
+                    xhr.send(formData);
+                }
+            });
+        }
+    });
+
     function previewScreenshot(num, input) {
         const file = input.files[0];
         if (!file) return;
@@ -872,6 +992,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 xhr.send(formData);
             }
         });
+    }
+});
+</script>
+
+<script>
+function autoCalculatePnL() {
+    const entryInput = document.querySelector('input[name="entry_price"]');
+    const exitInput = document.querySelector('input[name="exit_price"]');
+    const lotInput = document.querySelector('input[name="quantity"]');
+    const typeSelect = document.querySelector('select[name="trade_type"]');
+    const pnlField = document.getElementById('profitLoss');
+    
+    console.log('Entry:', entryInput?.value, 'Exit:', exitInput?.value, 'Lot:', lotInput?.value);
+    
+    if (entryInput && exitInput && pnlField) {
+        const entryPrice = parseFloat(entryInput.value);
+        const exitPrice = parseFloat(exitInput.value);
+        const lotSize = parseFloat(lotInput?.value) || 1;
+        const tradeType = typeSelect?.value || 'buy';
+        
+        if (entryPrice && exitPrice) {
+            let pnl = 0;
+            if (tradeType === 'buy') {
+                pnl = (exitPrice - entryPrice) * lotSize;
+            } else if (tradeType === 'sell') {
+                pnl = (entryPrice - exitPrice) * lotSize;
+            }
+            pnlField.value = pnl.toFixed(2);
+            
+            // Color the field
+            if (pnl > 0) {
+                pnlField.style.color = '#00e676';
+                pnlField.style.borderColor = '#00e676';
+            } else if (pnl < 0) {
+                pnlField.style.color = '#ff5252';
+                pnlField.style.borderColor = '#ff5252';
+            } else {
+                pnlField.style.color = '';
+                pnlField.style.borderColor = '';
+            }
+        }
+    }
+}
+
+// Add event listeners when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const entryInput = document.querySelector('input[name="entry_price"]');
+    const exitInput = document.querySelector('input[name="exit_price"]');
+    const lotInput = document.querySelector('input[name="quantity"]');
+    const typeSelect = document.querySelector('select[name="trade_type"]');
+    
+    if (entryInput) entryInput.addEventListener('input', autoCalculatePnL);
+    if (exitInput) exitInput.addEventListener('input', autoCalculatePnL);
+    if (lotInput) lotInput.addEventListener('input', autoCalculatePnL);
+    if (typeSelect) typeSelect.addEventListener('change', autoCalculatePnL);
+    
+    // Calculate on page load if values exist
+    if (entryInput?.value && exitInput?.value) {
+        autoCalculatePnL();
     }
 });
 </script>

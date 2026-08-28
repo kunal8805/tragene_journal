@@ -109,7 +109,10 @@
             <div class="col-md-4">
                 <div class="form-floating-custom">
                     <span class="floating-label">Exit Price</span>
-                    <input type="number" name="exit_price" value="{{ trade.exit_price if trade.exit_price else '' }}" step="0.00001">
+                    <input type="number" name="exit_price" id="exitPrice" value="{{ trade.exit_price if trade.exit_price else '' }}" step="0.00001" oninput="autoCalculatePnL()">
+                    <span class="floating-label" style="margin-top:15px;">P&L (Auto-calculated, editable)</span>
+                    <input type="number" name="profit_loss" id="profitLoss" value="{{ trade.profit_loss if trade.profit_loss is not none else '' }}" step="0.01" style="margin-top:5px;">
+                    <small style="color: #00e676; font-size: 12px;">✅ Auto-calculates when you enter Entry & Exit prices. You can also edit manually.</small>
                 </div>
             </div>
             <div class="col-md-4">

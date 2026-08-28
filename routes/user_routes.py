@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, Response
 from flask_login import login_required, current_user
 from extensions import db, limiter
-from models import Trade, ImportHistory, DayNote, DiaryEntry, DiaryImage, TradingAccount, User, FAQ, SupportTicket, TicketReply, TradeScreenshot, AIUsageLog, detect_market, get_market_info, get_currency_for_market, SyncConnection
+from models import Trade, ImportHistory, DayNote, DiaryEntry, DiaryImage, TradingAccount, User, FAQ, SupportTicket, TicketReply, TradeScreenshot, TradeRuleCheck, AIUsageLog, detect_market, get_market_info, get_currency_for_market, SyncConnection
 from rate_limits import ai_rate_limit_key, require_daily_ai_quota
 from datetime import datetime, date, timedelta
 import csv
@@ -452,6 +452,51 @@ def add_trade():
         other_charges = float(request.form.get('other_charges', 0))
         margin_used = float(request.form.get('margin_used')) if request.form.get('margin_used') else None
         
+        # Calculate P&L based on market type
+        calculated_pnl = None
+        calculated_pips = None
+        is_win = False
+        
+        if entry_price and exit_price:
+            if market == 'crypto' or market == 'indian_stock':
+                # Simple calculation for crypto/stocks
+                if trade_type.lower() == 'buy':
+                    calculated_pnl = (exit_price - entry_price) * quantity
+                else:
+                    calculated_pnl = (entry_price - exit_price) * quantity
+            else:
+                # FOREX calculation
+                symbol_upper = symbol.upper()
+                pip_multiplier = 10000
+                value_per_pip_per_lot = 10
+                
+                if 'XAU' in symbol_upper or 'GOLD' in symbol_upper:
+                    pip_multiplier = 1
+                    value_per_pip_per_lot = 100
+                elif 'JPY' in symbol_upper:
+                    pip_multiplier = 100
+                    value_per_pip_per_lot = 10
+                elif any(x in symbol_upper for x in ['US30', 'NAS100', 'NAS', 'SPX', 'DJI', 'DAX']):
+                    pip_multiplier = 1
+                    value_per_pip_per_lot = 1
+                
+                if trade_type.lower() == 'buy':
+                    calculated_pips = (exit_price - entry_price) * pip_multiplier
+                else:
+                    calculated_pips = (entry_price - exit_price) * pip_multiplier
+                
+                calculated_pnl = calculated_pips * value_per_pip_per_lot * quantity
+            
+            if calculated_pnl is not None:
+                calculated_pnl -= (brokerage + taxes + other_charges)
+                is_win = calculated_pnl > 0
+
+        # Check for manual P&L override
+        manual_pnl = request.form.get('profit_loss')
+        if manual_pnl and manual_pnl.strip():
+            calculated_pnl = float(manual_pnl)
+            is_win = calculated_pnl > 0
+
         trade = Trade(
             user_id=current_user.id,
             account_id=account_id,
@@ -460,6 +505,9 @@ def add_trade():
             trade_type=trade_type,
             entry_price=entry_price,
             exit_price=exit_price,
+            profit_loss=calculated_pnl,
+            profit_loss_pips=calculated_pips,
+            is_win=is_win,
             stop_loss=stop_loss,
             take_profit=take_profit,
             quantity=quantity,
@@ -484,7 +532,6 @@ def add_trade():
             broker=broker,
             import_source='manual'
         )
-        trade.calculate_pnl()
         db.session.add(trade)
         db.session.flush()  # 🆕 Get trade.id for screenshots
         
@@ -569,6 +616,23 @@ def edit_trade(trade_id):
         trade.entry_price = float(request.form.get('entry_price', trade.entry_price))
         trade.exit_price = float(request.form.get('exit_price')) if request.form.get('exit_price') else None
         trade.stop_loss = float(request.form.get('stop_loss')) if request.form.get('stop_loss') else None
+        
+        # Use manual P&L if provided, otherwise auto-calculate
+        manual_pnl = request.form.get('profit_loss')
+        if manual_pnl and manual_pnl.strip():
+            trade.profit_loss = float(manual_pnl)
+            trade.is_win = trade.profit_loss > 0
+        elif trade.entry_price and trade.exit_price:
+            # Auto-calculate P&L
+            if trade.trade_type == 'buy':
+                calculated_pnl = (trade.exit_price - trade.entry_price) * (trade.quantity or 1)
+            elif trade.trade_type == 'sell':
+                calculated_pnl = (trade.entry_price - trade.exit_price) * (trade.quantity or 1)
+            else:
+                calculated_pnl = 0
+            
+            trade.profit_loss = calculated_pnl - (trade.brokerage or 0) - (trade.taxes or 0) - (trade.other_charges or 0)
+            trade.is_win = trade.profit_loss > 0
         trade.take_profit = float(request.form.get('take_profit')) if request.form.get('take_profit') else None
         trade.quantity = float(request.form.get('quantity', trade.quantity))
         trade.session = request.form.get('session', trade.session)
@@ -594,7 +658,6 @@ def edit_trade(trade_id):
         if request.form.get('exit_date'):
             trade.exit_date = datetime.strptime(request.form.get('exit_date'), '%Y-%m-%dT%H:%M')
         
-        trade.calculate_pnl()
         db.session.flush()  # 🆕 Get trade.id if needed
         
         # 🆕 Handle screenshot uploads (up to 2)
@@ -664,14 +727,30 @@ def edit_trade(trade_id):
 def delete_trade(trade_id):
     account_id = get_active_account_id()
     trade = Trade.query.filter_by(
-        id=trade_id, 
+        id=trade_id,
         user_id=current_user.id,
         account_id=account_id
     ).first_or_404()
+    
+    # Delete all associated records first
+    TradeScreenshot.query.filter_by(trade_id=trade.id).delete()
+    TradeRuleCheck.query.filter_by(trade_id=trade.id).delete()
+    
+    # Flush the deletions
+    db.session.flush()
+    
+    # Now delete the trade
+    # Delete associated screenshots and rule checks first
+    TradeScreenshot.query.filter_by(trade_id=trade.id).delete()
+    TradeRuleCheck.query.filter_by(trade_id=trade.id).delete()
+    db.session.flush()
+    
     db.session.delete(trade)
     db.session.commit()
     flash('Trade deleted.','info')
     return redirect(url_for('user.journal'))
+
+
 
 
 
