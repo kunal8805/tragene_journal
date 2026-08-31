@@ -231,6 +231,12 @@
     }
     .diary-label.screenshot-label i { color: #a78bfa !important; }
 
+    /* Voice label — distinct color */
+    .diary-label.voice-label {
+        color: #06b6d4 !important;
+    }
+    .diary-label.voice-label i { color: #22d3ee !important; }
+
     .diary-input{
         background: transparent !important;
         border: none;
@@ -263,6 +269,103 @@
     }
     .diary-textarea:focus{ outline:none; }
     .diary-textarea::placeholder{ color: var(--ink-faint) !important; font-family:'EB Garamond', serif; font-style: italic; font-size: 1.05rem; }
+
+    /* ═══ NEW: VOICE RECORDING UI ═══ */
+    .voice-record-section {
+        border: 1.5px dashed var(--brass);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        background: rgba(255,255,255,0.2);
+        transition: all 0.3s;
+    }
+    .voice-record-section.recording {
+        border-color: var(--wax);
+        background: rgba(124,43,40,0.08);
+        box-shadow: 0 0 20px rgba(124,43,40,0.15);
+    }
+    
+    .voice-btn {
+        font-family:'Cormorant Garamond', serif;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        border: 1.5px solid var(--ink-faint);
+        color: var(--ink-soft) !important;
+        background: transparent;
+        padding: 8px 18px;
+        border-radius: 50px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .voice-btn:hover { border-color: var(--wax); color: var(--wax-dark) !important; }
+    .voice-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .voice-btn.record-btn {
+        border-color: var(--wax-dark);
+        color: var(--wax-dark) !important;
+        background: rgba(124,43,40,0.05);
+    }
+    .voice-btn.record-btn.recording {
+        background: var(--wax-dark);
+        color: var(--parchment-hi) !important;
+        animation: voicePulse 1.5s ease-in-out infinite;
+    }
+    @keyframes voicePulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(124,43,40,0.4); }
+        50% { box-shadow: 0 0 0 10px rgba(124,43,40,0); }
+    }
+    
+    .voice-timer {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.1rem;
+        color: var(--wax-dark) !important;
+        font-weight: 600;
+    }
+    
+    .voice-quota {
+        font-family: 'EB Garamond', serif;
+        font-style: italic;
+        font-size: 0.75rem;
+        color: var(--ink-faint) !important;
+    }
+    
+    .voice-wave {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 24px;
+    }
+    .voice-wave span {
+        width: 3px;
+        background: var(--wax);
+        border-radius: 2px;
+        animation: waveBounce 0.8s ease-in-out infinite;
+    }
+    .voice-wave span:nth-child(1) { height: 8px; animation-delay: 0s; }
+    .voice-wave span:nth-child(2) { height: 14px; animation-delay: 0.1s; }
+    .voice-wave span:nth-child(3) { height: 20px; animation-delay: 0.2s; }
+    .voice-wave span:nth-child(4) { height: 12px; animation-delay: 0.3s; }
+    .voice-wave span:nth-child(5) { height: 18px; animation-delay: 0.4s; }
+    .voice-wave span:nth-child(6) { height: 10px; animation-delay: 0.5s; }
+    .voice-wave span:nth-child(7) { height: 16px; animation-delay: 0.6s; }
+    @keyframes waveBounce {
+        0%, 100% { transform: scaleY(0.5); }
+        50% { transform: scaleY(1); }
+    }
+    
+    .voice-transcript-area {
+        display: none;
+        margin-top: 12px;
+        border-top: 1px solid var(--rule);
+        padding-top: 12px;
+    }
+    .voice-transcript-area.show { display: block; animation: fadeInUp 0.3s ease; }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
     /* ---------- buttons ---------- */
     .wax-btn{
@@ -633,6 +736,58 @@
                         </div>
                     </div>
 
+                    <!-- ═══ VOICE RECORDING SECTION ═══ -->
+                    <div class="voice-record-section" id="voiceRecordSection">
+                        <label class="diary-label voice-label"><i class="bi bi-mic-fill"></i> Voice Entry</label>
+                        
+                        <!-- Idle State -->
+                        <div id="voiceIdleState">
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <button type="button" class="voice-btn record-btn" id="voiceRecordBtn" onclick="startVoiceRecording()">
+                                    <i class="bi bi-mic"></i> Record
+                                </button>
+                                <span class="voice-quota" id="voiceQuota">Loading quota...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Recording State -->
+                        <div id="voiceRecordingState" style="display:none;">
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <button type="button" class="voice-btn record-btn recording" onclick="stopVoiceRecording()">
+                                    <i class="bi bi-stop-fill"></i> Stop
+                                </button>
+                                <div class="voice-wave">
+                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <span class="voice-timer" id="voiceTimer">00:00</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Transcribing State -->
+                        <div id="voiceTranscribingState" style="display:none;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="spinner-border spinner-border-sm" style="color: var(--wax);"></div>
+                                <span class="diary-hint">Transcribing your voice...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Transcript Area -->
+                        <div class="voice-transcript-area" id="voiceTranscriptArea">
+                            <label class="diary-label voice-label" style="font-size:0.85rem;">
+                                <i class="bi bi-pencil"></i> Edit transcript if needed
+                            </label>
+                            <textarea class="diary-textarea" id="voiceTranscriptText" rows="3" style="min-height:100px; font-size:1.2rem;"></textarea>
+                            <div class="d-flex gap-2 mt-2 flex-wrap">
+                                <button type="button" class="wax-btn" style="padding:8px 20px; font-size:0.85rem;" onclick="saveVoiceToDiary()">
+                                    <i class="bi bi-bookmark-check"></i> Save to Diary
+                                </button>
+                                <button type="button" class="quill-btn" style="padding:6px 18px; font-size:0.8rem;" onclick="discardVoiceTranscript()">
+                                    Discard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <form id="diaryForm" enctype="multipart/form-data">
                         <div class="row mb-4">
                             <div class="col-sm-5">
@@ -726,13 +881,171 @@
     let imageFiles = [];
     let selectedMood = '';
 
+    // ═══ VOICE RECORDING VARIABLES ═══
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let voiceTimerInterval = null;
+    let voiceRecordingSeconds = 0;
+    let voiceEntryId = null;
+
     document.addEventListener('DOMContentLoaded', function () {
         setupImageUpload();
         loadEntries();
+        loadVoiceQuota();
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('entryDate').value = today;
         document.getElementById('folioDate').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     });
+
+    // ═══ VOICE RECORDING FUNCTIONS ═══
+    function loadVoiceQuota() {
+        fetch('/transcription/status')
+            .then(res => res.json())
+            .then(data => {
+                const quotaEl = document.getElementById('voiceQuota');
+                const recordBtn = document.getElementById('voiceRecordBtn');
+                
+                if (data.allowed) {
+                    quotaEl.textContent = `${data.remaining_minutes} min remaining`;
+                    recordBtn.disabled = false;
+                } else {
+                    quotaEl.textContent = '🔒 Pro/Elite required';
+                    recordBtn.disabled = true;
+                }
+            })
+            .catch(err => {
+                document.getElementById('voiceQuota').textContent = 'Quota unavailable';
+            });
+    }
+
+    async function startVoiceRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+            
+            mediaRecorder.onstop = handleVoiceStop;
+            
+            mediaRecorder.start();
+            
+            // UI updates
+            document.getElementById('voiceIdleState').style.display = 'none';
+            document.getElementById('voiceRecordingState').style.display = 'block';
+            document.getElementById('voiceTranscribingState').style.display = 'none';
+            document.getElementById('voiceRecordSection').classList.add('recording');
+            
+            // Start timer
+            voiceRecordingSeconds = 0;
+            voiceTimerInterval = setInterval(() => {
+                voiceRecordingSeconds++;
+                const mins = Math.floor(voiceRecordingSeconds / 60);
+                const secs = voiceRecordingSeconds % 60;
+                document.getElementById('voiceTimer').textContent = 
+                    String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+            }, 1000);
+            
+        } catch (err) {
+            alert('Microphone access denied. Please allow microphone permission.');
+        }
+    }
+
+    function stopVoiceRecording() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            clearInterval(voiceTimerInterval);
+            
+            // Stop all audio tracks
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            
+            // UI updates
+            document.getElementById('voiceRecordingState').style.display = 'none';
+            document.getElementById('voiceTranscribingState').style.display = 'block';
+            document.getElementById('voiceRecordSection').classList.remove('recording');
+        }
+    }
+
+    function handleVoiceStop() {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+        
+        fetch('/transcription/transcribe', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('voiceTranscribingState').style.display = 'none';
+            
+            if (data.success) {
+                voiceEntryId = data.entry_id;
+                document.getElementById('voiceTranscriptText').value = data.transcript;
+                document.getElementById('voiceTranscriptArea').classList.add('show');
+                loadVoiceQuota();
+            } else {
+                alert(data.message || 'Transcription failed');
+                document.getElementById('voiceIdleState').style.display = 'block';
+            }
+        })
+        .catch(err => {
+            document.getElementById('voiceTranscribingState').style.display = 'none';
+            document.getElementById('voiceIdleState').style.display = 'block';
+            alert('Error: ' + err.message);
+        });
+    }
+
+    function saveVoiceToDiary() {
+        const transcript = document.getElementById('voiceTranscriptText').value.trim();
+        
+        if (!transcript) {
+            alert('Transcript is empty');
+            return;
+        }
+        
+        if (!voiceEntryId) {
+            alert('No transcription to save');
+            return;
+        }
+        
+        const entryDate = document.getElementById('entryDate').value || new Date().toISOString().split('T')[0];
+        const title = 'Voice Entry - ' + new Date().toLocaleDateString();
+        
+        fetch('/transcription/save-to-diary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                entry_id: voiceEntryId,
+                transcript: transcript,
+                title: title,
+                date: entryDate,
+                mood: selectedMood || 'voice'
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Saved to diary!');
+                discardVoiceTranscript();
+                loadEntries();
+                loadVoiceQuota();
+            } else {
+                alert(data.message || 'Error saving');
+            }
+        })
+        .catch(err => alert('Error saving: ' + err.message));
+    }
+
+    function discardVoiceTranscript() {
+        document.getElementById('voiceTranscriptArea').classList.remove('show');
+        document.getElementById('voiceTranscriptText').value = '';
+        document.getElementById('voiceIdleState').style.display = 'block';
+        voiceEntryId = null;
+    }
 
     document.querySelectorAll('.mood-stamp').forEach(btn => {
         btn.addEventListener('click', function () {
@@ -818,13 +1131,6 @@
         if (progressText) progressText.textContent = text;
     }
 
-    function saveDiaryEntryWithProgress(formData, imageCount) {
-        // This function is kept for compatibility but no longer used
-        return new Promise((resolve, reject) => {
-            resolve({success: true, message: 'Entry saved'});
-        });
-    }
-
     function autoSaveDraft() {
         const draft = {
             date: document.getElementById('entryDate').value,
@@ -862,12 +1168,9 @@
         localStorage.removeItem('diaryDraft');
     }
 
-    // Auto-save draft only when user types
     document.getElementById('entryContent').addEventListener('input', autoSaveDraft);
     document.getElementById('entryTitle').addEventListener('input', autoSaveDraft);
     document.getElementById('entryDate').addEventListener('change', autoSaveDraft);
-
-    // Auto-load draft silently without popup
     loadDraft();
 
     document.getElementById('diaryForm').addEventListener('submit', async function (e) {
@@ -884,7 +1187,6 @@
         showUploadOverlay(true);
 
         try {
-            // STEP 1: Save entry text immediately (fast, no images)
             const entryData = new FormData();
             entryData.append('date', entryDate);
             entryData.append('title', document.getElementById('entryTitle').value);
@@ -905,14 +1207,12 @@
                 return;
             }
 
-            // Entry is saved! Now upload photos if any
             if (imageCount > 0) {
                 updateUploadProgress(20, 'Entry saved! Uploading ' + imageCount + ' photo(s)...');
                 
                 const imageData = new FormData();
                 imageFiles.forEach(file => imageData.append('images', file));
                 
-                // Use XHR for photo upload with progress
                 const photoResult = await new Promise((resolve, reject) => {
                     const xhr = new XMLHttpRequest();
                     xhr.open('POST', `/user/diary/${entryResult.entry_id}/upload-images`);
@@ -944,7 +1244,6 @@
                 updateUploadProgress(100, '✅ Entry saved successfully!');
             }
 
-            // Success - clear everything
             setTimeout(() => {
                 clearDraft();
                 clearForm();

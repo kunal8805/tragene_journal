@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, make_response
 from flask_login import login_user, logout_user, login_required, current_user
 from extensions import db, limiter
-from models import User, TradingAccount, Moderator
+from models import User, TradingAccount, Moderator, LoginDevice
 from rate_limits import (
     is_user_locked,
     login_rate_limit_key,
@@ -10,8 +10,137 @@ from rate_limits import (
 )
 from verify_email import send_verification_email, verify_email_token
 from datetime import datetime
+import uuid
+import hashlib
 
 auth_bp = Blueprint('auth', __name__)
+
+# ==================== DEVICE LIMIT FUNCTIONS ====================
+
+def get_device_id():
+    """Get or create unique device ID from cookie"""
+    device_id = request.cookies.get('device_id')
+    
+    if not device_id:
+        raw = f"{request.user_agent}{request.remote_addr}{datetime.utcnow()}"
+        device_id = hashlib.md5(raw.encode()).hexdigest()
+    
+    return device_id
+
+
+def get_device_name():
+    """Get device name from user agent"""
+    ua = request.user_agent.string.lower()
+    
+    if 'iphone' in ua:
+        return 'iPhone'
+    elif 'ipad' in ua:
+        return 'iPad'
+    elif 'android' in ua:
+        return 'Android Phone'
+    elif 'windows' in ua:
+        return 'Windows PC'
+    elif 'macintosh' in ua or 'mac os' in ua:
+        return 'Mac'
+    elif 'linux' in ua:
+        return 'Linux'
+    else:
+        return 'Unknown Device'
+
+
+def get_max_devices(user):
+    """Get max devices allowed for user's tier"""
+    if user.is_admin:
+        return float('inf')
+    
+    tier_limits = {
+        'free': 2,
+        'pro': 3,
+        'elite': 5,
+        'enterprise': float('inf')
+    }
+    return tier_limits.get(user.subscription_tier, 2)
+
+
+def check_device_limit(user):
+    """Check if user has exceeded device limit. Returns (can_login, message, device_id)"""
+    device_id = get_device_id()
+    max_devices = get_max_devices(user)
+    
+    # Admin - unlimited devices
+    if user.is_admin or max_devices == float('inf'):
+        existing_device = LoginDevice.query.filter_by(
+            user_id=user.id,
+            device_id=device_id
+        ).first()
+        
+        if not existing_device:
+            new_device = LoginDevice(
+                user_id=user.id,
+                device_id=device_id,
+                device_name=get_device_name(),
+                ip_address=request.remote_addr,
+                user_agent=request.user_agent.string[:500]
+            )
+            db.session.add(new_device)
+            db.session.commit()
+        else:
+            existing_device.last_active = datetime.utcnow()
+            existing_device.is_active = True
+            db.session.commit()
+        
+        return True, None, device_id
+    
+    # Check if this device already registered
+    existing_device = LoginDevice.query.filter_by(
+        user_id=user.id,
+        device_id=device_id
+    ).first()
+    
+    if existing_device:
+        existing_device.last_active = datetime.utcnow()
+        existing_device.is_active = True
+        db.session.commit()
+        return True, None, device_id
+    
+    # Count active devices
+    active_devices = LoginDevice.query.filter_by(
+        user_id=user.id,
+        is_active=True
+    ).count()
+    
+    # Check limit
+    if active_devices >= max_devices:
+        tier_name = user.subscription_tier.capitalize()
+        return False, f"Maximum {max_devices} devices allowed on {tier_name} plan. Log out from another device or upgrade.", None
+    
+    # Register new device
+    new_device = LoginDevice(
+        user_id=user.id,
+        device_id=device_id,
+        device_name=get_device_name(),
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string[:500]
+    )
+    db.session.add(new_device)
+    db.session.commit()
+    
+    return True, None, device_id
+
+
+def remove_device(user_id, device_id):
+    """Remove/logout a specific device"""
+    device = LoginDevice.query.filter_by(
+        user_id=user_id,
+        device_id=device_id
+    ).first()
+    
+    if device:
+        device.is_active = False
+        db.session.commit()
+        return True
+    return False
+
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -208,6 +337,12 @@ def login():
             session.clear()
             session.permanent = True
             
+            # Check device limit
+            can_login, device_message, device_id = check_device_limit(user)
+            if not can_login:
+                flash(device_message, 'danger')
+                return render_template('login.html')
+            
             if not user.get_active_account():
                 account = TradingAccount(
                     user_id=user.id,
@@ -227,6 +362,13 @@ def login():
             flash(f'Welcome back, {user.full_name}! 👋', 'success')
             
             next_page = request.args.get('next')
+            
+            # Set device cookie
+            if device_id:
+                response = redirect(next_page if next_page else (url_for('admin.dashboard') if user.is_admin else url_for('user.dashboard')))
+                response.set_cookie('device_id', device_id, max_age=60*60*24*365)
+                return response
+            
             if next_page:
                 return redirect(next_page)
             
@@ -262,11 +404,18 @@ def logout():
         flash('You have been logged out of all devices.', 'success')
         return redirect(url_for('auth.login'))
     
+    # Remove device on logout
+    device_id = request.cookies.get('device_id')
+    if device_id:
+        remove_device(current_user.id, device_id)
+    
     logout_user()
     session.clear()
     flash(f'Logged out successfully. See you soon, {username}! 👋', 'success')
     
-    return redirect(url_for('auth.login'))
+    response = redirect(url_for('auth.login'))
+    response.delete_cookie('device_id')
+    return response
 
 
 @auth_bp.route('/verify-email/<token>')
@@ -303,3 +452,77 @@ def resend_verification():
         flash(result['message'], 'danger')
     
     return redirect(url_for('user.dashboard'))
+
+
+# ==================== DEVICE MANAGEMENT ROUTES ====================
+
+@auth_bp.route('/my-devices')
+@login_required
+def my_devices():
+    """Show user's logged-in devices"""
+    devices = LoginDevice.query.filter_by(
+        user_id=current_user.id,
+        is_active=True
+    ).order_by(LoginDevice.last_active.desc()).all()
+    
+    max_devices = get_max_devices(current_user)
+    current_device_id = request.cookies.get('device_id')
+    
+    # Check if AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('json') == 'true':
+        return jsonify({
+            'success': True,
+            'devices': [{
+                'id': d.id,
+                'device_id': d.device_id,
+                'device_name': d.device_name,
+                'icon': d.get_device_icon(),
+                'ip_address': d.ip_address,
+                'last_active_display': d.get_last_active_display()
+            } for d in devices],
+            'max_devices': 'unlimited' if max_devices == float('inf') else max_devices,
+            'current_device_id': current_device_id,
+            'device_count': len(devices)
+        })
+    
+    return render_template('user/devices.html',
+        devices=devices,
+        max_devices=max_devices,
+        current_device_id=current_device_id,
+        device_count=len(devices)
+    )
+
+
+@auth_bp.route('/api/logout-device/<int:device_id>', methods=['POST'])
+@login_required
+def api_logout_device(device_id):
+    """Logout a specific device"""
+    device = LoginDevice.query.get(device_id)
+    
+    if not device or device.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Device not found'}), 404
+    
+    device.is_active = False
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Device logged out successfully'})
+
+
+@auth_bp.route('/api/logout-all-devices', methods=['POST'])
+@login_required
+def api_logout_all_devices():
+    """Logout from all devices except current"""
+    current_device_id = request.cookies.get('device_id')
+    
+    # Deactivate all other devices
+    LoginDevice.query.filter(
+        LoginDevice.user_id == current_user.id,
+        LoginDevice.device_id != current_device_id,
+        LoginDevice.is_active == True
+    ).update({'is_active': False})
+    
+    # Increment session version
+    current_user.session_version = (current_user.session_version or 0) + 1
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Logged out from all other devices'})

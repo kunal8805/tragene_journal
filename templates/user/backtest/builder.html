@@ -1,0 +1,1339 @@
+{% extends "base_user.html" %}
+{% block title %}Strategy Builder - Tragene Journal{% endblock %}
+{% block page_title %}🎯 Strategy Builder{% endblock %}
+
+{% block extra_css %}
+<style>
+    .builder-header {
+        background: linear-gradient(135deg, #111827 0%, #1a2332 100%);
+        border-bottom: 1px solid #1e2d42;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .back-btn {
+        background: #1a2332;
+        border: 1px solid #1e2d42;
+        color: #e5e7eb;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .back-btn:hover {
+        background: #1e2d42;
+        transform: translateX(-2px);
+    }
+
+    .header-title {
+        font-size: 24px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-secondary {
+        background: #1a2332;
+        color: #e5e7eb;
+        border: 1px solid #1e2d42;
+    }
+
+    .btn-secondary:hover {
+        background: #1e2d42;
+        transform: translateY(-2px);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .builder-grid {
+        display: grid;
+        grid-template-columns: 280px 1fr 320px;
+        gap: 20px;
+        padding: 20px;
+        max-width: 1600px;
+        margin: 0 auto;
+        min-height: calc(100vh - 70px);
+    }
+
+    .indicator-sidebar {
+        background: linear-gradient(135deg, #111827 0%, #1a2332 100%);
+        border: 1px solid #1e2d42;
+        border-radius: 12px;
+        padding: 16px;
+        height: fit-content;
+        position: sticky;
+        top: 90px;
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar-title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin-bottom: 16px;
+        letter-spacing: 1px;
+    }
+
+    .search-box {
+        width: 100%;
+        padding: 10px 14px;
+        background: #1a2332;
+        border: 1px solid #1e2d42;
+        border-radius: 8px;
+        color: #e5e7eb;
+        font-size: 13px;
+        margin-bottom: 16px;
+        outline: none;
+        transition: all 0.3s;
+    }
+
+    .search-box:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .indicator-category {
+        margin-bottom: 12px;
+    }
+
+    .category-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.3s;
+        font-size: 13px;
+        font-weight: 600;
+        color: #9ca3af;
+    }
+
+    .category-header:hover {
+        background: #1a2332;
+        color: #e5e7eb;
+    }
+
+    .category-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+
+    .category-items {
+        padding-left: 32px;
+        display: none;
+    }
+
+    .category-items.open {
+        display: block;
+    }
+
+    .indicator-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #9ca3af;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid transparent;
+    }
+
+    .indicator-item:hover {
+        background: #1a2332;
+        color: #e5e7eb;
+        border-color: #1e2d42;
+        transform: translateX(2px);
+    }
+
+    .indicator-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .builder-area {
+        background: linear-gradient(135deg, #111827 0%, #1a2332 100%);
+        border: 1px solid #1e2d42;
+        border-radius: 12px;
+        padding: 24px;
+        min-height: 600px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .strategy-header {
+        margin-bottom: 24px;
+    }
+
+    .strategy-name-input {
+        width: 100%;
+        padding: 12px 16px;
+        background: #1a2332;
+        border: 1px solid #1e2d42;
+        border-radius: 8px;
+        color: #e5e7eb;
+        font-size: 16px;
+        font-weight: 600;
+        outline: none;
+        margin-bottom: 12px;
+        transition: all 0.3s;
+    }
+
+    .strategy-name-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .strategy-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #6b7280;
+        letter-spacing: 0.5px;
+    }
+
+    .form-select, .form-input {
+        padding: 10px 14px;
+        background: #1a2332;
+        border: 1px solid #1e2d42;
+        border-radius: 8px;
+        color: #e5e7eb;
+        font-size: 13px;
+        outline: none;
+        width: 100%;
+        transition: all 0.3s;
+    }
+
+    .form-select:focus, .form-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .rules-section {
+        margin-top: 24px;
+        border-top: 1px solid #1e2d42;
+        padding-top: 24px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-entry {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-exit {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .condition-group {
+        background: #1a2332;
+        border: 1px solid #1e2d42;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: all 0.3s;
+    }
+
+    .condition-group:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .condition-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .logic-operator {
+        padding: 6px 12px;
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s;
+    }
+
+    .logic-operator:hover {
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .condition-select {
+        padding: 8px 12px;
+        background: #111827;
+        border: 1px solid #1e2d42;
+        border-radius: 6px;
+        color: #e5e7eb;
+        font-size: 12px;
+        outline: none;
+        min-width: 150px;
+        flex: 1;
+        transition: all 0.3s;
+    }
+
+    .condition-select:focus {
+        border-color: #3b82f6;
+    }
+
+    .add-condition-btn {
+        padding: 10px;
+        background: transparent;
+        border: 2px dashed #1e2d42;
+        border-radius: 8px;
+        color: #6b7280;
+        cursor: pointer;
+        width: 100%;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s;
+        margin-top: 8px;
+    }
+
+    .add-condition-btn:hover {
+        border-color: #3b82f6;
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    .settings-panel {
+        background: linear-gradient(135deg, #111827 0%, #1a2332 100%);
+        border: 1px solid #1e2d42;
+        border-radius: 12px;
+        padding: 16px;
+        height: fit-content;
+        position: sticky;
+        top: 90px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .settings-title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin-bottom: 16px;
+        letter-spacing: 1px;
+    }
+
+    .settings-group {
+        margin-bottom: 20px;
+    }
+
+    .settings-group-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9ca3af;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #1e2d42;
+    }
+
+    .setting-item {
+        margin-bottom: 10px;
+    }
+
+    .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .setting-label {
+        font-size: 12px;
+        color: #9ca3af;
+        flex-shrink: 0;
+    }
+
+    .setting-input {
+        padding: 6px 10px;
+        background: #1a2332;
+        border: 1px solid #1e2d42;
+        border-radius: 6px;
+        color: #e5e7eb;
+        font-size: 12px;
+        outline: none;
+        width: 100px;
+        transition: all 0.3s;
+    }
+
+    .setting-input:focus {
+        border-color: #3b82f6;
+    }
+
+    .run-btn {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 16px;
+        letter-spacing: 0.5px;
+    }
+
+    .run-btn:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        transform: translateY(-2px);
+    }
+
+    @keyframes backtestSpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 1200px) {
+        .builder-grid {
+            grid-template-columns: 240px 1fr;
+        }
+        .settings-panel {
+            grid-column: 1 / -1;
+            position: static;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .builder-grid {
+            grid-template-columns: 1fr;
+        }
+        .indicator-sidebar {
+            position: static;
+            max-height: none;
+        }
+        .strategy-meta {
+            grid-template-columns: 1fr;
+        }
+        .builder-header {
+            flex-direction: column;
+            gap: 12px;
+        }
+        .header-actions {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <!-- Header -->
+    <div class="builder-header">
+        <div class="header-left">
+            <button class="back-btn" onclick="history.back()">← Back</button>
+            <h1 class="header-title">Strategy Builder</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="saveStrategy()">💾 Save Strategy</button>
+            <button class="btn btn-secondary" onclick="loadStrategies()">📂 My Strategies</button>
+            <button class="btn btn-secondary" onclick="loadResults()">📊 My Results</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="builder-grid">
+        <!-- Left Sidebar - Indicators -->
+        <div class="indicator-sidebar">
+            <div class="sidebar-title">Indicator Library</div>
+            <input type="text" class="search-box" placeholder="Search indicators..." onkeyup="filterIndicators(this.value)">
+            
+            <div id="indicatorLibrary"></div>
+        </div>
+
+        <!-- Center - Strategy Builder -->
+        <div class="builder-area">
+            <div class="strategy-header">
+                <input type="text" class="strategy-name-input" id="strategyName" placeholder="Strategy Name (e.g., RSI Mean Reversion)" value="">
+                
+                <div class="strategy-meta">
+                    <div class="form-group">
+                        <label class="form-label">Symbol</label>
+                        <select class="form-select" id="symbolSelect" onchange="onSymbolChange()">
+                            <option value="">Select Symbol...</option>
+                            <optgroup label="🌍 Universal Fallback">
+                                <option value="UNIVERSAL/EURUSD-DEMO">UNIVERSAL/EURUSD-DEMO (Any Symbol)</option>
+                            </optgroup>
+                            <optgroup label="💱 Forex Majors (7)">
+                                <option value="EUR/USD">EUR/USD</option>
+                                <option value="USD/JPY">USD/JPY</option>
+                                <option value="GBP/USD">GBP/USD</option>
+                                <option value="USD/CHF">USD/CHF</option>
+                                <option value="USD/CAD">USD/CAD</option>
+                                <option value="AUD/USD">AUD/USD</option>
+                                <option value="NZD/USD">NZD/USD</option>
+                            </optgroup>
+                            <optgroup label="💱 Forex Crosses (10)">
+                                <option value="EUR/GBP">EUR/GBP</option>
+                                <option value="EUR/JPY">EUR/JPY</option>
+                                <option value="GBP/JPY">GBP/JPY</option>
+                                <option value="EUR/CHF">EUR/CHF</option>
+                                <option value="AUD/JPY">AUD/JPY</option>
+                                <option value="EUR/AUD">EUR/AUD</option>
+                                <option value="GBP/AUD">GBP/AUD</option>
+                                <option value="CHF/JPY">CHF/JPY</option>
+                                <option value="CAD/JPY">CAD/JPY</option>
+                                <option value="NZD/JPY">NZD/JPY</option>
+                            </optgroup>
+                            <optgroup label="🥇 Commodities (4)">
+                                <option value="XAU/USD">XAU/USD (Gold)</option>
+                                <option value="XAG/USD">XAG/USD (Silver)</option>
+                                <option value="USOIL">USOIL (WTI Crude)</option>
+                                <option value="UKOIL">UKOIL (Brent Crude)</option>
+                            </optgroup>
+                            <optgroup label="🇮🇳 Forex Extra (1)">
+                                <option value="USD/INR">USD/INR</option>
+                            </optgroup>
+                            <optgroup label="₿ Crypto (10)">
+                                <option value="BTC/USDT">BTC/USDT</option>
+                                <option value="ETH/USDT">ETH/USDT</option>
+                                <option value="BNB/USDT">BNB/USDT</option>
+                                <option value="SOL/USDT">SOL/USDT</option>
+                                <option value="XRP/USDT">XRP/USDT</option>
+                                <option value="ADA/USDT">ADA/USDT</option>
+                                <option value="DOGE/USDT">DOGE/USDT</option>
+                                <option value="AVAX/USDT">AVAX/USDT</option>
+                                <option value="MATIC/USDT">MATIC/USDT</option>
+                                <option value="DOT/USDT">DOT/USDT</option>
+                            </optgroup>
+                            <optgroup label="🇮🇳 Indian Indices (3)">
+                                <option value="NIFTY 50">NIFTY 50</option>
+                                <option value="BANK NIFTY">BANK NIFTY</option>
+                                <option value="SENSEX">SENSEX</option>
+                            </optgroup>
+                            <optgroup label="🇮🇳 Indian Stocks (7)">
+                                <option value="RELIANCE">RELIANCE</option>
+                                <option value="HDFC BANK">HDFC BANK</option>
+                                <option value="ICICI BANK">ICICI BANK</option>
+                                <option value="TCS">TCS</option>
+                                <option value="INFOSYS">INFOSYS</option>
+                                <option value="SBIN">SBIN</option>
+                                <option value="TATA MOTORS">TATA MOTORS</option>
+                            </optgroup>
+                            <optgroup label="🔧 Custom Symbol">
+                                <option value="CUSTOM">Custom Symbol (uses universal data)</option>
+                            </optgroup>
+                        </select>
+                        <div id="customSymbolWrap" style="display:none;margin-top:8px;">
+                            <input type="text" class="form-input" id="customSymbolInput" 
+                                   placeholder="Enter any symbol (e.g., AAPL, TSLA, BTC/INR)" 
+                                   style="width:100%;">
+                            <small style="color:#6b7280;font-size:10px;margin-top:4px;display:block;">
+                                ⚠️ Custom symbols will use the universal fallback dataset
+                            </small>
+                        </div>
+                        <div id="symbolStatus" style="margin-top:8px;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Timeframe</label>
+                        <select class="form-select" id="timeframeSelect">
+                            <option value="1m">1 Minute</option>
+                            <option value="5m">5 Minutes</option>
+                            <option value="15m">15 Minutes</option>
+                            <option value="30m">30 Minutes</option>
+                            <option value="1h">1 Hour</option>
+                            <option value="4h">4 Hours</option>
+                            <option value="1d">1 Day</option>
+                            <option value="1w">1 Week</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Initial Capital</label>
+                        <input type="number" class="form-input" id="initialCapital" value="10000" min="100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entry Rules -->
+            <div class="rules-section">
+                <div class="section-title">
+                    🟢 Entry Rules <span class="section-badge badge-entry">Entry</span>
+                </div>
+                <div id="entryRules"></div>
+                <button class="add-condition-btn" onclick="addCondition('entry')">+ Add Entry Condition</button>
+            </div>
+
+            <!-- Exit Rules -->
+            <div class="rules-section">
+                <div class="section-title">
+                    🔴 Exit Rules <span class="section-badge badge-exit">Exit</span>
+                </div>
+                <div id="exitRules"></div>
+                <button class="add-condition-btn" onclick="addCondition('exit')">+ Add Exit Condition</button>
+            </div>
+        </div>
+
+        <!-- Right Panel - Settings -->
+        <div class="settings-panel">
+            <div class="settings-title">Strategy Settings</div>
+
+            <!-- Risk Management -->
+            <div class="settings-group">
+                <div class="settings-group-title">🛡 Risk Management</div>
+                
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">Stop Loss Type</label>
+                        <select class="setting-input" id="stopLossType" style="width: 120px;">
+                            <option value="none">None</option>
+                            <option value="percentage">Percentage %</option>
+                            <option value="atr">ATR Multiple</option>
+                            <option value="fixed">Fixed Price</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item" id="stopLossValueWrap" style="display:none;">
+                    <div class="setting-row">
+                        <label class="setting-label">Stop Loss Value</label>
+                        <input type="number" class="setting-input" id="stopLossValue" value="2" step="0.1">
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">Take Profit Type</label>
+                        <select class="setting-input" id="takeProfitType" style="width: 120px;">
+                            <option value="none">None</option>
+                            <option value="percentage">Percentage %</option>
+                            <option value="rr">Risk:Reward</option>
+                            <option value="atr">ATR Multiple</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item" id="takeProfitValueWrap" style="display:none;">
+                    <div class="setting-row">
+                        <label class="setting-label">Take Profit Value</label>
+                        <input type="number" class="setting-input" id="takeProfitValue" value="2" step="0.1">
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">Trailing Stop</label>
+                        <select class="setting-input" id="trailingStop" style="width: 120px;">
+                            <option value="none">None</option>
+                            <option value="percentage">Percentage %</option>
+                            <option value="atr">ATR Multiple</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Position Sizing -->
+            <div class="settings-group">
+                <div class="settings-group-title">💰 Position Sizing</div>
+                
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">Position Type</label>
+                        <select class="setting-input" id="positionType" style="width: 120px;">
+                            <option value="fixed">Fixed Size</option>
+                            <option value="percentage">% of Equity</option>
+                            <option value="risk">Risk-Based</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">Position Size</label>
+                        <input type="number" class="setting-input" id="positionSize" value="1" step="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Costs -->
+            <div class="settings-group">
+                <div class="settings-group-title">📊 Trading Costs</div>
+                
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">Slippage (pips)</label>
+                        <input type="number" class="setting-input" id="slippage" value="1" step="0.1">
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">Commission ($)</label>
+                        <input type="number" class="setting-input" id="commission" value="0" step="0.01">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date Range -->
+            <div class="settings-group">
+                <div class="settings-group-title">📅 Date Range</div>
+                
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">Start Date</label>
+                        <input type="date" class="setting-input" id="startDate" style="width: 130px;">
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-row">
+                        <label class="setting-label">End Date</label>
+                        <input type="date" class="setting-input" id="endDate" style="width: 130px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage Display -->
+            <div id="usageDisplay" style="margin-bottom: 12px; padding: 12px; background: #1a2332; border: 1px solid #1e2d42; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; font-weight: 600;">Backtests Used</span>
+                    <span style="font-size: 0.75rem; color: #6b7280;" id="usageTier">Loading...</span>
+                </div>
+                <div style="margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #6b7280; margin-bottom: 4px;">
+                        <span id="usageCount">0 / 10</span>
+                        <span id="usageRemaining">10 remaining</span>
+                    </div>
+                    <div style="height: 6px; background: #111827; border-radius: 3px; overflow: hidden;">
+                        <div id="usageBar" style="height: 100%; width: 0%; background: #10b981; border-radius: 3px; transition: width 0.5s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="run-btn" onclick="runBacktest()">🚀 RUN BACKTEST</button>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ==================== INDICATOR LIBRARY ====================
+    const indicatorLibrary = {
+        trend: {
+            label: 'Trend Indicators',
+            icon: '📈',
+            items: [
+                { name: 'SMA', params: ['period'] },
+                { name: 'EMA', params: ['period'] },
+                { name: 'MACD', params: ['fast', 'slow', 'signal'] },
+                { name: 'ADX', params: ['period'] },
+                { name: 'SuperTrend', params: ['period', 'multiplier'] },
+                { name: 'Parabolic SAR', params: ['step', 'max'] },
+                { name: 'Ichimoku Cloud', params: ['conversion', 'base', 'span'] }
+            ]
+        },
+        momentum: {
+            label: 'Momentum Indicators',
+            icon: '⚡',
+            items: [
+                { name: 'RSI', params: ['period'] },
+                { name: 'Stochastic', params: ['k_period', 'd_period'] },
+                { name: 'CCI', params: ['period'] },
+                { name: 'Williams %R', params: ['period'] },
+                { name: 'Momentum', params: ['period'] },
+                { name: 'ROC', params: ['period'] }
+            ]
+        },
+        volatility: {
+            label: 'Volatility Indicators',
+            icon: '📊',
+            items: [
+                { name: 'Bollinger Bands', params: ['period', 'std_dev'] },
+                { name: 'ATR', params: ['period'] },
+                { name: 'Keltner Channels', params: ['period', 'multiplier'] },
+                { name: 'Donchian Channels', params: ['period'] }
+            ]
+        },
+        volume: {
+            label: 'Volume Indicators',
+            icon: '📉',
+            items: [
+                { name: 'Volume', params: [] },
+                { name: 'Volume SMA', params: ['period'] },
+                { name: 'OBV', params: [] },
+                { name: 'VWAP', params: [] },
+                { name: 'Volume RSI', params: ['period'] },
+                { name: 'MFI', params: ['period'] }
+            ]
+        },
+        priceAction: {
+            label: 'Price Action',
+            icon: '🕯️',
+            items: [
+                { name: 'Price', params: [] },
+                { name: 'Open', params: [] },
+                { name: 'High', params: [] },
+                { name: 'Low', params: [] },
+                { name: 'Close', params: [] },
+                { name: 'Doji Pattern', params: [] },
+                { name: 'Bullish Engulfing', params: [] },
+                { name: 'Bearish Engulfing', params: [] },
+                { name: 'Hammer', params: [] },
+                { name: 'Shooting Star', params: [] },
+                { name: 'Higher High', params: [] },
+                { name: 'Lower Low', params: [] }
+            ]
+        }
+    };
+
+    const operatorOptions = [
+        'crosses above',
+        'crosses below',
+        'is greater than',
+        'is less than',
+        'is equal to',
+        'is above',
+        'is below',
+        'enters overbought',
+        'enters oversold',
+        'leaves overbought',
+        'leaves oversold',
+        'is rising',
+        'is falling'
+    ];
+
+    function renderIndicatorLibrary() {
+        const container = document.getElementById('indicatorLibrary');
+        container.innerHTML = '';
+        
+        Object.keys(indicatorLibrary).forEach(categoryKey => {
+            const category = indicatorLibrary[categoryKey];
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'indicator-category';
+            
+            categoryDiv.innerHTML = `
+                <div class="category-header" onclick="toggleCategory(this)">
+                    <span class="category-icon">${category.icon}</span>
+                    <span>${category.label}</span>
+                    <span style="margin-left:auto;font-size:10px;">▼</span>
+                </div>
+                <div class="category-items">
+                    ${category.items.map(item => `
+                        <div class="indicator-item" onclick="addIndicator('${item.name}')" 
+                             data-indicator="${item.name}">
+                            <span class="indicator-dot" style="background: #3b82f6;"></span>
+                            ${item.name}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            container.appendChild(categoryDiv);
+        });
+    }
+
+    function toggleCategory(header) {
+        const items = header.nextElementSibling;
+        items.classList.toggle('open');
+    }
+
+    function filterIndicators(search) {
+        const items = document.querySelectorAll('.indicator-item');
+        items.forEach(item => {
+            if (item.dataset.indicator.toLowerCase().includes(search.toLowerCase())) {
+                item.style.display = 'flex';
+                item.closest('.category-items').classList.add('open');
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // ==================== CONDITION BUILDER ====================
+    function addCondition(type) {
+        const container = document.getElementById(type === 'entry' ? 'entryRules' : 'exitRules');
+        const conditionCount = container.children.length;
+        
+        const conditionDiv = document.createElement('div');
+        conditionDiv.className = 'condition-group';
+        conditionDiv.innerHTML = `
+            ${conditionCount > 0 ? `
+            <div style="margin-bottom:10px;">
+                <button class="logic-operator" onclick="toggleLogic(this)">AND</button>
+            </div>
+            ` : ''}
+            <div class="condition-row">
+                <select class="condition-select" onchange="updateConditionParams(this)">
+                    <option value="">Select Indicator...</option>
+                    <option value="price">Price</option>
+                    <option value="open">Open</option>
+                    <option value="high">High</option>
+                    <option value="low">Low</option>
+                    <option value="close">Close</option>
+                    <option value="sma">SMA</option>
+                    <option value="ema">EMA</option>
+                    <option value="rsi">RSI</option>
+                    <option value="macd">MACD</option>
+                    <option value="macd_signal">MACD Signal</option>
+                    <option value="macd_histogram">MACD Histogram</option>
+                    <option value="bollinger_upper">Bollinger Upper</option>
+                    <option value="bollinger_middle">Bollinger Middle</option>
+                    <option value="bollinger_lower">Bollinger Lower</option>
+                    <option value="atr">ATR</option>
+                    <option value="stochastic_k">Stochastic %K</option>
+                    <option value="stochastic_d">Stochastic %D</option>
+                    <option value="adx">ADX</option>
+                    <option value="vwap">VWAP</option>
+                    <option value="supertrend">SuperTrend</option>
+                    <option value="volume">Volume</option>
+                    <option value="obv">OBV</option>
+                    <option value="doji">Doji Pattern</option>
+                    <option value="bullish_engulfing">Bullish Engulfing</option>
+                    <option value="bearish_engulfing">Bearish Engulfing</option>
+                    <option value="hammer">Hammer</option>
+                    <option value="shooting_star">Shooting Star</option>
+                </select>
+                
+                <select class="condition-select">
+                    ${operatorOptions.map(op => `<option value="${op}">${op}</option>`).join('')}
+                </select>
+                
+                <select class="condition-select">
+                    <option value="value">Value</option>
+                    <option value="price">Price</option>
+                    <option value="sma">SMA</option>
+                    <option value="ema">EMA</option>
+                    <option value="rsi">RSI</option>
+                    <option value="macd">MACD</option>
+                    <option value="bollinger_upper">Bollinger Upper</option>
+                    <option value="bollinger_middle">Bollinger Middle</option>
+                    <option value="bollinger_lower">Bollinger Lower</option>
+                    <option value="atr">ATR</option>
+                    <option value="vwap">VWAP</option>
+                </select>
+                
+                <input type="text" class="condition-select" placeholder="Value/Period" style="min-width:100px;flex:0.5;">
+                
+                <button class="btn btn-danger btn-sm" onclick="removeCondition(this)">✕</button>
+            </div>
+            <div class="condition-params" style="display:none;margin-top:10px;">
+                <div class="condition-row">
+                    <label class="setting-label">Period:</label>
+                    <input type="number" class="setting-input" value="14" style="width:70px;">
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(conditionDiv);
+    }
+
+    function removeCondition(btn) {
+        btn.closest('.condition-group').remove();
+    }
+
+    function toggleLogic(btn) {
+        btn.textContent = btn.textContent === 'AND' ? 'OR' : 'AND';
+    }
+
+    function addIndicator(indicatorName) {
+        addCondition('entry');
+        const lastCondition = document.querySelector('#entryRules .condition-group:last-child');
+        const selects = lastCondition.querySelectorAll('.condition-select');
+        selects[0].value = indicatorName.toLowerCase().replace(/ /g, '_');
+    }
+
+    function updateConditionParams(select) {
+        const paramDiv = select.closest('.condition-group').querySelector('.condition-params');
+        if (select.value && ['sma','ema','rsi','macd','atr','stochastic_k','stochastic_d','adx'].includes(select.value)) {
+            paramDiv.style.display = 'block';
+        } else {
+            paramDiv.style.display = 'none';
+        }
+    }
+
+    // ==================== SETTINGS LOGIC ====================
+    document.getElementById('stopLossType').addEventListener('change', function() {
+        document.getElementById('stopLossValueWrap').style.display = 
+            this.value === 'none' ? 'none' : 'block';
+    });
+
+    document.getElementById('takeProfitType').addEventListener('change', function() {
+        document.getElementById('takeProfitValueWrap').style.display = 
+            this.value === 'none' ? 'none' : 'block';
+    });
+
+    // ==================== SYMBOL HANDLING ====================
+    function onSymbolChange() {
+        const symbolSelect = document.getElementById('symbolSelect');
+        const customWrap = document.getElementById('customSymbolWrap');
+        
+        if (symbolSelect.value === 'CUSTOM') {
+            customWrap.style.display = 'block';
+            document.getElementById('customSymbolInput').focus();
+        } else {
+            customWrap.style.display = 'none';
+        }
+        
+        updateSymbolStatus(symbolSelect.value);
+    }
+
+        function updateSymbolStatus(symbol) {
+        const statusDiv = document.getElementById('symbolStatus');
+        console.log('Checking symbol:', symbol);
+        
+        if (!symbol || symbol === 'CUSTOM') {
+            statusDiv.innerHTML = '';
+            return;
+        }
+        
+        if (symbol === 'UNIVERSAL/EURUSD-DEMO') {
+            statusDiv.innerHTML = `
+                <div style="background:rgba(139,92,246,0.1);padding:8px 12px;border-radius:6px;">
+                    <span style="color:#8b5cf6;font-size:11px;">🌍 Universal dataset - works for any symbol</span>
+                </div>
+            `;
+            return;
+        }
+        
+        fetch('/backtest/api/symbol-status/' + encodeURIComponent(symbol))
+            .then(res => res.json())
+            .then(data => {
+                if (data.available) {
+                    statusDiv.innerHTML = `
+                        <div style="background:rgba(16,185,129,0.1);padding:8px 12px;border-radius:6px;">
+                            <span style="color:#10b981;font-size:11px;">✅ Specific data available</span>
+                            <span style="color:#6b7280;font-size:10px;display:block;margin-top:2px;">
+                                ${data.date_range || ''}
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div style="background:rgba(245,158,11,0.1);padding:8px 12px;border-radius:6px;">
+                            <span style="color:#f59e0b;font-size:11px;">⚠️ No specific data - will use universal fallback</span>
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => {
+                console.error('Error checking symbol status:', err);
+                statusDiv.innerHTML = `
+                    <div style="background:rgba(245,158,11,0.1);padding:8px 12px;border-radius:6px;">
+                        <span style="color:#f59e0b;font-size:11px;">⚠️ Will use universal fallback</span>
+                    </div>
+                `;
+            });
+    }
+
+    function loadSymbols() {
+        setDefaultDates();
+    }
+
+    function setDefaultDates() {
+        const today = new Date();
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(today.getFullYear() - 1);
+        
+        document.getElementById('startDate').value = oneYearAgo.toISOString().split('T')[0];
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    }
+
+    // ==================== SAVE STRATEGY ====================
+    function saveStrategy() {
+        const strategy = collectStrategyData();
+        
+        if (!strategy || !strategy.name || !strategy.symbol) {
+            alert('Please enter strategy name and select symbol');
+            return;
+        }
+        
+        fetch('/backtest/api/save_strategy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(strategy)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('Strategy saved successfully!');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => alert('Error saving strategy'));
+    }
+
+    // ==================== RUN BACKTEST ====================
+    function runBacktest() {
+        const strategy = collectStrategyData();
+        
+        if (!strategy) return;
+        
+        if (!strategy.name) {
+            alert('Please enter strategy name');
+            return;
+        }
+        
+        if (!strategy.entry_rules || strategy.entry_rules.length === 0) {
+            alert('Please add at least one entry condition');
+            return;
+        }
+        
+        // Show loading overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'backtestLoading';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.innerHTML = `
+            <div style="text-align:center;">
+                <div style="width:70px;height:70px;border:4px solid #1e2d42;border-top:4px solid #3b82f6;border-radius:50%;animation:backtestSpin 1s linear infinite;margin:0 auto 20px;"></div>
+                <h4 style="color:#e5e7eb;margin-bottom:8px;">Running Backtest...</h4>
+                <p style="color:#6b7280;font-size:0.85rem;" id="loadingStatus">Loading data...</p>
+                <div style="width:250px;height:6px;background:#1a2332;border-radius:3px;margin:20px auto;overflow:hidden;">
+                    <div id="loadingBar" style="height:100%;width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:3px;transition:width 0.4s;"></div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        // Animate loading
+        let progress = 0;
+        const loadingInterval = setInterval(() => {
+            progress += Math.random() * 12;
+            if (progress > 90) progress = 90;
+            const bar = document.getElementById('loadingBar');
+            if (bar) bar.style.width = progress + '%';
+            const status = document.getElementById('loadingStatus');
+            if (status) {
+                if (progress < 30) status.textContent = 'Loading historical data...';
+                else if (progress < 60) status.textContent = 'Calculating indicators...';
+                else if (progress < 80) status.textContent = 'Running simulation...';
+                else status.textContent = 'Generating results...';
+            }
+        }, 300);
+        
+        fetch('/backtest/api/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(strategy)
+        })
+        .then(res => res.json())
+        .then(data => {
+            clearInterval(loadingInterval);
+            if (data.success) {
+                const bar = document.getElementById('loadingBar');
+                if (bar) bar.style.width = '100%';
+                setTimeout(() => {
+                    window.location.href = '/backtest/results/' + data.run_id;
+                }, 500);
+            } else {
+                document.body.removeChild(overlay);
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => {
+            clearInterval(loadingInterval);
+            document.body.removeChild(overlay);
+            alert('Error running backtest');
+        });
+    }
+
+    // ==================== COLLECT STRATEGY DATA ====================
+    function collectStrategyData() {
+        const symbolSelect = document.getElementById('symbolSelect');
+        let symbol = symbolSelect.value;
+        
+        if (symbol === 'CUSTOM') {
+            symbol = document.getElementById('customSymbolInput').value.trim();
+            if (!symbol) {
+                alert('Please enter a custom symbol');
+                return null;
+            }
+            symbol = symbol.toUpperCase();
+        }
+        
+        if (!symbol) {
+            alert('Please select a symbol');
+            return null;
+        }
+        
+        const entryRules = [];
+        document.querySelectorAll('#entryRules .condition-group').forEach(group => {
+            const selects = group.querySelectorAll('.condition-select');
+            const logicBtn = group.querySelector('.logic-operator');
+            
+            entryRules.push({
+                logic: logicBtn ? logicBtn.textContent : 'AND',
+                indicator: selects[0].value,
+                operator: selects[1].value,
+                compare_to: selects[2].value,
+                value: selects[3].value || null,
+                period: group.querySelector('.condition-params input')?.value || 14
+            });
+        });
+        
+        const exitRules = [];
+        document.querySelectorAll('#exitRules .condition-group').forEach(group => {
+            const selects = group.querySelectorAll('.condition-select');
+            const logicBtn = group.querySelector('.logic-operator');
+            
+            exitRules.push({
+                logic: logicBtn ? logicBtn.textContent : 'AND',
+                indicator: selects[0].value,
+                operator: selects[1].value,
+                compare_to: selects[2].value,
+                value: selects[3].value || null,
+                period: group.querySelector('.condition-params input')?.value || 14
+            });
+        });
+        
+        return {
+            name: document.getElementById('strategyName').value,
+            symbol: symbol,
+            original_symbol: symbolSelect.value === 'CUSTOM' ? 'CUSTOM' : symbol,
+            timeframe: document.getElementById('timeframeSelect').value,
+            initial_capital: parseFloat(document.getElementById('initialCapital').value),
+            entry_rules: entryRules,
+            exit_rules: exitRules,
+            risk_management: {
+                stop_loss_type: document.getElementById('stopLossType').value,
+                stop_loss_value: parseFloat(document.getElementById('stopLossValue').value),
+                take_profit_type: document.getElementById('takeProfitType').value,
+                take_profit_value: parseFloat(document.getElementById('takeProfitValue').value),
+                trailing_stop: document.getElementById('trailingStop').value
+            },
+            position_sizing: {
+                type: document.getElementById('positionType').value,
+                size: parseFloat(document.getElementById('positionSize').value)
+            },
+            costs: {
+                slippage: parseFloat(document.getElementById('slippage').value),
+                commission: parseFloat(document.getElementById('commission').value)
+            },
+            date_range: {
+                start: document.getElementById('startDate').value,
+                end: document.getElementById('endDate').value
+            }
+        };
+    }
+
+    function loadStrategies() {
+        window.location.href = '/backtest/my-strategies';
+    }
+
+    function loadResults() {
+        window.location.href = '/backtest/my-results';
+    }
+
+    // ==================== LOAD USAGE ====================
+    function loadUsage() {
+        fetch('/backtest/api/my-usage')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const u = data.usage;
+                    document.getElementById('usageTier').textContent = u.tier + ' Plan';
+                    document.getElementById('usageCount').textContent = u.month_count + ' / ' + u.monthly_limit;
+                    document.getElementById('usageRemaining').textContent = u.remaining + ' remaining';
+                    document.getElementById('usageBar').style.width = u.usage_percent + '%';
+                }
+            })
+            .catch(err => console.error('Error loading usage:', err));
+    }
+
+    // Initialize
+    renderIndicatorLibrary();
+    loadSymbols();
+    loadUsage();
+    document.getElementById('symbolSelect').addEventListener('change', onSymbolChange);
+</script>
+{% endblock %}

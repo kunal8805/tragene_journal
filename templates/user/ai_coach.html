@@ -400,8 +400,8 @@
             </div>
         </div>
         
-        <div class="chat-hint" id="chatHint">
-            <span id="tokenHint">🪙 Ask me anything about your trades!</span>
+         <div class="chat-hint" id="chatHint">
+            <span id="tokenHint">Ask me anything about your trades!</span>
         </div>
         
         <div class="chat-input-row">
@@ -448,8 +448,8 @@
             
             if (data.success) {
                 addMessage(data.response, 'coach');
-                document.getElementById('tokenHint').innerHTML = 
-                    `🪙 ${data.tokens_used.toLocaleString()} tokens used | ${data.remaining.toLocaleString()} remaining`;
+                                document.getElementById('tokenHint').innerHTML = 
+                    `✅ Response received`;
             } else {
                 addMessage('Sorry, ' + data.message, 'coach');
             }

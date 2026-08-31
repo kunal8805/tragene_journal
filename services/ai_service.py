@@ -711,8 +711,13 @@ def estimate_tokens(trade_count, diary_count=0, checklist_days=0, analysis_type=
 
 
 def estimate_cost(token_count, model='gpt-4o-mini'):
-    costs = {'gpt-4o-mini': 0.02, 'gpt-3.5-turbo': 0.06, 'gpt-4': 0.80}
-    return round((token_count / 1000) * costs.get(model, 0.02), 4)
+    costs = {
+        'gpt-4o-mini': 0.003,
+        'gpt-4o-mini': 0.02,
+        'gpt-3.5-turbo': 0.06,
+        'gpt-4': 0.80
+    }
+    return round((token_count / 1000) * costs.get(model, 0.003), 4)
 
 
 # ═══════════════════════════════════════════════════════════

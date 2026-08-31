@@ -6,7 +6,6 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-    /* Root Variables for Theme Compatibility */
     :root {
         --card-bg: rgba(10, 16, 30, 0.72);
         --card-border: rgba(0, 229, 255, 0.16);
@@ -34,22 +33,6 @@
         --table-header: rgba(0, 229, 255, 0.04);
     }
 
-    .dark {
-        --card-bg: rgba(8, 13, 24, 0.78);
-        --card-border: rgba(0, 229, 255, 0.18);
-        --text-primary: #eaf4ff;
-        --text-secondary: #8ba3c7;
-        --text-muted: #46536e;
-        --feature-hover: rgba(0, 229, 255, 0.08);
-        --table-header-bg: rgba(0, 229, 255, 0.06);
-        --table-stripe: rgba(255,255,255,0.015);
-        --footer-bg: rgba(3, 6, 12, 0.7);
-        --table-bg: rgba(8, 13, 24, 0.95);
-        --table-border: rgba(0, 229, 255, 0.1);
-        --table-header: rgba(0, 229, 255, 0.05);
-    }
-
-    /* Ambient HUD background grid */
     .subscription-hud-bg {
         position: fixed;
         inset: 0;
@@ -79,10 +62,6 @@
         0%, 100% { box-shadow: 0 0 20px rgba(0,229,255,0.35), 0 0 60px rgba(0,229,255,0.12); }
         50% { box-shadow: 0 0 32px rgba(0,229,255,0.55), 0 0 90px rgba(0,229,255,0.22); }
     }
-    @keyframes pulseGlowPurple {
-        0%, 100% { box-shadow: 0 0 20px rgba(176,38,255,0.3), 0 0 55px rgba(176,38,255,0.1); }
-        50% { box-shadow: 0 0 30px rgba(176,38,255,0.5), 0 0 80px rgba(176,38,255,0.2); }
-    }
     @keyframes pulseGlowGold {
         0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.3), 0 0 55px rgba(255,215,0,0.1); }
         50% { box-shadow: 0 0 30px rgba(255,215,0,0.5), 0 0 80px rgba(255,215,0,0.2); }
@@ -101,7 +80,6 @@
         opacity: 0.85;
     }
 
-    /* ── Billing Toggle ── */
     .billing-toggle-wrapper {
         display: flex;
         justify-content: center;
@@ -141,11 +119,6 @@
         box-shadow: 0 4px 15px rgba(0, 194, 255, 0.4);
     }
 
-    .billing-toggle button:hover:not(.active) {
-        color: var(--text-primary);
-        background: rgba(255,255,255,0.05);
-    }
-
     .save-badge {
         display: inline-block;
         background: #00e676;
@@ -158,7 +131,6 @@
         letter-spacing: 0.5px;
     }
 
-    /* Plan Card Styling */
     .plan-card {
         background: var(--card-bg);
         backdrop-filter: blur(16px);
@@ -169,50 +141,16 @@
         overflow: hidden;
     }
 
-    .plan-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: transparent;
-        transition: all 0.35s ease;
-    }
-
     .plan-card:hover {
         transform: translateY(-8px);
         box-shadow: var(--shadow-lg) !important;
     }
-
-    .plan-card.free-card:hover::before { background: linear-gradient(90deg, transparent, var(--glow-green), transparent); }
-    .plan-card.pro-card:hover::before { background: linear-gradient(90deg, transparent, var(--glow-cyan), transparent); }
-    .plan-card.elite-card:hover::before { background: linear-gradient(90deg, transparent, var(--glow-gold), transparent); }
 
     .plan-card.pro-card {
         border-color: rgba(0, 229, 255, 0.55) !important;
         animation: pulseGlow 3.5s ease-in-out infinite;
     }
 
-    .plan-card.pro-card::after {
-        content: '';
-        position: absolute;
-        left: 0; right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, rgba(0,229,255,0.9), transparent);
-        animation: scanSweep 4s linear infinite;
-        filter: blur(1px);
-    }
-
-    .plan-card.elite-card {
-        border-color: rgba(255, 215, 0, 0.35) !important;
-        box-shadow: 0 0 22px rgba(255,215,0,0.15);
-    }
-    .plan-card.elite-card:hover {
-        animation: pulseGlowGold 3.5s ease-in-out infinite;
-    }
-
-    /* Popular Badge */
     .popular-badge {
         position: absolute;
         top: -16px;
@@ -251,7 +189,6 @@
         white-space: nowrap;
     }
 
-    /* Feature Row */
     .feature-row {
         transition: all 0.2s ease;
         border-radius: 8px;
@@ -262,13 +199,10 @@
         background: var(--feature-hover);
     }
 
-    /* Icons */
     .check-icon { color: var(--glow-green); font-size: 1rem; filter: drop-shadow(0 0 4px rgba(57,255,138,0.6)); }
     .cross-icon { color: #3a4a63; font-size: 1rem; }
-    .dark .cross-icon { color: #35415a; }
     .gold-icon { color: var(--glow-gold); font-size: 1rem; filter: drop-shadow(0 0 4px rgba(255,215,0,0.6)); }
 
-    /* Feature Text */
     .feature-text {
         color: var(--text-primary);
         font-family: 'Inter', sans-serif;
@@ -289,12 +223,7 @@
         font-weight: 600;
         text-shadow: 0 0 12px rgba(255,215,0,0.35);
     }
-    .feature-text.dim-gold {
-        color: #b8860b;
-        font-weight: 400;
-    }
 
-    /* Buttons */
     .btn-upgrade {
         border-radius: 14px;
         font-family: 'Rajdhani', sans-serif;
@@ -305,18 +234,12 @@
         text-transform: uppercase;
         font-size: 0.95rem;
     }
-    .btn-upgrade:hover:not(:disabled) {
-        transform: scale(1.04);
-    }
 
     .btn-pro {
         background: linear-gradient(135deg, #00c2ff, #0072ff) !important;
         border: none !important;
         color: #041018 !important;
         box-shadow: 0 4px 20px rgba(0, 194, 255, 0.45);
-    }
-    .btn-pro:hover:not(:disabled) {
-        box-shadow: 0 8px 35px rgba(0, 194, 255, 0.7);
     }
 
     .btn-elite {
@@ -325,25 +248,14 @@
         color: #1a1a1a !important;
         box-shadow: 0 4px 20px rgba(255, 215, 0, 0.45);
     }
-    .btn-elite:hover:not(:disabled) {
-        box-shadow: 0 8px 35px rgba(255, 215, 0, 0.7);
-    }
 
     .btn-current {
         background: rgba(57, 255, 138, 0.08) !important;
         border: 2px solid var(--glow-green) !important;
         color: var(--glow-green) !important;
-        text-shadow: 0 0 8px rgba(57,255,138,0.5);
         cursor: default;
     }
 
-    .btn-outline-secondary {
-        background: transparent !important;
-        border: 2px solid var(--text-muted) !important;
-        color: var(--text-muted) !important;
-    }
-
-    /* Alert */
     .alert-modern {
         background: var(--alert-bg) !important;
         border: 1px solid var(--alert-border) !important;
@@ -362,7 +274,6 @@
         margin-right: 6px;
     }
 
-    /* Yearly Discount Badge */
     .yearly-discount {
         display: inline-block;
         background: linear-gradient(135deg, #00e676, #00c853);
@@ -382,7 +293,6 @@
         margin-right: 6px;
     }
 
-    /* Comparison Table with Dark Theme */
     .comparison-table {
         background: var(--table-bg) !important;
         backdrop-filter: blur(16px);
@@ -390,11 +300,6 @@
         overflow: hidden;
         border: 1px solid var(--card-border);
         margin-top: 2rem;
-    }
-    
-    .comparison-table .table {
-        background: transparent !important;
-        margin-bottom: 0;
     }
     
     .comparison-table .table thead th {
@@ -407,7 +312,6 @@
         letter-spacing: 1px;
         border-bottom: 1px solid rgba(0,229,255,0.25);
         padding: 1rem 0.75rem;
-        background-color: transparent !important;
     }
     
     .comparison-table .table tbody td {
@@ -416,20 +320,10 @@
         border-bottom: 1px solid rgba(255,255,255,0.05);
         vertical-align: middle;
         padding: 0.75rem;
-        background-color: transparent !important;
-    }
-    
-    .comparison-table .table tbody tr {
-        background: transparent !important;
-        transition: background 0.2s ease;
     }
     
     .comparison-table .table tbody tr:hover {
         background: var(--feature-hover) !important;
-    }
-    
-    .comparison-table .table tbody tr:nth-child(even) {
-        background: rgba(255,255,255,0.015) !important;
     }
     
     .comparison-table .col-pro {
@@ -444,7 +338,6 @@
         color: var(--glow-green); 
         font-weight: bold; 
         font-size: 1.1rem; 
-        text-shadow: 0 0 6px rgba(57,255,138,0.6); 
     }
     
     .comparison-table .table-cross { 
@@ -457,12 +350,6 @@
         color: var(--glow-gold);
         font-weight: bold;
         font-size: 1.1rem;
-        text-shadow: 0 0 6px rgba(255,215,0,0.6);
-    }
-    
-    .comparison-table .table td:first-child {
-        font-weight: 600;
-        color: var(--text-primary) !important;
     }
     
     .comparison-table-header {
@@ -470,15 +357,6 @@
         padding: 1.25rem 1.5rem;
         border-bottom: 1px solid var(--card-border);
         border-radius: 20px 20px 0 0;
-    }
-    
-    .comparison-table-header h5 {
-        color: var(--text-primary) !important;
-        font-weight: 700;
-    }
-    
-    .comparison-table-header h5 i {
-        color: var(--glow-cyan);
     }
     
     .comparison-table-footer {
@@ -491,13 +369,7 @@
     .comparison-table-footer small {
         color: var(--text-muted) !important;
     }
-    
-    .comparison-table-footer small i {
-        color: var(--glow-cyan);
-        opacity: 0.6;
-    }
 
-    /* Plan Header Icons */
     .plan-icon {
         width: 56px;
         height: 56px;
@@ -512,18 +384,10 @@
     .icon-pro { background: linear-gradient(135deg, #00c2ff, #0072ff); box-shadow: 0 0 25px rgba(0,194,255,0.5); }
     .icon-elite { background: linear-gradient(135deg, #ffd700, #f7971e); box-shadow: 0 0 25px rgba(255,215,0,0.5); }
 
-    /* Headings & Price */
-    h4.fw-bold, h5.fw-bold {
-        font-family: 'Rajdhani', sans-serif;
-        letter-spacing: 0.5px;
-    }
     .price-amount {
         color: var(--text-primary);
         font-family: 'JetBrains Mono', monospace;
-        text-shadow: 0 0 18px rgba(0, 229, 255, 0.25);
     }
-    .pro-card .price-amount { text-shadow: 0 0 22px rgba(0, 229, 255, 0.5); }
-    .elite-card .price-amount { text-shadow: 0 0 22px rgba(255, 215, 0, 0.5); }
     .price-period {
         color: var(--text-secondary);
         font-family: 'JetBrains Mono', monospace;
@@ -550,15 +414,6 @@
         color: var(--glow-gold);
     }
 
-    .plan-price-section {
-        display: none;
-    }
-    
-    .plan-price-section.active {
-        display: block;
-    }
-
-    /* Screenshot Attachment Feature Badge */
     .new-feature-badge {
         display: inline-block;
         background: rgba(176, 38, 255, 0.1);
@@ -570,6 +425,13 @@
         font-weight: 700;
         margin-left: 6px;
         letter-spacing: 0.5px;
+    }
+
+    .plan-price-section {
+        display: none;
+    }
+    .plan-price-section.active {
+        display: block;
     }
 
     @media (max-width: 768px) {
@@ -606,11 +468,11 @@
             {{ current_user.subscription_tier | upper }}
         </h4>
         {% if current_user.subscription_tier == 'free' %}
-        <small style="color: var(--text-muted);">Limited AI Tokens</small>
+        <small style="color: var(--text-muted);">Limited AI Tokens · 10 Backtests/mo · 2 Devices</small>
         {% elif current_user.subscription_tier == 'pro' %}
-        <small style="color: var(--text-muted);">Unlimited AI Tokens</small>
+        <small style="color: var(--text-muted);">Unlimited AI Tokens · 150 Backtests/mo · 3 Devices</small>
         {% elif current_user.subscription_tier == 'elite' %}
-        <small style="color: var(--glow-gold);">Unlimited AI Tokens · Advanced Model</small>
+        <small style="color: var(--glow-gold);">Unlimited AI Tokens · Unlimited Backtests · 5 Devices</small>
         {% endif %}
     </div>
 </div>
@@ -630,7 +492,7 @@
 <!-- Pricing Cards -->
 <div class="row g-4 mb-5">
 
-    <!-- ==================== FREE PLAN ==================== -->
+    <!-- FREE PLAN -->
     <div class="col-lg-4 col-md-6">
         <div class="card plan-card free-card h-100 border-0 shadow-sm" style="border-radius: 24px;">
             <div class="card-body p-4 p-xl-5 d-flex flex-column text-center">
@@ -654,15 +516,6 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text">Crypto Auto Sync</span>
-                        <span class="new-feature-badge">NEW</span>
-                    </div>
-                    <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-x-circle-fill cross-icon flex-shrink-0"></i>
-                        <span class="feature-text muted">MT4/MT5 Auto Sync</span>
-                    </div>
-                    <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
                         <span class="feature-text">2 Trading Accounts</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
@@ -671,11 +524,11 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text">Export PDF/CSV Reports</span>
+                        <span class="feature-text highlight">🎯 10 Backtests / Month</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-x-circle-fill cross-icon flex-shrink-0"></i>
-                        <span class="feature-text muted">Ad Free</span>
+                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
+                        <span class="feature-text">📱 2 Device Logins</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
@@ -710,7 +563,7 @@
         </div>
     </div>
 
-    <!-- ==================== PRO PLAN ==================== -->
+    <!-- PRO PLAN -->
     <div class="col-lg-4 col-md-6">
         <div class="card plan-card pro-card h-100 border-0" style="border-radius: 24px; z-index: 1;">
             <div class="popular-badge">🔥 MOST POPULAR</div>
@@ -719,7 +572,6 @@
                 <h4 class="fw-bold mt-2" style="color: var(--text-primary);">Pro</h4>
                 <p class="plan-description small mb-3">AI-powered trading insights</p>
 
-                <!-- Monthly Price -->
                 <div class="plan-price-section active" id="proMonthly">
                     <div class="mb-4">
                         <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">₹399</h2>
@@ -727,7 +579,6 @@
                     </div>
                 </div>
 
-                <!-- Yearly Price -->
                 <div class="plan-price-section" id="proYearly">
                     <div class="mb-4">
                         <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">
@@ -749,11 +600,6 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text highlight">Crypto Auto Sync</span>
-                        <span class="new-feature-badge">NEW</span>
-                    </div>
-                    <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
                         <span class="feature-text highlight">MT4/MT5 Auto Sync</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
@@ -762,15 +608,11 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text">Standard Analytics</span>
+                        <span class="feature-text highlight">🎯 150 Backtests / Month</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text">Export PDF/CSV Reports</span>
-                    </div>
-                    <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text highlight">Ad Free Experience</span>
+                        <span class="feature-text highlight">📱 3 Device Logins</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
@@ -805,7 +647,7 @@
         </div>
     </div>
 
-    <!-- ==================== ELITE PLAN ==================== -->
+    <!-- ELITE PLAN -->
     <div class="col-lg-4 col-md-6">
         <div class="card plan-card elite-card h-100 border-0 shadow-sm" style="border-radius: 24px;">
             <div class="elite-badge">👑 PREMIUM</div>
@@ -814,7 +656,6 @@
                 <h4 class="fw-bold mt-2" style="color: var(--text-primary);">Elite</h4>
                 <p class="plan-description small mb-3">Complete AI coaching suite</p>
 
-                <!-- Monthly Price -->
                 <div class="plan-price-section active" id="eliteMonthly">
                     <div class="mb-4">
                         <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">₹799</h2>
@@ -822,7 +663,6 @@
                     </div>
                 </div>
 
-                <!-- Yearly Price -->
                 <div class="plan-price-section" id="eliteYearly">
                     <div class="mb-4">
                         <h2 class="fw-bold mb-0 price-amount" style="font-size: 2.5rem;">
@@ -844,11 +684,6 @@
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text gold">Crypto Auto Sync</span>
-                        <span class="new-feature-badge">NEW</span>
-                    </div>
-                    <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
                         <span class="feature-text gold">MT4/MT5 Auto Sync</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
@@ -856,21 +691,16 @@
                         <span class="feature-text gold">Unlimited Accounts</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text">Advanced Analytics</span>
+                        <i class="bi bi-check-circle-fill gold-icon flex-shrink-0"></i>
+                        <span class="feature-text gold">🎯 Unlimited Backtests</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text">Export PDF/CSV Reports</span>
-                    </div>
-                    <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
-                        <span class="feature-text gold">Ad Free Experience</span>
+                        <span class="feature-text gold">📱 5 Device Logins</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
                         <span class="feature-text gold">Unlimited AI Tokens</span>
-                        <span class="token-badge token-badge-gold ms-auto">Advanced Model</span>
                     </div>
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
@@ -883,11 +713,6 @@
                     <div class="feature-row d-flex align-items-center gap-3">
                         <i class="bi bi-check-circle-fill check-icon flex-shrink-0"></i>
                         <span class="feature-text gold">AI Coach & Goals</span>
-                    </div>
-                    <div class="feature-row d-flex align-items-center gap-3">
-                        <i class="bi bi-check-circle-fill gold-icon flex-shrink-0"></i>
-                        <span class="feature-text gold">✨ Advanced AI Trading Guide Tools</span>
-                        <span class="token-badge token-badge-gold ms-auto">Elite Only</span>
                     </div>
                 </div>
 
@@ -938,12 +763,6 @@
                     <td class="text-center py-3 col-elite fw-semibold">✅ Unlimited</td>
                 </tr>
                 <tr>
-                    <td class="ps-4 py-3 fw-semibold">Crypto Auto Sync <span class="new-feature-badge">NEW</span></td>
-                    <td class="text-center py-3"><span class="table-check">✓</span></td>
-                    <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
-                    <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
-                </tr>
-                <tr>
                     <td class="ps-4 py-3 fw-semibold">MT4/MT5 Auto Sync</td>
                     <td class="text-center py-3"><span class="table-cross">✕</span></td>
                     <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
@@ -956,22 +775,10 @@
                     <td class="text-center py-3 col-elite fw-semibold">✅ Unlimited</td>
                 </tr>
                 <tr>
-                    <td class="ps-4 py-3 fw-semibold">Screenshot Attachments</td>
-                    <td class="text-center py-3"><span class="table-check">✓</span></td>
-                    <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
-                    <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
-                </tr>
-                <tr>
                     <td class="ps-4 py-3 fw-semibold">Analytics</td>
                     <td class="text-center py-3">Standard</td>
                     <td class="text-center py-3 col-pro">Standard</td>
                     <td class="text-center py-3 col-elite fw-semibold">✨ Advanced</td>
-                </tr>
-                <tr>
-                    <td class="ps-4 py-3 fw-semibold">Export Reports (PDF/CSV)</td>
-                    <td class="text-center py-3"><span class="table-check">✓</span></td>
-                    <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
-                    <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
                 </tr>
                 <tr>
                     <td class="ps-4 py-3 fw-semibold">Ad Free</td>
@@ -980,22 +787,22 @@
                     <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
                 </tr>
                 <tr>
+                    <td class="ps-4 py-3 fw-semibold" style="color: var(--glow-cyan);">🎯 Strategy Backtests</td>
+                    <td class="text-center py-3">10 / Month</td>
+                    <td class="text-center py-3 col-pro fw-semibold">150 / Month</td>
+                    <td class="text-center py-3 col-elite fw-semibold" style="color: var(--glow-gold);">✅ Unlimited</td>
+                </tr>
+                <tr>
+                    <td class="ps-4 py-3 fw-semibold" style="color: var(--glow-cyan);">📱 Device Logins</td>
+                    <td class="text-center py-3">2 Devices</td>
+                    <td class="text-center py-3 col-pro fw-semibold">3 Devices</td>
+                    <td class="text-center py-3 col-elite fw-semibold" style="color: var(--glow-gold);">5 Devices</td>
+                </tr>
+                <tr>
                     <td class="ps-4 py-3 fw-semibold">AI Tokens</td>
                     <td class="text-center py-3">Limited</td>
                     <td class="text-center py-3 col-pro fw-semibold">✅ Unlimited</td>
                     <td class="text-center py-3 col-elite fw-semibold" style="color: var(--glow-gold);">✅ Unlimited</td>
-                </tr>
-                <tr>
-                    <td class="ps-4 py-3 fw-semibold">AI Model</td>
-                    <td class="text-center py-3">—</td>
-                    <td class="text-center py-3 col-pro">—</td>
-                    <td class="text-center py-3 col-elite fw-semibold" style="color: var(--glow-gold);">Advanced Model</td>
-                </tr>
-                <tr>
-                    <td class="ps-4 py-3 fw-semibold">AI Analysis</td>
-                    <td class="text-center py-3"><span class="table-check">✓</span></td>
-                    <td class="text-center py-3 col-pro"><span class="table-check">✓</span></td>
-                    <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
                 </tr>
                 <tr>
                     <td class="ps-4 py-3 fw-semibold">AI Diary Writer</td>
@@ -1004,22 +811,10 @@
                     <td class="text-center py-3 col-elite"><span class="table-gold-check">✨ ✓</span></td>
                 </tr>
                 <tr>
-                    <td class="ps-4 py-3 fw-semibold">Personalized AI Coach</td>
+                    <td class="ps-4 py-3 fw-semibold">AI Coach & Goals</td>
                     <td class="text-center py-3"><span class="table-cross">✕</span></td>
                     <td class="text-center py-3 col-pro"><span class="table-cross">✕</span></td>
                     <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
-                </tr>
-                <tr>
-                    <td class="ps-4 py-3 fw-semibold">Trading Goals & Planner</td>
-                    <td class="text-center py-3"><span class="table-cross">✕</span></td>
-                    <td class="text-center py-3 col-pro"><span class="table-cross">✕</span></td>
-                    <td class="text-center py-3 col-elite"><span class="table-check">✓</span></td>
-                </tr>
-                <tr>
-                    <td class="ps-4 py-3 fw-semibold">Advanced AI Trading Guide Tools</td>
-                    <td class="text-center py-3"><span class="table-cross">✕</span></td>
-                    <td class="text-center py-3 col-pro"><span class="table-cross">✕</span></td>
-                    <td class="text-center py-3 col-elite"><span class="table-gold-check">✨ ✓</span></td>
                 </tr>
             </tbody>
         </table>
@@ -1027,14 +822,8 @@
     <div class="comparison-table-footer">
         <small>
             <i class="bi bi-info-circle me-1"></i> 
-            <span class="fw-semibold" style="color: var(--text-secondary);">Token Usage:</span> 
-            Free plan includes limited AI tokens. Paid plans (Pro & Elite) include unlimited AI tokens.
-            <span class="d-block mt-1" style="color: var(--glow-gold);">
-                ✨ Elite plan includes Advanced AI Model, AI Diary Writer, and Advanced AI Trading Guide Tools
-            </span>
-            <span class="d-block mt-1" style="color: #b026ff;">
-                🆕 Crypto Auto Sync is available on ALL plans! Screenshot attachments also available for everyone.
-            </span>
+            <span class="fw-semibold" style="color: var(--text-secondary);">Backtest & Device Limits:</span> 
+            Free: 10 backtests/mo + 2 devices · Pro: 150 backtests/mo + 3 devices · Elite: Unlimited backtests + 5 devices
         </small>
     </div>
 </div>
@@ -1045,11 +834,9 @@
     function switchBilling(type) {
         currentBilling = type;
 
-        // Update toggle buttons
         document.getElementById('btnMonthly').classList.toggle('active', type === 'monthly');
         document.getElementById('btnYearly').classList.toggle('active', type === 'yearly');
 
-        // Show/hide price sections
         document.querySelectorAll('.plan-price-section').forEach(el => el.classList.remove('active'));
         if (type === 'monthly') {
             document.getElementById('proMonthly').classList.add('active');
@@ -1059,7 +846,6 @@
             document.getElementById('eliteYearly').classList.add('active');
         }
 
-        // Update checkout links
         const proLink = document.querySelector('.pro-checkout-link');
         const eliteLink = document.querySelector('.elite-checkout-link');
         if (proLink) {

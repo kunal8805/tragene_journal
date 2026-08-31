@@ -592,6 +592,20 @@
         </a>
         {% endif %}
         
+        <div class="nav-label">Backtesting</div>
+
+        <a href="{{ url_for('backtest.admin_dashboard') }}" class="nav-link {% if request.endpoint == 'backtest.admin_dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i> Backtest Dashboard
+        </a>
+
+        <a href="{{ url_for('backtest.admin_data_manager') }}" class="nav-link {% if request.endpoint == 'backtest.admin_data_manager' %}active{% endif %}">
+            <i class="bi bi-database"></i> Data Manager
+        </a>
+
+        <a href="{{ url_for('backtest.admin_analytics') }}" class="nav-link {% if request.endpoint == 'backtest.admin_analytics' %}active{% endif %}">
+            <i class="bi bi-graph-up-arrow"></i> Backtest Analytics
+        </a>
+
         <div class="nav-label">Analytics & AI</div>
         
         {% if current_user.is_admin or can_access('analytics') %}
@@ -623,16 +637,16 @@
         {% endif %}
         
         {% if current_user.is_admin or can_access('blog') %}
-<a href="{{ url_for('admin.blog_list') }}" class="nav-link {% if 'admin.blog' in request.endpoint %}active{% endif %}">
-    <i class="bi bi-file-earmark-text"></i> Blog CMS
-</a>
-{% endif %}
+        <a href="{{ url_for('admin.blog_list') }}" class="nav-link {% if 'admin.blog' in request.endpoint %}active{% endif %}">
+            <i class="bi bi-file-earmark-text"></i> Blog CMS
+        </a>
+        {% endif %}
 
-{% if current_user.is_admin or can_access('subscriptions.edit') %}
-<a href="{{ url_for('admin.subscription_manager') }}" class="nav-link {% if request.endpoint == 'admin.subscription_manager' %}active{% endif %}">
-    <i class="bi bi-shield-lock"></i> Purchase Control
-</a>
-{% endif %}
+        {% if current_user.is_admin or can_access('subscriptions.edit') %}
+        <a href="{{ url_for('admin.subscription_manager') }}" class="nav-link {% if request.endpoint == 'admin.subscription_manager' %}active{% endif %}">
+            <i class="bi bi-shield-lock"></i> Purchase Control
+        </a>
+        {% endif %}
         
         {% if current_user.is_admin or can_access('subscriptions.payment') %}
         <a href="{{ url_for('admin.payment_analytics') }}" class="nav-link {% if request.endpoint == 'admin.payment_analytics' %}active{% endif %}">
@@ -640,7 +654,7 @@
         </a>
         {% endif %}
         
-                {% if current_user.is_admin or can_access('coupons') %}
+        {% if current_user.is_admin or can_access('coupons') %}
         <a href="{{ url_for('coupon.admin_coupons') }}" class="nav-link {% if request.endpoint and 'coupon.admin' in request.endpoint %}active{% endif %}">
             <i class="bi bi-ticket-perforated"></i> Coupons
         </a>

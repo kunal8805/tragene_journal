@@ -1,0 +1,331 @@
+<!-- templates/user/trial/trial_banner.html -->
+
+<style>
+    /* === TRIAL BANNER - ELEGANT COUNTDOWN === */
+    .trial-banner {
+        background: linear-gradient(135deg, #1a2332 0%, #111827 100%);
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        border-left: 4px solid #3b82f6;
+        border-radius: 0 12px 12px 0;
+        padding: 12px 20px;
+        margin: 16px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        position: relative;
+        overflow: hidden;
+        animation: slideDown 0.5s ease;
+    }
+
+    @keyframes slideDown {
+        from { 
+            transform: translateY(-10px);
+            opacity: 0;
+        }
+        to { 
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .trial-banner::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 150px;
+        height: 100%;
+        background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .trial-banner-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .trial-banner-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: rgba(59, 130, 246, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
+        50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+    }
+
+    .trial-banner-text {
+        flex: 1;
+    }
+
+    .trial-banner-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #e5e7eb;
+        margin: 0 0 2px;
+    }
+
+    .trial-banner-subtitle {
+        font-size: 11px;
+        color: #9ca3af;
+        margin: 0;
+    }
+
+    .trial-countdown {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .countdown-item {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 8px;
+        padding: 6px 10px;
+        text-align: center;
+        min-width: 45px;
+    }
+
+    .countdown-value {
+        font-size: 18px;
+        font-weight: 800;
+        color: #3b82f6;
+        line-height: 1;
+        display: block;
+    }
+
+    .countdown-label {
+        font-size: 8px;
+        text-transform: uppercase;
+        color: #6b7280;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        margin-top: 3px;
+    }
+
+    .trial-banner-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        z-index: 1;
+    }
+
+    .trial-upgrade-btn {
+        padding: 8px 18px;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        white-space: nowrap;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .trial-upgrade-btn:hover {
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    .trial-close-banner {
+        background: transparent;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 4px;
+        transition: all 0.3s;
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .trial-close-banner:hover {
+        color: #e5e7eb;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Expired Banner Style */
+    .trial-banner.expired {
+        border-left-color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.25);
+    }
+
+    .trial-banner.expired .trial-banner-icon {
+        background: rgba(245, 158, 11, 0.15);
+    }
+
+    .trial-banner.expired .countdown-value {
+        color: #f59e0b;
+    }
+
+    .trial-banner.expired .trial-upgrade-btn {
+        background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    }
+
+    @media (max-width: 768px) {
+        .trial-banner {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 14px;
+        }
+        .trial-countdown {
+            width: 100%;
+            justify-content: space-between;
+        }
+        .countdown-item {
+            flex: 1;
+            min-width: 0;
+        }
+        .trial-banner-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+</style>
+
+<!-- Active Trial Banner -->
+<div class="trial-banner" id="trialBanner" style="display: none;">
+    <div class="trial-banner-left">
+        <div class="trial-banner-icon">⏰</div>
+        <div class="trial-banner-text">
+            <div class="trial-banner-title">Pro Trial Active</div>
+            <div class="trial-banner-subtitle">Enjoy all premium features free</div>
+        </div>
+    </div>
+    
+    <div class="trial-countdown" id="trialCountdown">
+        <div class="countdown-item">
+            <span class="countdown-value" id="trialDays">0</span>
+            <span class="countdown-label">Days</span>
+        </div>
+        <div class="countdown-item">
+            <span class="countdown-value" id="trialHours">0</span>
+            <span class="countdown-label">Hours</span>
+        </div>
+        <div class="countdown-item">
+            <span class="countdown-value" id="trialMinutes">0</span>
+            <span class="countdown-label">Min</span>
+        </div>
+        <div class="countdown-item">
+            <span class="countdown-value" id="trialSeconds">0</span>
+            <span class="countdown-label">Sec</span>
+        </div>
+    </div>
+    
+    <div class="trial-banner-actions">
+        <a href="/subscription" class="trial-upgrade-btn">
+            ⚡ Upgrade Now
+        </a>
+        <button class="trial-close-banner" onclick="hideTrialBanner()" aria-label="Close banner">✕</button>
+    </div>
+</div>
+
+<!-- Expired Trial Banner -->
+<div class="trial-banner expired" id="trialExpiredBanner" style="display: none;">
+    <div class="trial-banner-left">
+        <div class="trial-banner-icon">😢</div>
+        <div class="trial-banner-text">
+            <div class="trial-banner-title">Trial Has Ended</div>
+            <div class="trial-banner-subtitle">Unlock all features with Pro</div>
+        </div>
+    </div>
+    
+    <div class="trial-banner-actions">
+        <a href="/subscription" class="trial-upgrade-btn">
+            💎 Get Pro - ₹799
+        </a>
+        <button class="trial-close-banner" onclick="hideTrialExpiredBanner()" aria-label="Close banner">✕</button>
+    </div>
+</div>
+
+<script>
+    let trialEndDate = null;
+    let countdownInterval = null;
+
+    function initTrialBanner(trialData) {
+        if (trialData.is_active && trialData.end_date) {
+            trialEndDate = new Date(trialData.end_date);
+            
+            // Show active banner
+            document.getElementById('trialBanner').style.display = 'flex';
+            
+            // Start countdown
+            startCountdown();
+        } else if (trialData.has_expired) {
+            // Show expired banner
+            document.getElementById('trialExpiredBanner').style.display = 'flex';
+        }
+    }
+
+    function startCountdown() {
+        updateCountdown();
+        countdownInterval = setInterval(updateCountdown, 1000);
+    }
+
+    function updateCountdown() {
+        const now = new Date();
+        const diff = trialEndDate - now;
+        
+        if (diff <= 0) {
+            clearInterval(countdownInterval);
+            document.getElementById('trialBanner').style.display = 'none';
+            document.getElementById('trialExpiredBanner').style.display = 'flex';
+            return;
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        document.getElementById('trialDays').textContent = days;
+        document.getElementById('trialHours').textContent = String(hours).padStart(2, '0');
+        document.getElementById('trialMinutes').textContent = String(minutes).padStart(2, '0');
+        document.getElementById('trialSeconds').textContent = String(seconds).padStart(2, '0');
+    }
+
+    function hideTrialBanner() {
+        document.getElementById('trialBanner').style.display = 'none';
+        if (countdownInterval) clearInterval(countdownInterval);
+        
+        // Optional: Save dismissal
+        fetch('/trial/api/dismiss-banner', { method: 'POST' }).catch(() => {});
+    }
+
+    function hideTrialExpiredBanner() {
+        document.getElementById('trialExpiredBanner').style.display = 'none';
+    }
+
+    // Fetch trial status
+    fetch('/trial/api/status')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                initTrialBanner(data);
+            }
+        })
+        .catch(() => {});
+</script>

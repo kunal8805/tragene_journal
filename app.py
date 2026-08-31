@@ -24,6 +24,9 @@ def create_app():
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
     app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
     
+    # Max upload size for CSV files (100MB)
+    app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+    
     # FIX: Secure cookies only in production (HTTPS)
     app.config['SESSION_COOKIE_SECURE'] = is_production
     app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -41,7 +44,8 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
     
-    from models import User, Trade, ImportHistory, DayNote, TradingAccount, Category, Tag, Blog, SEOSettings, PageMetadata, Redirect, NewsletterSubscriber, MediaLibrary, ContactMessage, Coupon, CouponUsage, CouponUser, LeadStatus, LeadNote, LeadFollowUp, Influencer, InfluencerCampaign, seed_lead_statuses
+    from models import User, Trade, ImportHistory, DayNote, TradingAccount, Category, Tag, Blog, SEOSettings, PageMetadata, Redirect, NewsletterSubscriber, MediaLibrary, ContactMessage, Coupon, CouponUsage, CouponUser, LeadStatus, LeadNote, LeadFollowUp, Influencer, InfluencerCampaign, seed_lead_statuses, BacktestStrategy, BacktestRun, HistoricalData, BacktestUsage, LoginDevice
+    from trial import TrialClaim
     
     @login_manager.user_loader
     def load_user(user_id):
@@ -68,6 +72,9 @@ def create_app():
     from routes.moderator_routes import moderator_bp
     from routes.coupon_routes import coupon_bp
     from routes.lead_routes import lead_bp
+    from backtest.routes import backtest_bp
+    from routes.trial_routes import trial_bp
+    from routes.transcription_routes import transcription_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
@@ -81,6 +88,13 @@ def create_app():
     app.register_blueprint(coupon_bp)
     app.register_blueprint(lead_bp)
     app.register_blueprint(mt5_receiver_bp)
+    app.register_blueprint(backtest_bp)
+    app.register_blueprint(trial_bp)
+    app.register_blueprint(transcription_bp)
+    
+    # Create data directory if it doesn't exist
+    data_dir = os.path.join(basedir, 'data', 'historical')
+    os.makedirs(data_dir, exist_ok=True)
     
     with app.app_context():
         if 'db' in sys.argv:
@@ -142,6 +156,26 @@ def create_app():
             'is_moderator': False,
             'moderator': None,
             'can_access': lambda key: True
+        }
+    
+    @app.context_processor
+    def inject_backtest_info():
+        """Inject backtest availability info"""
+        return {
+            'backtest_enabled': True,
+            'backtest_tiers': {
+                'free': 5,
+                'pro': 100,
+                'elite': 'unlimited'
+            }
+        }
+    
+    @app.context_processor
+    def inject_trial_info():
+        """Inject trial availability info"""
+        return {
+            'trial_enabled': True,
+            'trial_duration_days': 7
         }
 
     @app.before_request
@@ -213,6 +247,14 @@ def create_app():
         message = 'Too many attempts. Please wait a moment and try again.'
         if request.path.startswith('/ai') or request.path.startswith('/api/'):
             return jsonify({'success': False, 'message': message}), 429
+        flash(message, 'danger')
+        return redirect(request.referrer or url_for('auth.login'))
+    
+    @app.errorhandler(413)
+    def too_large(e):
+        message = 'File is too large. Maximum size is 100MB.'
+        if request.path.startswith('/api/'):
+            return jsonify({'success': False, 'message': message}), 413
         flash(message, 'danger')
         return redirect(request.referrer or url_for('auth.login'))
             

@@ -1,0 +1,399 @@
+<!-- templates/user/trial/trial_popup.html -->
+
+<style>
+    /* === TRIAL POPUP - COMPACT & ELEGANT === */
+    .trial-popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+        from { 
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to { 
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes floatGift {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+
+    @keyframes pulseBorder {
+        0%, 100% { border-color: rgba(245, 158, 11, 0.4); }
+        50% { border-color: rgba(245, 158, 11, 0.8); }
+    }
+
+    .trial-popup {
+        background: linear-gradient(145deg, #1a2332 0%, #111827 100%);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 16px;
+        padding: 20px 18px 14px;
+        max-width: 340px;
+        width: 92%;
+        position: relative;
+        animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 
+            0 20px 40px -10px rgba(0, 0, 0, 0.5),
+            0 0 30px rgba(59, 130, 246, 0.08);
+    }
+
+    .trial-popup::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+        background-size: 200% auto;
+        animation: shimmer 3s linear infinite;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .trial-popup-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.04);
+        border: none;
+        color: #9ca3af;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        transition: all 0.3s;
+        z-index: 2;
+    }
+
+    .trial-popup-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #e5e7eb;
+        transform: rotate(90deg);
+    }
+
+    .trial-gift-icon {
+        text-align: center;
+        margin-bottom: 2px;
+        animation: floatGift 2s ease-in-out infinite;
+    }
+
+    .trial-gift-icon span {
+        font-size: 32px;
+        display: inline-block;
+        filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.4));
+    }
+
+    .trial-popup-title {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 800;
+        color: #e5e7eb;
+        margin-bottom: 2px;
+        letter-spacing: -0.3px;
+    }
+
+    .trial-popup-subtitle {
+        text-align: center;
+        font-size: 11px;
+        color: #9ca3af;
+        margin-bottom: 14px;
+    }
+
+    .trial-value-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        color: #a78bfa;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        margin-left: 4px;
+    }
+
+    .trial-features {
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+    }
+
+    .trial-feature-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 0;
+        font-size: 12px;
+        color: #d1d5db;
+    }
+
+    .trial-feature-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        flex-shrink: 0;
+    }
+
+    .trial-feature-icon.check {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+    }
+
+    .trial-claim-btn {
+        width: 100%;
+        padding: 11px;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+        background-size: 200% auto;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        letter-spacing: 0.2px;
+    }
+
+    .trial-claim-btn:hover {
+        background-position: right center;
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .trial-claim-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .trial-dismiss-btn {
+        width: 100%;
+        padding: 7px;
+        background: transparent;
+        color: #6b7280;
+        border: none;
+        font-size: 10px;
+        cursor: pointer;
+        margin-top: 4px;
+        transition: all 0.3s;
+        border-radius: 6px;
+    }
+
+    .trial-dismiss-btn:hover {
+        color: #9ca3af;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* INLINE VERIFICATION NOTICE - Compact */
+    .trial-verify-notice {
+        display: none;
+        margin-top: 10px;
+        padding: 10px 12px;
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        border-radius: 10px;
+        text-align: center;
+        animation: pulseBorder 1.5s ease-in-out infinite;
+    }
+
+    .trial-verify-notice.show {
+        display: block;
+    }
+
+    .trial-verify-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .trial-verify-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .trial-verify-text {
+        font-size: 11px;
+        color: #fbbf24;
+        font-weight: 700;
+        line-height: 1.3;
+    }
+
+    .trial-verify-link {
+        color: #f59e0b;
+        font-weight: 800;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .trial-verify-link:hover {
+        color: #fbbf24;
+    }
+
+    @media (max-width: 480px) {
+        .trial-popup {
+            padding: 16px 14px 12px;
+            max-width: 300px;
+        }
+        .trial-gift-icon span {
+            font-size: 28px;
+        }
+        .trial-popup-title {
+            font-size: 16px;
+        }
+        .trial-features {
+            padding: 8px 10px;
+        }
+        .trial-feature-item {
+            font-size: 11px;
+        }
+    }
+</style>
+
+<!-- Popup HTML -->
+<div class="trial-popup-overlay" id="trialPopupOverlay" style="display: none;">
+    <div class="trial-popup">
+        <button class="trial-popup-close" onclick="dismissTrialPopup()" aria-label="Close">✕</button>
+        
+        <div class="trial-gift-icon">
+            <span>🎁</span>
+        </div>
+        
+        <div class="trial-popup-title">Claim Your 7-Day Free Trial</div>
+        
+        <div class="trial-popup-subtitle">
+            Premium Plan <span class="trial-value-badge">₹799 VALUE</span>
+        </div>
+        
+        <div class="trial-features">
+            <div class="trial-feature-item">
+                <span class="trial-feature-icon check">✓</span>
+                Unlimited Backtests
+            </div>
+            <div class="trial-feature-item">
+                <span class="trial-feature-icon check">✓</span>
+                All Advanced Indicators
+            </div>
+            <div class="trial-feature-item">
+                <span class="trial-feature-icon check">✓</span>
+                3 Trading Accounts
+            </div>
+            <div class="trial-feature-item">
+                <span class="trial-feature-icon check">✓</span>
+                Priority Support
+            </div>
+        </div>
+        
+        <button class="trial-claim-btn" onclick="claimTrial()" id="claimTrialBtn">
+            🚀 Claim Free Trial
+        </button>
+        
+        <button class="trial-dismiss-btn" onclick="dismissTrialPopup()">
+            Not now — I'll check later
+        </button>
+        
+        <!-- INLINE VERIFICATION NOTICE -->
+        <div class="trial-verify-notice" id="trialVerifyNotice">
+            <div class="trial-verify-row">
+                <span class="trial-verify-icon">🔒</span>
+                <span class="trial-verify-text">Verify your email to claim!</span>
+                <a href="/settings" class="trial-verify-link">Verify Now →</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTrialPopup() {
+        document.getElementById('trialPopupOverlay').style.display = 'flex';
+    }
+
+    function dismissTrialPopup() {
+        document.getElementById('trialPopupOverlay').style.display = 'none';
+        
+        fetch('/trial/api/dismiss-popup', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }).catch(() => {});
+    }
+
+    function claimTrial() {
+        const btn = document.getElementById('claimTrialBtn');
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Claiming...';
+        
+        fetch('/trial/api/claim', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                btn.innerHTML = '✅ Trial Activated!';
+                btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Claim Free Trial';
+                
+                if (data.need_verification) {
+                    // Show inline verification notice
+                    document.getElementById('trialVerifyNotice').classList.add('show');
+                } else {
+                    alert(data.message || 'Error claiming trial');
+                }
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Claim Free Trial';
+            alert('Error claiming trial');
+        });
+    }
+
+    // Close popup when clicking outside
+    document.getElementById('trialPopupOverlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            dismissTrialPopup();
+        }
+    });
+</script>

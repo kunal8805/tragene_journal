@@ -1,0 +1,276 @@
+{% extends "base_user.html" %}
+{% block title %}My Results - Tragene Journal{% endblock %}
+{% block page_title %}📊 My Results{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 style="margin:0;">📊 My Backtest Results</h4>
+        <div class="d-flex gap-2">
+            <button onclick="bulkDelete()" class="btn btn-danger btn-sm" id="bulkDeleteBtn" style="display:none;">🗑️ Delete Selected</button>
+            <a href="/backtest/builder" class="btn btn-primary btn-sm">+ New Backtest</a>
+        </div>
+    </div>
+    
+    <div id="resultsList">
+        <div class="text-center py-5">
+            <div class="spinner-border" style="color: #3b82f6;"></div>
+            <p class="text-muted mt-3">Loading results...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Config Modal -->
+<div id="configModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99999;display:none;align-items:center;justify-content:center;">
+    <div style="background:#151e2e;border:1px solid #1e2d42;border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;color:#e5e7eb;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h5 style="margin:0;">📊 Strategy Configuration</h5>
+            <button onclick="closeConfig()" style="background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <div id="configContent"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedResults = new Set();
+
+    document.addEventListener('DOMContentLoaded', loadResults);
+
+    function loadResults() {
+        fetch('/backtest/api/my-results')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderResults(data.results);
+                } else {
+                    document.getElementById('resultsList').innerHTML = `
+                        <div class="text-center py-5">
+                            <p class="text-danger">Error: ${data.message}</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                document.getElementById('resultsList').innerHTML = `
+                    <div class="text-center py-5">
+                        <p class="text-danger">Error loading results</p>
+                    </div>
+                `;
+            });
+    }
+
+    function deleteResult(resultId) {
+        if (!confirm('Delete this result? This cannot be undone.')) return;
+        
+        fetch('/backtest/api/delete-result/' + resultId, {
+            method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadResults();
+                selectedResults.delete(resultId);
+                updateBulkButton();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => alert('Error deleting result'));
+    }
+
+    function toggleSelect(checkbox, resultId) {
+        if (checkbox.checked) {
+            selectedResults.add(resultId);
+        } else {
+            selectedResults.delete(resultId);
+        }
+        updateBulkButton();
+    }
+
+    function toggleAll(checkbox) {
+        const allCheckboxes = document.querySelectorAll('.result-checkbox');
+        selectedResults.clear();
+        
+        allCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+            if (checkbox.checked) {
+                selectedResults.add(parseInt(cb.value));
+            }
+        });
+        
+        updateBulkButton();
+    }
+
+    function updateBulkButton() {
+        const btn = document.getElementById('bulkDeleteBtn');
+        if (selectedResults.size > 0) {
+            btn.style.display = 'block';
+            btn.textContent = '🗑️ Delete Selected (' + selectedResults.size + ')';
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+
+    function bulkDelete() {
+        if (selectedResults.size === 0) return;
+        
+        if (!confirm('Delete ' + selectedResults.size + ' selected result(s)? This cannot be undone.')) return;
+        
+        const ids = Array.from(selectedResults);
+        
+        fetch('/backtest/api/bulk-delete-results', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ result_ids: ids })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                selectedResults.clear();
+                loadResults();
+                updateBulkButton();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => alert('Error deleting results'));
+    }
+
+    function viewConfig(runId) {
+        fetch('/backtest/api/view-strategy-config/' + runId)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const config = data.config;
+                    const stats = data.stats;
+                    
+                    let html = `
+                        <div style="margin-bottom:16px;font-size:0.85rem;padding:12px;background:#1a2332;border-radius:8px;">
+                            <strong>Strategy:</strong> ${data.strategy_name || 'Unnamed'}<br>
+                            <strong>Symbol:</strong> ${data.symbol} | 
+                            <strong>Timeframe:</strong> ${data.timeframe}
+                        </div>
+                        
+                        <h6 style="color:#3b82f6;margin-bottom:8px;">📈 Entry Rules:</h6>
+                        ${config.entry_rules && config.entry_rules.length > 0 ? config.entry_rules.map((rule, i) => `
+                            <div style="padding:8px;background:#1a2332;border-radius:6px;margin-bottom:6px;font-size:0.78rem;">
+                                ${i > 0 ? (rule.logic || 'AND') + ' | ' : ''}${rule.indicator || 'N/A'} ${rule.operator || ''} ${rule.compare_to || ''} ${rule.value || ''}
+                                ${rule.period ? '(Period: ' + rule.period + ')' : ''}
+                            </div>
+                        `).join('') : '<p style="font-size:0.78rem;color:#6b7280;">None</p>'}
+                        
+                        <h6 class="mt-3" style="color:#3b82f6;margin-bottom:8px;">🚪 Exit Rules:</h6>
+                        ${config.exit_rules && config.exit_rules.length > 0 ? config.exit_rules.map((rule, i) => `
+                            <div style="padding:8px;background:#1a2332;border-radius:6px;margin-bottom:6px;font-size:0.78rem;">
+                                ${i > 0 ? (rule.logic || 'AND') + ' | ' : ''}${rule.indicator || 'N/A'} ${rule.operator || ''} ${rule.compare_to || ''} ${rule.value || ''}
+                                ${rule.period ? '(Period: ' + rule.period + ')' : ''}
+                            </div>
+                        `).join('') : '<p style="font-size:0.78rem;color:#6b7280;">None</p>'}
+                        
+                        <h6 class="mt-3" style="color:#3b82f6;margin-bottom:8px;">🛡 Risk Management:</h6>
+                        <div style="font-size:0.78rem;padding:8px;background:#1a2332;border-radius:6px;">
+                            Stop Loss: ${config.risk_management?.stop_loss_type || 'None'}
+                            ${config.risk_management?.stop_loss_value ? '(' + config.risk_management.stop_loss_value + ')' : ''}
+                            <br>
+                            Take Profit: ${config.risk_management?.take_profit_type || 'None'}
+                            ${config.risk_management?.take_profit_value ? '(' + config.risk_management.take_profit_value + ')' : ''}
+                            <br>
+                            Trailing Stop: ${config.risk_management?.trailing_stop || 'None'}
+                        </div>
+                        
+                        <h6 class="mt-3" style="color:#3b82f6;margin-bottom:8px;">💰 Position Sizing:</h6>
+                        <div style="font-size:0.78rem;padding:8px;background:#1a2332;border-radius:6px;">
+                            Type: ${config.position_sizing?.type || 'Fixed'} | Size: ${config.position_sizing?.size || 1}
+                        </div>
+                        
+                        <h6 class="mt-3" style="color:#3b82f6;margin-bottom:8px;">📊 Results:</h6>
+                        <div style="font-size:0.78rem;padding:8px;background:#1a2332;border-radius:6px;">
+                            Win Rate: ${stats.win_rate.toFixed(1)}% | Trades: ${stats.total_trades} | Return: ${stats.total_return.toFixed(2)}%
+                        </div>
+                    `;
+                    
+                    document.getElementById('configContent').innerHTML = html;
+                    document.getElementById('configModal').style.display = 'flex';
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => alert('Error loading config'));
+    }
+
+    function closeConfig() {
+        document.getElementById('configModal').style.display = 'none';
+    }
+
+    function renderResults(results) {
+        const container = document.getElementById('resultsList');
+        
+        if (results.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <div style="font-size:48px;margin-bottom:16px;">📊</div>
+                    <h5>No Results Yet</h5>
+                    <p class="text-muted">Run your first backtest to see results here!</p>
+                    <a href="/backtest/builder" class="btn btn-primary btn-sm mt-3">Run Backtest</a>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-dark table-hover" style="--bs-table-bg: #111827; --bs-table-border-color: #1e2d42;">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">
+                                <input type="checkbox" onchange="toggleAll(this)" id="selectAll">
+                            </th>
+                            <th>#</th>
+                            <th>Strategy</th>
+                            <th>Symbol</th>
+                            <th>Timeframe</th>
+                            <th>Return %</th>
+                            <th>Win Rate</th>
+                            <th>Trades</th>
+                            <th>Profit Factor</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.map((r, index) => `
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="result-checkbox" value="${r.id}" onchange="toggleSelect(this, ${r.id})">
+                                </td>
+                                <td>${r.id}</td>
+                                <td style="font-weight:600;">${r.strategy_name || 'Unnamed'}</td>
+                                <td><span class="badge bg-info">${r.symbol}</span></td>
+                                <td><span class="badge bg-secondary">${r.timeframe}</span></td>
+                                <td style="color: ${r.total_return >= 0 ? '#10b981' : '#ef4444'}; font-weight:600;">
+                                    ${r.total_return >= 0 ? '+' : ''}${r.total_return.toFixed(2)}%
+                                </td>
+                                <td>${r.win_rate.toFixed(1)}%</td>
+                                <td>${r.total_trades}</td>
+                                <td>${r.profit_factor.toFixed(2)}</td>
+                                <td style="font-size:0.75rem;">${new Date(r.created_at).toLocaleDateString()}</td>
+                                <td>
+                                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                                        <a href="/backtest/results/${r.id}" class="btn btn-sm btn-primary" style="font-size:0.7rem;padding:4px 8px;">View</a>
+                                        <button onclick="viewConfig(${r.id})" class="btn btn-sm" style="font-size:0.7rem;padding:4px 8px;background:#8b5cf6;color:white;border:none;border-radius:4px;">Config</button>
+                                        <button onclick="deleteResult(${r.id})" class="btn btn-sm btn-danger" style="font-size:0.7rem;padding:4px 8px;">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

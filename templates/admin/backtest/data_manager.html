@@ -1,0 +1,392 @@
+{% extends "base_admin.html" %}
+{% block title %}Data Manager - Admin{% endblock %}
+{% block page_title %}Data Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    .symbol-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 14px;
+        transition: all 0.2s;
+    }
+    .symbol-card:hover {
+        border-color: var(--accent);
+    }
+    .symbol-card.loaded {
+        border-left: 3px solid var(--green);
+    }
+    .symbol-card.missing {
+        border-left: 3px solid var(--red);
+        opacity: 0.7;
+    }
+    .symbol-card.universal {
+        border-left: 3px solid var(--purple);
+    }
+    .symbol-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .status-badge {
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .status-loaded {
+        background: rgba(0,200,83,0.15);
+        color: var(--green);
+    }
+    .status-missing {
+        background: rgba(255,82,82,0.15);
+        color: var(--red);
+    }
+    .status-universal {
+        background: rgba(139,92,246,0.15);
+        color: var(--purple);
+    }
+    .symbol-info {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+    .action-btn {
+        padding: 5px 10px;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 0.65rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .action-btn:hover {
+        background: var(--sidebar-hover);
+        color: var(--text-primary);
+    }
+    .action-btn.upload {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.3);
+        color: var(--info);
+    }
+    .action-btn.upload:hover {
+        background: rgba(59, 130, 246, 0.2);
+    }
+    .action-btn.delete {
+        background: rgba(255,82,82,0.1);
+        border-color: rgba(255,82,82,0.3);
+        color: var(--red);
+    }
+    .action-btn.delete:hover {
+        background: rgba(255,82,82,0.2);
+    }
+    .section-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        display: none;
+    }
+    .modal-overlay.open {
+        display: flex;
+    }
+    .modal-content-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 24px;
+        max-width: 450px;
+        width: 90%;
+    }
+    .file-upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 12px;
+    }
+    .file-upload-area:hover {
+        border-color: var(--accent);
+        background: var(--sidebar-hover);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 text-center">
+                <h4 id="loadedCount" style="color: var(--green); margin:0;">0</h4>
+                <small class="text-muted">Loaded</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 text-center">
+                <h4 id="missingCount" style="color: var(--red); margin:0;">0</h4>
+                <small class="text-muted">Missing</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 text-center">
+                <h4 id="totalCount" style="margin:0;">0</h4>
+                <small class="text-muted">Total Symbols</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 text-center">
+                <h4 id="universalStatus" style="color: var(--red); margin:0;">NO</h4>
+                <small class="text-muted">Universal Dataset</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-card" style="border-color: rgba(139,92,246,0.5);">
+        <div class="section-title">Universal Fallback Dataset</div>
+        <p class="text-muted" style="font-size:0.8rem;margin-bottom:12px;">Used when specific symbol data is not available.</p>
+        <div id="universalInfo" style="margin-bottom:12px; font-size:0.78rem;"></div>
+        <button class="action-btn upload" onclick="showUploadModal('UNIVERSAL/EURUSD-DEMO')">Upload/Replace</button>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">All Symbols (43)</div>
+        <input type="text" class="form-control mb-3" placeholder="Search symbols..." onkeyup="filterSymbols(this.value)" style="max-width:300px;">
+        <div class="row" id="symbolsGrid">
+            <div class="col-12 text-center py-4 text-muted">Loading symbols...</div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="uploadModal">
+    <div class="modal-content-box">
+        <h5 style="margin-bottom:12px;">Upload CSV for <span id="uploadSymbolName" style="color: var(--accent);"></span></h5>
+        <div class="file-upload-area" id="dropArea" onclick="document.getElementById('csvFile').click()">
+            <div style="font-size:36px;margin-bottom:8px;">CSV</div>
+            <p style="font-size:0.8rem;font-weight:600;margin-bottom:4px;">Click to select CSV file</p>
+            <p style="font-size:0.7rem;color:var(--text-muted);">Required: Date, Open, High, Low, Close, Volume</p>
+            <input type="file" id="csvFile" accept=".csv" style="display:none;" onchange="handleFileSelect(this)">
+        </div>
+        <div id="fileInfo" style="display:none;margin-bottom:12px;"></div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="uploadCSV()">Upload</button>
+            <button class="btn btn-secondary btn-sm" onclick="closeUploadModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content-box">
+        <h5 style="margin-bottom:12px;">Delete Data?</h5>
+        <p style="color:var(--text-secondary);margin-bottom:12px;font-size:0.85rem;">
+            Are you sure you want to delete data for <strong id="deleteSymbolName" style="color:var(--red);"></strong>?
+        </p>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete()">Delete</button>
+            <button class="btn btn-secondary btn-sm" onclick="closeDeleteModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ALL_SYMBOLS = [
+        'EUR/USD', 'USD/JPY', 'GBP/USD', 'USD/CHF', 'USD/CAD', 'AUD/USD', 'NZD/USD',
+        'EUR/GBP', 'EUR/JPY', 'GBP/JPY', 'EUR/CHF', 'AUD/JPY', 'EUR/AUD', 'GBP/AUD',
+        'CHF/JPY', 'CAD/JPY', 'NZD/JPY',
+        'XAU/USD', 'XAG/USD', 'USOIL', 'UKOIL', 'USD/INR',
+        'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT', 'XRP/USDT',
+        'ADA/USDT', 'DOGE/USDT', 'AVAX/USDT', 'MATIC/USDT', 'DOT/USDT',
+        'NIFTY 50', 'BANK NIFTY', 'SENSEX',
+        'RELIANCE', 'HDFC BANK', 'ICICI BANK', 'TCS', 'INFOSYS', 'SBIN', 'TATA MOTORS'
+    ];
+
+    let currentUploadSymbol = null;
+    let selectedFile = null;
+    let deleteSymbol = null;
+
+    document.addEventListener('DOMContentLoaded', loadData);
+
+    function loadData() {
+        fetch('/backtest/api/admin/data-status')
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    document.getElementById('loadedCount').textContent = d.stats.total_loaded;
+                    document.getElementById('missingCount').textContent = d.stats.total_missing;
+                    document.getElementById('totalCount').textContent = d.stats.total_symbols;
+                    document.getElementById('universalStatus').textContent = d.stats.universal ? 'YES' : 'NO';
+                    document.getElementById('universalStatus').style.color = d.stats.universal ? 'var(--green)' : 'var(--red)';
+                    renderUniversal(d.universal);
+                    renderSymbols(d.data);
+                }
+            })
+            .catch(err => console.error('Error:', err));
+    }
+
+    function renderUniversal(data) {
+        const info = document.getElementById('universalInfo');
+        if (data && data.row_count > 0) {
+            info.innerHTML = data.row_count.toLocaleString() + ' rows | ' + data.date_start + ' to ' + data.date_end;
+            info.style.color = 'var(--green)';
+        } else {
+            info.innerHTML = 'Not loaded yet. Upload CSV to enable backtesting.';
+            info.style.color = 'var(--red)';
+        }
+    }
+
+    function renderSymbols(data) {
+        const grid = document.getElementById('symbolsGrid');
+        grid.innerHTML = ALL_SYMBOLS.map(symbol => {
+            const info = data[symbol];
+            const loaded = info && info.row_count > 0;
+            return '<div class="col-md-4 col-lg-3 mb-3" data-symbol="' + symbol + '">' +
+                '<div class="symbol-card ' + (loaded ? 'loaded' : 'missing') + '">' +
+                '<div class="symbol-name">' + symbol + 
+                '<span class="status-badge ' + (loaded ? 'status-loaded' : 'status-missing') + '">' + 
+                (loaded ? 'Loaded' : 'Missing') + '</span></div>' +
+                '<div class="symbol-info">' +
+                (loaded ? info.row_count.toLocaleString() + ' rows' : 'Uses universal fallback') + '</div>' +
+                '<div style="display:flex;gap:6px;">' +
+                '<button class="action-btn upload" onclick="showUploadModal(\'' + symbol + '\')">Upload</button>' +
+                (loaded ? '<button class="action-btn delete" onclick="showDeleteModal(\'' + symbol + '\')">Delete</button>' : '') +
+                '</div></div></div>';
+        }).join('');
+    }
+
+    function showUploadModal(symbol) {
+        currentUploadSymbol = symbol;
+        selectedFile = null;
+        document.getElementById('uploadSymbolName').textContent = symbol;
+        document.getElementById('fileInfo').style.display = 'none';
+        document.getElementById('csvFile').value = '';
+        document.getElementById('uploadModal').classList.add('open');
+    }
+
+    function closeUploadModal() {
+        document.getElementById('uploadModal').classList.remove('open');
+        currentUploadSymbol = null;
+        selectedFile = null;
+    }
+
+    function handleFileSelect(input) {
+        if (input.files.length > 0) {
+            selectedFile = input.files[0];
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.style.display = 'block';
+            fileInfo.innerHTML = '<div style="background:rgba(0,200,83,0.1);padding:10px;border-radius:6px;">' +
+                '<strong style="color:var(--green);font-size:0.75rem;">File Selected</strong><br>' +
+                '<span style="font-size:0.7rem;color:var(--text-secondary);">' + selectedFile.name + ' (' + (selectedFile.size / 1024).toFixed(1) + ' KB)</span></div>';
+        }
+    }
+
+    function uploadCSV() {
+        if (!selectedFile) {
+            alert('Please select a CSV file first');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('symbol', currentUploadSymbol);
+        formData.append('file', selectedFile);
+        fetch('/backtest/api/admin/upload-csv', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                alert('Uploaded: ' + d.message);
+                closeUploadModal();
+                loadData();
+            } else {
+                alert('Error: ' + d.message);
+            }
+        })
+        .catch(err => alert('Error uploading file'));
+    }
+
+    function showDeleteModal(symbol) {
+        deleteSymbol = symbol;
+        document.getElementById('deleteSymbolName').textContent = symbol;
+        document.getElementById('deleteModal').classList.add('open');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('open');
+        deleteSymbol = null;
+    }
+
+    function confirmDelete() {
+        if (!deleteSymbol) return;
+        fetch('/backtest/api/admin/delete-csv/' + encodeURIComponent(deleteSymbol), {
+            method: 'DELETE'
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                alert('Deleted');
+                closeDeleteModal();
+                loadData();
+            } else {
+                alert('Error: ' + d.message);
+            }
+        })
+        .catch(err => alert('Error deleting'));
+    }
+
+    function filterSymbols(search) {
+        const query = search.toLowerCase();
+        document.querySelectorAll('#symbolsGrid [data-symbol]').forEach(card => {
+            const name = card.dataset.symbol || '';
+            card.style.display = name.toLowerCase().includes(query) ? '' : 'none';
+        });
+    }
+
+    const dropArea = document.getElementById('dropArea');
+    dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.style.borderColor = 'var(--green)';
+    });
+    dropArea.addEventListener('dragleave', () => {
+        dropArea.style.borderColor = 'var(--border-color)';
+    });
+    dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.style.borderColor = 'var(--border-color)';
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            document.getElementById('csvFile').files = files;
+            handleFileSelect({ files: files });
+        }
+    });
+</script>
+{% endblock %}

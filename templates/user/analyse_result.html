@@ -244,8 +244,8 @@
                 <span class="badge-fresh">✨ Fresh analysis</span>
             {% endif %}
         </div>
-        <div class="token-cost" title="AI tokens used for this analysis">
-            🪙 {{ analysis.tokens_used }} tokens · ${{ "%.4f"|format(analysis.api_cost) }}
+        <div class="token-cost" title="Analysis completed">
+            ✅ Analysis complete
         </div>
     </div>
 
@@ -364,7 +364,7 @@
     <div class="analyse-actions">
         <a href="{{ url_for('user.analyse_page', page_key=page_key, sub_id=analysis.sub_id or '', force='1') }}" 
            class="btn-reanalyse"
-           onclick="return confirm('This will use ~{{ analysis.tokens_used }} tokens to re-analyse. Continue?')">
+           onclick="return confirm('This will reanalyse all your details. Continue?')">
             🔄 Re-analyse
         </a>
         

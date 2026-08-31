@@ -68,12 +68,13 @@ def get_daily_ai_limit(user):
         plan_tier=user.subscription_tier,
         is_active=True
     ).first()
-    if plan_default and plan_default.daily_requests is not None:
+    # FIXED: Only return if daily_requests is a POSITIVE number
+    if plan_default and plan_default.daily_requests is not None and plan_default.daily_requests > 0:
         return plan_default.daily_requests
     fallback_limits = {
         'free': 2,
         'pro': 50,
-        'elite': 150,
+        'elite': None,  # Changed to None = unlimited
         'enterprise': None,
     }
     return fallback_limits.get(user.subscription_tier, 2)

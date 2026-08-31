@@ -425,6 +425,28 @@
     </div>
 </div>
 
+<!-- ── Device Management Section ── -->
+<div class="settings-section" id="devices">
+    <div class="section-title"><i class="bi bi-phone"></i> Active Devices</div>
+    
+    <div class="plan-info-card">
+        <div class="plan-icon"><i class="bi bi-phone"></i></div>
+        <div class="plan-text">
+            <h6 id="deviceCountText">Loading devices...</h6>
+            <p id="deviceLimitText"></p>
+        </div>
+        <button class="btn btn-sm text-white" style="background: #ff5252; border-radius: 20px; padding: 6px 16px; font-weight: 600;" onclick="logoutAllDevices()">
+            <i class="bi bi-box-arrow-right"></i> Logout All
+        </button>
+    </div>
+    
+    <div id="devicesList">
+        <div class="text-center py-3">
+            <div class="spinner-border spinner-border-sm" style="color: var(--accent);"></div>
+        </div>
+    </div>
+</div>
+
 <!-- ── Create/Edit Account Modal ── -->
 <div class="modal fade" id="accountModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -513,6 +535,7 @@
         accountModal = new bootstrap.Modal(document.getElementById('accountModal'));
         deleteModal = new bootstrap.Modal(document.getElementById('deleteAccountModal'));
         loadAccountsList();
+        loadDevices();
     });
     
     function loadAccountsList() {
@@ -688,6 +711,90 @@
     
     function showUpgradeAlert() {
         alert('You have reached the maximum number of accounts for your plan. Please upgrade to create more accounts.');
+    }
+
+    // ==================== DEVICE MANAGEMENT ====================
+    
+    function loadDevices() {
+        fetch('/auth/my-devices')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderDevices(data.devices, data.max_devices, data.current_device_id, data.device_count);
+                }
+            })
+            .catch(err => console.error('Error loading devices:', err));
+    }
+    
+    function renderDevices(devices, maxDevices, currentDeviceId, deviceCount) {
+        const maxDisplay = maxDevices === 'unlimited' || maxDevices === Infinity ? 'Unlimited' : maxDevices;
+        document.getElementById('deviceCountText').textContent = deviceCount + ' of ' + maxDisplay + ' devices used';
+        document.getElementById('deviceLimitText').textContent = maxDevices === 'unlimited' || maxDevices === Infinity ? 'Unlimited devices on your plan' : 'Maximum ' + maxDevices + ' devices on your plan';
+        
+        const container = document.getElementById('devicesList');
+        
+        if (devices.length === 0) {
+            container.innerHTML = '<p class="text-muted small">No active devices found.</p>';
+            return;
+        }
+        
+        container.innerHTML = devices.map(device => `
+            <div class="account-card ${device.device_id === currentDeviceId ? 'active-account' : ''}">
+                <div class="acc-left">
+                    <div class="acc-icon" style="background: rgba(79,142,247,0.12); color: var(--accent);">
+                        <i class="bi ${device.icon || 'bi-phone'}"></i>
+                    </div>
+                    <div class="acc-details">
+                        <h6>
+                            ${device.device_name || 'Unknown Device'}
+                            ${device.device_id === currentDeviceId ? '<span class="acc-badge active-badge ms-2">THIS DEVICE</span>' : ''}
+                        </h6>
+                        <div class="acc-meta">
+                            <span>${device.ip_address || 'Unknown IP'}</span>
+                            <span>Last active: ${device.last_active_display || 'Just now'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="acc-actions">
+                    ${device.device_id !== currentDeviceId ? `
+                        <button class="btn btn-delete-acc" onclick="logoutDevice(${device.id})">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function logoutDevice(deviceId) {
+        if (!confirm('Logout this device?')) return;
+        
+        fetch('/auth/api/logout-device/' + deviceId, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    loadDevices();
+                } else {
+                    alert(data.message || 'Error');
+                }
+            })
+            .catch(err => alert('Error logging out device'));
+    }
+    
+    function logoutAllDevices() {
+        if (!confirm('Logout from all other devices?')) return;
+        
+        fetch('/auth/api/logout-all-devices', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    loadDevices();
+                    alert(data.message);
+                } else {
+                    alert(data.message || 'Error');
+                }
+            })
+            .catch(err => alert('Error logging out devices'));
     }
 </script>
 {% endblock %}

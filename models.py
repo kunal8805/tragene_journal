@@ -1632,3 +1632,229 @@ def seed_lead_statuses():
     
     db.session.commit()
     print("✅ Lead and Influencer statuses seeded!")
+
+
+
+
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 📊 BACKTEST SYSTEM MODELS
+# ═══════════════════════════════════════════════════════════
+
+class BacktestStrategy(db.Model):
+    """User's saved backtest strategies"""
+    __tablename__ = 'backtest_strategies'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    config_json = db.Column(db.Text, nullable=False)
+    symbol = db.Column(db.String(50), nullable=False)
+    timeframe = db.Column(db.String(10), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='backtest_strategies', lazy=True)
+    
+    def get_config(self):
+        try:
+            return json.loads(self.config_json) if self.config_json else {}
+        except:
+            return {}
+    
+    def set_config(self, config_dict):
+        self.config_json = json.dumps(config_dict)
+
+
+class BacktestRun(db.Model):
+    """Records of backtest executions"""
+    __tablename__ = 'backtest_runs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    strategy_id = db.Column(db.Integer, db.ForeignKey('backtest_strategies.id'), nullable=True)
+    symbol = db.Column(db.String(50), nullable=False)
+    timeframe = db.Column(db.String(10), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    config_json = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='completed')
+    results_json = db.Column(db.Text)
+    error_message = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='backtest_runs', lazy=True)
+    strategy = db.relationship('BacktestStrategy', backref='runs', lazy=True)
+    
+    def get_results(self):
+        try:
+            return json.loads(self.results_json) if self.results_json else {}
+        except:
+            return {}
+    
+    def set_results(self, results_dict):
+        self.results_json = json.dumps(results_dict)
+
+
+class HistoricalData(db.Model):
+    """Registry of available historical data files"""
+    __tablename__ = 'historical_data'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(50), nullable=False)
+    timeframe = db.Column(db.String(10), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    date_range_start = db.Column(db.Date)
+    date_range_end = db.Column(db.Date)
+    row_count = db.Column(db.Integer)
+    file_size = db.Column(db.Integer)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    uploader = db.relationship('User', backref='uploaded_data', foreign_keys=[uploaded_by])
+    
+    __table_args__ = (db.UniqueConstraint('symbol', 'timeframe', name='uq_symbol_timeframe'),)
+
+
+class BacktestUsage(db.Model):
+    """Track backtest usage per user per day"""
+    __tablename__ = 'backtest_usage'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    run_date = db.Column(db.Date, nullable=False)
+    run_count = db.Column(db.Integer, default=0)
+    
+    user = db.relationship('User', backref='backtest_usage', lazy=True)
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'run_date', name='uq_user_date'),)
+
+
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 📱 LOGIN DEVICE TRACKING
+# ═══════════════════════════════════════════════════════════
+
+class LoginDevice(db.Model):
+    """Track user's logged-in devices for device limit enforcement"""
+    __tablename__ = 'login_devices'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    device_id = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    device_name = db.Column(db.String(200), default='Unknown Device')
+    device_type = db.Column(db.String(20), default='web')  # web, mobile, tablet
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.Text)
+    last_active = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='login_devices', lazy=True)
+    
+    def get_device_icon(self):
+        """Return emoji icon based on device name"""
+        name = (self.device_name or '').lower()
+        if 'iphone' in name:
+            return '📱'
+        elif 'ipad' in name:
+            return '📱'
+        elif 'android' in name:
+            return '📱'
+        elif 'windows' in name:
+            return '💻'
+        elif 'mac' in name:
+            return '💻'
+        elif 'linux' in name:
+            return '🖥️'
+        else:
+            return '🌐'
+    
+    def get_last_active_display(self):
+        """Human-readable last active time"""
+        if not self.last_active:
+            return 'Never'
+        
+        now = datetime.utcnow()
+        diff = now - self.last_active
+        
+        if diff.seconds < 60:
+            return 'Just now'
+        elif diff.seconds < 3600:
+            return f'{diff.seconds // 60} min ago'
+        elif diff.seconds < 86400:
+            return f'{diff.seconds // 3600} hours ago'
+        elif diff.days < 7:
+            return f'{diff.days} days ago'
+        else:
+            return self.last_active.strftime('%d %b %Y')
+    
+    def __repr__(self):
+        return f'<LoginDevice {self.device_name} for user {self.user_id}>'
+
+
+
+
+
+# ═══════════════════════════════════════════════════════════
+# 🎤 AUDIO TRANSCRIPTION MODELS
+# ═══════════════════════════════════════════════════════════
+
+class TranscriptionUsage(db.Model):
+    """Track user's audio transcription minutes per month"""
+    __tablename__ = 'transcription_usage'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    month_key = db.Column(db.String(7), nullable=False)  # "2026-08"
+    seconds_used = db.Column(db.Float, default=0.0)
+    transcription_count = db.Column(db.Integer, default=0)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='transcription_usage', lazy=True)
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'month_key', name='uq_user_month'),)
+    
+    def get_minutes_used(self):
+        """Return minutes used as float"""
+        return round(self.seconds_used / 60, 2) if self.seconds_used else 0.0
+    
+    def __repr__(self):
+        return f'<TranscriptionUsage user {self.user_id} month {self.month_key}: {self.get_minutes_used()}min>'
+
+
+class DiaryAudioEntry(db.Model):
+    """Diary entries created via audio transcription"""
+    __tablename__ = 'diary_audio_entries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    diary_entry_id = db.Column(db.Integer, db.ForeignKey('diary_entry.id'), nullable=True)
+    transcript = db.Column(db.Text, nullable=False)
+    original_transcript = db.Column(db.Text, nullable=True)
+    duration_seconds = db.Column(db.Float, default=0.0)
+    is_edited = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='audio_transcriptions', lazy=True)
+    diary_entry = db.relationship('DiaryEntry', backref='audio_transcription', lazy=True)
+    
+    def get_duration_display(self):
+        """Human-readable duration"""
+        if not self.duration_seconds:
+            return '0s'
+        mins = int(self.duration_seconds // 60)
+        secs = int(self.duration_seconds % 60)
+        if mins > 0:
+            return f'{mins}m {secs}s'
+        return f'{secs}s'
+    
+    def __repr__(self):
+        return f'<DiaryAudioEntry {self.id} by user {self.user_id}>'

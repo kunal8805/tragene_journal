@@ -144,6 +144,28 @@
         margin-top: 16px; display: flex; gap: 8px; align-items: flex-start;
     }
     .security-note i { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    
+    /* NEW: Loading spinner */
+    .spinner {
+        display: inline-block;
+        width: 16px; height: 16px;
+        border: 2px solid rgba(0,0,0,0.2);
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* NEW: Test connection button */
+    .btn-test {
+        padding: 8px 16px; background: rgba(38,166,154,0.08);
+        border: 1px solid rgba(38,166,154,0.2); color: var(--accent);
+        border-radius: 8px; font-weight: 600; font-size: 0.72rem;
+        cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+        transition: all 0.2s; margin-top: 8px;
+    }
+    .btn-test:hover { background: rgba(38,166,154,0.15); }
+    .btn-test:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 {% endblock %}
 
@@ -201,6 +223,24 @@
                 <label>Label (Optional)</label>
                 <input type="text" name="label" placeholder="e.g. My Binance Spot Account">
             </div>
+            
+            <!-- 🎯 Trading Account Selector -->
+            <div class="form-group">
+                <label>🎯 Select Trading Account *</label>
+                <select name="trading_account_id" id="tradingAccountSelect" class="crypto-required" required>
+                    <option value="">-- Select Trading Account --</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}" {% if account.id == current_account_id %}selected{% endif %}>
+                        {{ account.name }} ({{ account.broker or 'No Broker' }} - {{ account.currency }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="hint success">✅ Trades will ONLY sync to this trading account</div>
+                {% if not accounts %}
+                <div class="hint warn">⚠️ No trading accounts found. <a href="{{ url_for('user.settings') }}" style="color:#ffb300;">Create one first</a></div>
+                {% endif %}
+            </div>
+            
             <div class="form-group">
                 <label>API Key *</label>
                 <input type="password" name="api_key" placeholder="Enter your read-only API key" id="apiKey" class="crypto-required">
@@ -240,6 +280,24 @@
                 <label>Label (Optional)</label>
                 <input type="text" name="label" placeholder="e.g. FTMO Challenge Account">
             </div>
+            
+            <!-- 🎯 Trading Account Selector -->
+            <div class="form-group">
+                <label>🎯 Select Trading Account *</label>
+                <select name="trading_account_id" id="tradingAccountSelectForex" class="forex-required" required>
+                    <option value="">-- Select Trading Account --</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}" {% if account.id == current_account_id %}selected{% endif %}>
+                        {{ account.name }} ({{ account.broker or 'No Broker' }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="hint success">✅ MT5 trades will ONLY sync to this trading account</div>
+                {% if not accounts %}
+                <div class="hint warn">⚠️ No trading accounts found. <a href="{{ url_for('user.settings') }}" style="color:#ffb300;">Create one first</a></div>
+                {% endif %}
+            </div>
+            
             <div class="form-group">
                 <label>Server Name *</label>
                 <input type="text" name="server_name" placeholder="e.g. FTMO-Demo, ICMarkets-Live" class="forex-required">
@@ -262,9 +320,9 @@
             </div>
         </div>
         
-        <!-- ═══════════════════════════════════════ -->
+        <!-- ═══════════════════════════════════════════ -->
         <!-- INDIAN STOCKS SETUP -->
-        <!-- ═══════════════════════════════════════ -->
+        <!-- ═══════════════════════════════════════════ -->
         <div id="indianSetup" class="setup-card" style="display:none;">
             <h6>📋 Indian Stock Broker</h6>
             <div class="platform-grid" id="indianPlatforms">
@@ -296,12 +354,32 @@
                 <input type="text" name="label" placeholder="e.g. My Zerodha Account">
             </div>
             
+            <!-- 🎯 Trading Account Selector -->
+            <div class="form-group">
+                <label>🎯 Select Trading Account *</label>
+                <select name="trading_account_id" required>
+                    <option value="">-- Select Trading Account --</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}" {% if account.id == current_account_id %}selected{% endif %}>
+                        {{ account.name }} ({{ account.broker or 'No Broker' }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="hint success">✅ Trades will ONLY sync to this trading account</div>
+            </div>
+            
             <div style="background:rgba(38,166,154,0.05);border:1px solid rgba(38,166,154,0.1);border-radius:10px;padding:14px;text-align:center;margin-bottom:16px;">
                 <i class="bi bi-file-earmark-arrow-down" style="font-size:2rem;color:var(--accent);display:block;margin-bottom:8px;"></i>
                 <p style="font-size:0.8rem;color:#94a3b8;margin:0;">
                     Indian brokers use <strong>CSV tradebook upload</strong> for safety.<br>
                     No API credentials are stored — just download your tradebook from your broker's portal and upload it here.
                 </p>
+            </div>
+            
+            <div class="form-group">
+                <label>Upload Tradebook CSV</label>
+                <input type="file" name="tradebook_csv" accept=".csv" id="tradebookCsv" style="padding:8px;">
+                <div class="hint">Download your tradebook from your broker's portal (Zerodha Console, Angel One, etc.) and upload it here.</div>
             </div>
             
             <div class="security-note">
@@ -328,6 +406,7 @@
 <script>
     let currentMarket = 'crypto';
     let currentPlatform = '';
+    let isSubmitting = false;
     
     const ALL_EXCHANGES = [
         'alpaca','apex','aster','backpack','bigone','binance','bingx','bit2c',
@@ -346,6 +425,9 @@
         'weex','whitebit','woo','woofipro','xt','zaif','zebpay'
     ];
     
+    // Exchanges that require passphrase
+    const PASSPHRASE_EXCHANGES = ['okx','kucoin','bitget','coinbase','coinbaseexchange','gemini','kraken'];
+    
     function showExchangeDropdown() {
         filterExchangeList();
         document.getElementById('exchangeDropdown').classList.add('show');
@@ -361,7 +443,7 @@
             dropdown.innerHTML = '<div class="exchange-dropdown-empty">No exchange found</div>';
         } else {
             dropdown.innerHTML = filtered.map(ex => 
-                `<div class="exchange-dropdown-item" onclick="selectExchange('${ex}')">${ex}</div>`
+                `<div class="exchange-dropdown-item ${ex === currentPlatform ? 'selected' : ''}" onclick="selectExchange('${ex}')">${ex.charAt(0).toUpperCase() + ex.slice(1)}</div>`
             ).join('');
         }
     }
@@ -375,12 +457,13 @@
         
         const passphraseGroup = document.getElementById('passphraseGroup');
         if (passphraseGroup) {
-            passphraseGroup.style.display = ['okx','kucoin','bitget','coinbase','gemini'].includes(exchange) ? 'block' : 'none';
+            passphraseGroup.style.display = PASSPHRASE_EXCHANGES.includes(exchange) ? 'block' : 'none';
         }
         
         updateSubmitButton();
     }
     
+    // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
         const dropdown = document.getElementById('exchangeDropdown');
         const search = document.getElementById('exchangeSearch');
@@ -388,6 +471,47 @@
             dropdown.classList.remove('show');
         }
     });
+    
+    // Keyboard navigation for exchange dropdown
+    document.getElementById('exchangeSearch').addEventListener('keydown', function(e) {
+        const dropdown = document.getElementById('exchangeDropdown');
+        const items = dropdown.querySelectorAll('.exchange-dropdown-item');
+        let activeIndex = -1;
+        
+        items.forEach((item, index) => {
+            if (item.classList.contains('selected')) activeIndex = index;
+        });
+        
+        if (e.key === 'ArrowDown' && items.length > 0) {
+            e.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, items.length - 1);
+            highlightExchangeItem(items, activeIndex);
+        } else if (e.key === 'ArrowUp' && items.length > 0) {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            highlightExchangeItem(items, activeIndex);
+        } else if (e.key === 'Enter' && items.length > 0) {
+            e.preventDefault();
+            if (activeIndex >= 0) {
+                items[activeIndex].click();
+            } else if (items.length === 1) {
+                items[0].click();
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.classList.remove('show');
+        }
+    });
+    
+    function highlightExchangeItem(items, activeIndex) {
+        items.forEach((item, index) => {
+            if (index === activeIndex) {
+                item.classList.add('selected');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
     
     function selectMarket(market) {
         if (market === 'forex' && '{{ user_tier }}' === 'free') return;
@@ -397,6 +521,7 @@
         document.getElementById('marketInput').value = market;
         document.getElementById('platformInput').value = '';
         document.getElementById('exchangeSearch').value = '';
+        document.getElementById('customExchangeInput').value = '';
         
         document.querySelectorAll('.market-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('mkt' + (market === 'forex' ? 'Forex' : market === 'crypto' ? 'Crypto' : 'Indian')).classList.add('active');
@@ -409,6 +534,9 @@
         
         if (market === 'crypto') document.querySelectorAll('.crypto-required').forEach(el => el.required = true);
         if (market === 'forex') document.querySelectorAll('.forex-required').forEach(el => el.required = true);
+        
+        // Reset platform chips
+        document.querySelectorAll('.platform-chip').forEach(chip => chip.classList.remove('selected'));
         
         updateSubmitButton();
     }
@@ -427,10 +555,96 @@
     
     function updateSubmitButton() {
         const hasPlatform = currentPlatform || document.getElementById('platformInput').value;
-        document.getElementById('submitBtn').disabled = !(currentMarket && hasPlatform);
+        const submitBtn = document.getElementById('submitBtn');
+        const accountSelect = document.querySelector('select[name="trading_account_id"]');
+        const hasAccount = accountSelect ? accountSelect.value !== '' : false;
+        
+        if (currentMarket === 'crypto') {
+            const hasApiKey = document.getElementById('apiKey').value.length > 0;
+            const hasApiSecret = document.querySelector('input[name="api_secret"]').value.length > 0;
+            submitBtn.disabled = !(hasPlatform && hasApiKey && hasApiSecret && hasAccount);
+        } else if (currentMarket === 'forex') {
+            const hasServer = document.querySelector('input[name="server_name"]').value.length > 0;
+            const hasAccountNumber = document.querySelector('input[name="mt_account_number"]').value.length > 0;
+            const hasPassword = document.querySelector('input[name="investor_password"]').value.length > 0;
+            submitBtn.disabled = !(hasPlatform && hasServer && hasAccountNumber && hasPassword && hasAccount);
+        } else if (currentMarket === 'indian_stock') {
+            const hasCsv = document.getElementById('tradebookCsv') && document.getElementById('tradebookCsv').files.length > 0;
+            submitBtn.disabled = !(hasPlatform && hasCsv && hasAccount);
+        } else {
+            submitBtn.disabled = !(currentMarket && hasPlatform && hasAccount);
+        }
     }
     
+    // Add input listeners for real-time validation
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateSubmitButton);
+        input.addEventListener('change', updateSubmitButton);
+    });
+    
+    // Listen for account selection
+    document.querySelectorAll('select[name="trading_account_id"]').forEach(select => {
+        select.addEventListener('change', updateSubmitButton);
+    });
+    
+    // Handle form submission
     document.getElementById('syncForm').addEventListener('submit', function(e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            return;
+        }
+        
+        // Validate before submit
+        if (currentMarket === 'crypto') {
+            const apiKey = document.getElementById('apiKey').value;
+            const apiSecret = document.querySelector('input[name="api_secret"]').value;
+            const accountId = document.getElementById('tradingAccountSelect').value;
+            if (!apiKey || !apiSecret) {
+                e.preventDefault();
+                alert('Please enter both API Key and API Secret.');
+                return;
+            }
+            if (!accountId) {
+                e.preventDefault();
+                alert('Please select a trading account.');
+                return;
+            }
+        } else if (currentMarket === 'forex') {
+            const server = document.querySelector('input[name="server_name"]').value;
+            const account = document.querySelector('input[name="mt_account_number"]').value;
+            const password = document.querySelector('input[name="investor_password"]').value;
+            const accountId = document.getElementById('tradingAccountSelectForex').value;
+            if (!server || !account || !password) {
+                e.preventDefault();
+                alert('Please fill in all required fields.');
+                return;
+            }
+            if (!accountId) {
+                e.preventDefault();
+                alert('Please select a trading account.');
+                return;
+            }
+        } else if (currentMarket === 'indian_stock') {
+            const csvFile = document.getElementById('tradebookCsv');
+            const accountId = document.querySelector('#indianSetup select[name="trading_account_id"]').value;
+            if (csvFile && csvFile.files.length === 0) {
+                e.preventDefault();
+                alert('Please upload your tradebook CSV file.');
+                return;
+            }
+            if (!accountId) {
+                e.preventDefault();
+                alert('Please select a trading account.');
+                return;
+            }
+        }
+        
+        // Show loading state
+        isSubmitting = true;
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Connecting...';
+        
         console.log('Submitting... Market:', document.getElementById('marketInput').value, 'Platform:', document.getElementById('platformInput').value);
     });
 </script>

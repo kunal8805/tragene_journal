@@ -12,7 +12,7 @@ mt5_receiver_bp = Blueprint('mt5_receiver', __name__)
 # 🔐 SIMPLE SECURITY - JUST API KEY
 # ═══════════════════════════════════════════════════════════
 
-VPS_API_KEY = os.environ.get('VPS_API_KEY', 'tragene_sync_2024_secret_key')
+VPS_API_KEY = os.environ.get('VPS_API_KEY', 'Hg7kLm9pQr2xYw4zNc8vBd5fJh3nMs6tUy1aXe0i')
 
 def verify_api_key(api_key):
     """Simple API key verification"""
@@ -135,13 +135,17 @@ def receive_trades_from_vps():
                 print(f"   ❌ Error adding trade: {str(e)}")
                 continue
 
-        connection.last_sync = datetime.utcnow()
+        # ✅ FIXED: Use last_synced_at (not last_sync)
+        connection.last_synced_at = datetime.utcnow()
         connection.sync_status = 'active'
         connection.last_error = None
+        connection.sync_count = (connection.sync_count or 0) + 1
+        connection.total_trades_fetched = (connection.total_trades_fetched or 0) + trades_added
 
         db.session.commit()
 
         print(f"   ✅ Added: {trades_added}, Skipped: {trades_skipped}")
+        print(f"   ✅ Connection updated: last_synced_at={connection.last_synced_at}")
 
         return jsonify({
             'success': True,

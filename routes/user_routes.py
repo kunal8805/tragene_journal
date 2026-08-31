@@ -2693,6 +2693,12 @@ def sync_setup():
     """Setup new sync connection"""
     market = request.args.get('market', 'crypto')
     
+    # 🆕 Get user's trading accounts
+    accounts = TradingAccount.query.filter_by(
+        user_id=current_user.id,
+        is_active=True
+    ).order_by(TradingAccount.created_at).all()
+    
     # Check if user can access this market
     can_access = True
     access_message = ''
@@ -2704,7 +2710,9 @@ def sync_setup():
         market=market,
         can_access=can_access,
         access_message=access_message,
-        user_tier=current_user.subscription_tier
+        user_tier=current_user.subscription_tier,
+        accounts=accounts,  # 🆕 Pass accounts
+        current_account_id=get_active_account_id()  # 🆕 Pass current
     )
 
 
@@ -2718,20 +2726,50 @@ def sync_connect():
     label = request.form.get('label', '').strip()
     method = request.form.get('method', 'api')
     
+    # 🆕 Get selected trading account
+    trading_account_id = request.form.get('trading_account_id')
+    
+    if not trading_account_id:
+        flash('Please select a trading account for this sync.', 'danger')
+        return redirect(url_for('user.sync_setup', market=market))
+    
+    # 🆕 Validate account belongs to user
+    trading_account = TradingAccount.query.filter_by(
+        id=trading_account_id,
+        user_id=current_user.id,
+        is_active=True
+    ).first()
+    
+    if not trading_account:
+        flash('Invalid trading account selected.', 'danger')
+        return redirect(url_for('user.sync_setup', market=market))
+    
+    # 🆕 Check for existing MT5 sync on this account
+    if platform in ['mt4', 'mt5']:
+        existing_mt5 = SyncConnection.query.filter_by(
+            account_id=trading_account.id,
+            platform=platform,
+            is_active=True
+        ).first()
+        
+        if existing_mt5:
+            flash(f'⚠️ {trading_account.name} already has an active {platform.upper()} sync. Delete it first.', 'warning')
+            return redirect(url_for('user.sync_center'))
+    
     # Check permissions
     can_create, error_msg = can_create_sync(current_user, market)
     if not can_create:
         flash(error_msg, 'danger')
         return redirect(url_for('user.sync_center'))
     
-    # Create connection based on market
+    # 🆕 Create connection with selected account
     connection = SyncConnection(
         user_id=current_user.id,
-        account_id=get_active_account_id(),
+        account_id=trading_account.id,  # 🆕 Selected account
         market=market,
         platform=platform,
         method=method,
-        label=label or f"{platform.upper()} - {market.title()}"
+        label=label or f"{platform.upper()} - {trading_account.name}"  # 🆕 Include account name
     )
     
     # Handle credentials based on market
@@ -2793,8 +2831,8 @@ def sync_connect():
         connection.mt_account_number = login
         connection.investor_password_encrypted = encrypt(password)
         
-        # Generate sync_id and username for VPS
-        connection.sync_id = generate_sync_id(current_user.id, get_active_account_id())
+        # 🆕 Generate sync_id with selected account
+        connection.sync_id = generate_sync_id(current_user.id, trading_account.id)
         connection.username = current_user.email
         connection.sync_status = 'active'
         
@@ -2806,7 +2844,7 @@ def sync_connect():
         
         if success:
             connection.sync_status = 'active'
-            flash(f'✅ {platform.upper()} connected! Sync is active. Trades will appear automatically.', 'success')
+            flash(f'✅ {platform.upper()} connected to {trading_account.name}! Sync is active. Trades will appear automatically.', 'success')
         else:
             connection.sync_status = 'error'
             connection.last_error = error
@@ -2818,12 +2856,12 @@ def sync_connect():
     elif market == 'indian_stock':
         connection.method = 'csv'
         connection.sync_status = 'active'
-        flash(f'✅ {platform.upper()} connected! Upload your tradebook CSV to import trades.', 'success')
+        flash(f'✅ {platform.upper()} connected to {trading_account.name}! Upload your tradebook CSV to import trades.', 'success')
     
     db.session.add(connection)
     db.session.commit()
     
-    flash(f'✅ {platform.upper()} connected successfully!', 'success')
+    flash(f'✅ {platform.upper()} connected successfully to {trading_account.name}!', 'success')
     return redirect(url_for('user.sync_center'))
 
 

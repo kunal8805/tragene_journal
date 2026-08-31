@@ -1,0 +1,738 @@
+{% extends "base_user.html" %}
+{% block title %}My Strategies - Tragene Journal{% endblock %}
+{% block page_title %}📊 My Strategies{% endblock %}
+
+{% block extra_css %}
+<style>
+    .strategies-header {
+        background: #111827;
+        border-bottom: 1px solid #1e2d42;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .back-btn {
+        background: #1a2332;
+        border: 1px solid #1e2d42;
+        color: #e5e7eb;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+
+    .back-btn:hover {
+        background: #1e2d42;
+    }
+
+    .header-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #e5e7eb;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #1a2332;
+        color: #e5e7eb;
+        border: 1px solid #1e2d42;
+    }
+
+    .btn-secondary:hover {
+        background: #1e2d42;
+    }
+
+    .btn-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    /* Main Container */
+    .strategies-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* Toolbar */
+    .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .search-box {
+        padding: 10px 16px;
+        background: #111827;
+        border: 1px solid #1e2d42;
+        border-radius: 8px;
+        color: #e5e7eb;
+        font-size: 13px;
+        outline: none;
+        width: 300px;
+    }
+
+    .search-box:focus {
+        border-color: #3b82f6;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        background: #111827;
+        border: 1px solid #1e2d42;
+        border-radius: 8px;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .filter-btn:hover {
+        background: #1a2332;
+        color: #e5e7eb;
+    }
+
+    .filter-btn.active {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
+
+    /* Strategies Grid */
+    .strategies-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+    }
+
+    /* Strategy Card */
+    .strategy-card {
+        background: linear-gradient(135deg, #111827 0%, #1a2332 100%);
+        border: 1px solid #1e2d42;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .strategy-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        border-color: #3b82f6;
+    }
+
+    .strategy-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .strategy-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #e5e7eb;
+        margin-bottom: 4px;
+    }
+
+    .strategy-description {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    .strategy-badges {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-symbol {
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+    }
+
+    .badge-timeframe {
+        background: rgba(139, 92, 246, 0.2);
+        color: #8b5cf6;
+    }
+
+    .badge-active {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+    }
+
+    .badge-inactive {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+    }
+
+    /* Strategy Stats */
+    .strategy-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 16px 0;
+        padding: 12px;
+        background: #1a2332;
+        border-radius: 8px;
+    }
+
+    .mini-stat {
+        text-align: center;
+    }
+
+    .mini-stat-label {
+        font-size: 9px;
+        text-transform: uppercase;
+        color: #6b7280;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .mini-stat-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: #e5e7eb;
+    }
+
+    .mini-stat-value.positive {
+        color: #10b981;
+    }
+
+    .mini-stat-value.negative {
+        color: #ef4444;
+    }
+
+    /* Strategy Actions */
+    .strategy-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid #1e2d42;
+        background: #1a2332;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .action-btn:hover {
+        background: #1e2d42;
+        color: #e5e7eb;
+        transform: translateY(-1px);
+    }
+
+    .action-btn.run {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.3);
+        color: #10b981;
+    }
+
+    .action-btn.run:hover {
+        background: rgba(16, 185, 129, 0.2);
+    }
+
+    .action-btn.edit {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.3);
+        color: #3b82f6;
+    }
+
+    .action-btn.edit:hover {
+        background: rgba(59, 130, 246, 0.2);
+    }
+
+    .action-btn.delete {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    .action-btn.delete:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #111827;
+        border: 2px dashed #1e2d42;
+        border-radius: 12px;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+
+    .empty-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #e5e7eb;
+        margin-bottom: 8px;
+    }
+
+    .empty-description {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 24px;
+    }
+
+    /* Loading State */
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+    }
+
+    .spinner {
+        border: 3px solid #1e2d42;
+        border-top: 3px solid #3b82f6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        display: none;
+    }
+
+    .modal-overlay.open {
+        display: flex;
+    }
+
+    .modal {
+        background: #111827;
+        border: 1px solid #1e2d42;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #e5e7eb;
+        margin-bottom: 16px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .strategies-grid {
+            grid-template-columns: 1fr;
+        }
+        .toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .search-box {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <!-- Header -->
+    <div class="strategies-header">
+        <div class="header-left">
+            <a href="/backtest/builder" class="back-btn">← Back to Builder</a>
+            <h1 class="header-title">My Strategies</h1>
+        </div>
+        <div class="header-actions">
+            <a href="/backtest/builder" class="btn btn-success">+ New Strategy</a>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="strategies-container">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <input type="text" class="search-box" placeholder="Search strategies..." onkeyup="filterStrategies(this.value)">
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterByStatus(this, 'all')">All</button>
+                <button class="filter-btn" onclick="filterByStatus(this, 'active')">Active</button>
+                <button class="filter-btn" onclick="filterByStatus(this, 'inactive')">Inactive</button>
+            </div>
+        </div>
+
+        <!-- Strategies Grid -->
+        <div id="strategiesContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading your strategies...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <h3 class="modal-title">Delete Strategy?</h3>
+            <p style="color:#9ca3af;margin-bottom:16px;">
+                Are you sure you want to delete <strong id="deleteStrategyName" style="color:#e5e7eb;"></strong>? 
+                This action cannot be undone.
+            </p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allStrategies = [];
+    let deleteStrategyId = null;
+    let currentFilter = 'all';
+    let currentSearch = '';
+
+    // Load strategies on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStrategies();
+    });
+
+    function loadStrategies() {
+        fetch('/backtest/api/strategies')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    allStrategies = data.strategies;
+                    renderStrategies(allStrategies);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(err => {
+                showError('Error loading strategies: ' + err.message);
+            });
+    }
+
+    function renderStrategies(strategies) {
+        const container = document.getElementById('strategiesContainer');
+        
+        if (strategies.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <h3 class="empty-title">No Strategies Found</h3>
+                    <p class="empty-description">
+                        ${allStrategies.length === 0 ? 
+                            'You haven\'t created any strategies yet. Start building your first strategy!' : 
+                            'No strategies match your search criteria.'}
+                    </p>
+                    ${allStrategies.length === 0 ? `
+                        <a href="/backtest/builder" class="btn btn-primary" style="display:inline-flex;">
+                            + Create Your First Strategy
+                        </a>
+                    ` : ''}
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = '<div class="strategies-grid">' + strategies.map(strategy => `
+            <div class="strategy-card" data-status="${strategy.is_active ? 'active' : 'inactive'}" 
+                 data-search="${strategy.name} ${strategy.symbol} ${strategy.timeframe} ${strategy.description || ''}">
+                <div class="strategy-card-header">
+                    <div>
+                        <div class="strategy-name">${strategy.name}</div>
+                        ${strategy.description ? `<div class="strategy-description">${strategy.description}</div>` : ''}
+                        <div class="strategy-badges">
+                            <span class="badge badge-symbol">${strategy.symbol}</span>
+                            <span class="badge badge-timeframe">${strategy.timeframe}</span>
+                            <span class="badge ${strategy.is_active ? 'badge-active' : 'badge-inactive'}">
+                                ${strategy.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                ${strategy.last_run ? `
+                <div class="strategy-stats">
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">Last Return</div>
+                        <div class="mini-stat-value ${strategy.last_run.total_return >= 0 ? 'positive' : 'negative'}">
+                            ${strategy.last_run.total_return >= 0 ? '+' : ''}${strategy.last_run.total_return.toFixed(2)}%
+                        </div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">Win Rate</div>
+                        <div class="mini-stat-value">${strategy.last_run.win_rate.toFixed(1)}%</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">Trades</div>
+                        <div class="mini-stat-value">${strategy.last_run.total_trades}</div>
+                    </div>
+                </div>
+                ` : `
+                <div class="strategy-stats" style="opacity:0.5;">
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">Status</div>
+                        <div class="mini-stat-value" style="font-size:11px;">Not Run Yet</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">Created</div>
+                        <div class="mini-stat-value" style="font-size:11px;">${formatDate(strategy.created_at)}</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-label">Updated</div>
+                        <div class="mini-stat-value" style="font-size:11px;">${formatDate(strategy.updated_at)}</div>
+                    </div>
+                </div>
+                `}
+
+                <div class="strategy-actions">
+                    <button class="action-btn run" onclick="runStrategy(${strategy.id})">▶ Run Backtest</button>
+                    <button class="action-btn edit" onclick="editStrategy(${strategy.id})">✏️ Edit</button>
+                    <button class="action-btn" onclick="cloneStrategy(${strategy.id})">📋 Clone</button>
+                    <button class="action-btn delete" onclick="showDeleteModal(${strategy.id})">🗑️ Delete</button>
+                </div>
+            </div>
+        `).join('') + '</div>';
+    }
+
+    function runStrategy(strategyId) {
+        fetch(`/backtest/api/run_strategy/${strategyId}`, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = `/backtest/results/${data.run_id}`;
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => alert('Error running strategy'));
+    }
+
+    function editStrategy(strategyId) {
+        window.location.href = `/backtest/builder?strategy_id=${strategyId}`;
+    }
+
+    function cloneStrategy(strategyId) {
+        fetch(`/backtest/api/clone_strategy/${strategyId}`, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('Strategy cloned successfully!');
+                loadStrategies();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => alert('Error cloning strategy'));
+    }
+
+    function showDeleteModal(strategyId) {
+        deleteStrategyId = strategyId;
+        const strategy = allStrategies.find(s => s.id === strategyId);
+        document.getElementById('deleteStrategyName').textContent = strategy ? strategy.name : '';
+        document.getElementById('deleteModal').classList.add('open');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('open');
+        deleteStrategyId = null;
+    }
+
+    function confirmDelete() {
+        if (!deleteStrategyId) return;
+        
+        fetch(`/backtest/api/delete_strategy/${deleteStrategyId}`, {
+            method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                closeDeleteModal();
+                loadStrategies();
+            } else {
+                alert('Error: ' + data.message);
+                closeDeleteModal();
+            }
+        })
+        .catch(err => {
+            alert('Error deleting strategy');
+            closeDeleteModal();
+        });
+    }
+
+    function filterStrategies(search) {
+        currentSearch = search.toLowerCase();
+        applyFilters();
+    }
+
+    function filterByStatus(btn, status) {
+        currentFilter = status;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilters();
+    }
+
+    function applyFilters() {
+        let filtered = allStrategies;
+        
+        if (currentFilter !== 'all') {
+            filtered = filtered.filter(s => s.is_active === (currentFilter === 'active'));
+        }
+        
+        if (currentSearch) {
+            filtered = filtered.filter(s => 
+                (s.name + ' ' + s.symbol + ' ' + s.timeframe + ' ' + (s.description || ''))
+                .toLowerCase()
+                .includes(currentSearch)
+            );
+        }
+        
+        renderStrategies(filtered);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            year: 'numeric'
+        });
+    }
+
+    function showError(message) {
+        const container = document.getElementById('strategiesContainer');
+        container.innerHTML = `
+            <div style="text-align:center;padding:40px;">
+                <div style="font-size:48px;margin-bottom:16px;">❌</div>
+                <h3 style="color:#ef4444;margin-bottom:8px;">Error Loading Strategies</h3>
+                <p style="color:#6b7280;margin-bottom:16px;">${message}</p>
+                <button class="btn btn-primary" onclick="loadStrategies()">Try Again</button>
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

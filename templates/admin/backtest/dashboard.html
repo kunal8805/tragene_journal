@@ -1,0 +1,731 @@
+{% extends "base_admin.html" %}
+{% block title %}Backtest Dashboard - Admin{% endblock %}
+{% block page_title %}📊 Backtest Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: var(--bg-card, #151e2e);
+        border-bottom: 1px solid var(--border-color, #1e2d42);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    .dashboard-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .header-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary, #e5e7eb);
+    }
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .quick-action-card {
+        background: var(--bg-card, #151e2e);
+        border: 1px solid var(--border-color, #1e2d42);
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        color: var(--text-primary, #e5e7eb);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .quick-action-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        border-color: var(--accent, #3b82f6);
+    }
+    .quick-action-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+    .quick-action-info h4 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 4px;
+    }
+    .quick-action-info p {
+        font-size: 11px;
+        color: var(--text-muted, #6b7280);
+        margin: 0;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .stat-card {
+        background: var(--bg-card, #151e2e);
+        border: 1px solid var(--border-color, #1e2d42);
+        border-radius: 12px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    .stat-card:hover {
+        border-color: var(--accent, #3b82f6);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+    .stat-icon {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        font-size: 24px;
+        opacity: 0.5;
+    }
+    .stat-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-muted, #6b7280);
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary, #e5e7eb);
+        margin-bottom: 4px;
+    }
+    .stat-change {
+        font-size: 11px;
+        font-weight: 600;
+        color: #10b981;
+    }
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    .chart-card {
+        background: var(--bg-card, #151e2e);
+        border: 1px solid var(--border-color, #1e2d42);
+        border-radius: 12px;
+        padding: 20px;
+    }
+    .chart-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary, #9ca3af);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    .table-card {
+        background: var(--bg-card, #151e2e);
+        border: 1px solid var(--border-color, #1e2d42);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+    .table-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+    .table-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary, #9ca3af);
+    }
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    thead {
+        background: #1a2332;
+    }
+    th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-secondary, #9ca3af);
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border-color, #1e2d42);
+    }
+    td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color, #1e2d42);
+        color: var(--text-primary, #e5e7eb);
+    }
+    tbody tr:hover {
+        background: #1a2332;
+    }
+    .badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+    }
+    .badge-success { background: rgba(16,185,129,0.2); color: #10b981; }
+    .badge-warning { background: rgba(245,158,11,0.2); color: #f59e0b; }
+    .badge-danger { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .badge-info { background: rgba(59,130,246,0.2); color: #3b82f6; }
+    .badge-purple { background: rgba(139,92,246,0.2); color: #8b5cf6; }
+    .nav-tabs {
+        display: flex;
+        gap: 4px;
+        background: #1a2332;
+        padding: 4px;
+        border-radius: 8px;
+    }
+    .nav-tab {
+        padding: 8px 16px;
+        border-radius: 6px;
+        color: var(--text-secondary, #9ca3af);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .nav-tab:hover {
+        color: var(--text-primary, #e5e7eb);
+        background: #1e2d42;
+    }
+    .nav-tab.active {
+        background: #3b82f6;
+        color: white;
+    }
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted, #6b7280);
+        grid-column: 1 / -1;
+    }
+    .spinner {
+        border: 3px solid #1e2d42;
+        border-top: 3px solid #3b82f6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @media (max-width: 1024px) {
+        .charts-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+        .dashboard-header { flex-direction: column; gap: 12px; }
+        .nav-tabs { width: 100%; overflow-x: auto; }
+        .dashboard-container { padding: 16px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <h1 class="header-title">🎯 Backtest Admin Dashboard</h1>
+        </div>
+        <div class="nav-tabs">
+            <a href="/backtest/admin/dashboard" class="nav-tab active">Dashboard</a>
+            <a href="/backtest/admin/data-manager" class="nav-tab">Data Manager</a>
+            <a href="/backtest/admin/analytics" class="nav-tab">Analytics</a>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="dashboard-container">
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="/backtest/admin/data-manager" class="quick-action-card">
+                <div class="quick-action-icon" style="background:rgba(59,130,246,0.2);">📁</div>
+                <div class="quick-action-info">
+                    <h4>Data Manager</h4>
+                    <p>Upload/Delete CSV data</p>
+                </div>
+            </a>
+            <a href="/backtest/admin/analytics" class="quick-action-card">
+                <div class="quick-action-icon" style="background:rgba(16,185,129,0.2);">📊</div>
+                <div class="quick-action-info">
+                    <h4>Analytics</h4>
+                    <p>View detailed stats</p>
+                </div>
+            </a>
+            <a href="/admin/users" class="quick-action-card">
+                <div class="quick-action-icon" style="background:rgba(139,92,246,0.2);">👥</div>
+                <div class="quick-action-info">
+                    <h4>User Management</h4>
+                    <p>Manage users & plans</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span>📈 Backtests Over Time</span>
+                    <span style="font-size:11px;color:#6b7280;">Last 7 Days</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="backtestsChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span>👥 Top Users</span>
+                    <span style="font-size:11px;color:#6b7280;">By Backtest Count</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="topUsersChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="table-card">
+            <div class="table-header">
+                <span class="table-title">🕐 Recent Backtest Activity</span>
+                <button onclick="refreshActivity()" style="background:#1a2332;border:1px solid #1e2d42;
+                        color:#e5e7eb;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">
+                    🔄 Refresh
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table id="activityTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Strategy</th>
+                            <th>Symbol</th>
+                            <th>Timeframe</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activityBody">
+                        <tr>
+                            <td colspan="8" style="text-align:center;color:#6b7280;">
+                                Loading activity...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Strategies -->
+        <div class="table-card">
+            <div class="table-header">
+                <span class="table-title">🏆 Top Performing Strategies</span>
+                <a href="/backtest/admin/analytics" style="color:#3b82f6;font-size:12px;text-decoration:none;">
+                    View All →
+                </a>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>User</th>
+                            <th>Strategy Name</th>
+                            <th>Symbol</th>
+                            <th>Return %</th>
+                            <th>Win Rate</th>
+                            <th>Profit Factor</th>
+                            <th>Trades</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topStrategiesBody">
+                        <tr>
+                            <td colspan="9" style="text-align:center;color:#6b7280;">
+                                Loading top strategies...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<!-- Config Modal -->
+<div id="configModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99999;display:none;align-items:center;justify-content:center;">
+    <div style="background:#151e2e;border:1px solid #1e2d42;border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+        <h5 style="margin-bottom:16px;color:#e5e7eb;">📊 Strategy Configuration</h5>
+        <div id="configContent"></div>
+        <button onclick="closeConfigModal()" style="background:#1a2332;border:1px solid #1e2d42;color:#e5e7eb;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:12px;">Close</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    let dashboardData = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardData();
+    });
+
+    function loadDashboardData() {
+        fetch('/backtest/api/admin/dashboard')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    dashboardData = data;
+                    renderStats(data.stats);
+                    renderCharts(data.charts);
+                    renderActivity(data.recent_activity);
+                    renderTopStrategies(data.top_strategies);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(err => {
+                showError('Error loading dashboard: ' + err.message);
+            });
+    }
+
+    function renderStats(stats) {
+        const statsGrid = document.getElementById('statsGrid');
+        
+        const statCards = [
+            { label: 'Total Backtests', value: stats.total_backtests, icon: '📊', change: stats.today_backtests + ' today' },
+            { label: 'Today\'s Backtests', value: stats.today_backtests, icon: '⚡', change: 'Live' },
+            { label: 'This Month', value: stats.month_backtests, icon: '📅', change: 'Current month' },
+            { label: 'Last Month', value: stats.last_month_backtests, icon: '🗓️', change: 'Previous month' },
+            { label: 'Active Users', value: stats.active_users, icon: '👥', change: 'This month' },
+            { label: 'Total Strategies', value: stats.total_strategies, icon: '🎯', change: 'Saved by users' },
+            { label: 'Data Files', value: stats.data_files, icon: '📁', change: 'Available symbols' },
+            { label: 'Avg Return', value: stats.avg_return + '%', icon: '💹', change: 'Across all runs' }
+        ];
+
+        statsGrid.innerHTML = statCards.map(card => `
+            <div class="stat-card">
+                <div class="stat-icon">${card.icon}</div>
+                <div class="stat-label">${card.label}</div>
+                <div class="stat-value">${card.value}</div>
+                <div class="stat-change">${card.change}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderCharts(charts) {
+        const backtestsCtx = document.getElementById('backtestsChart').getContext('2d');
+        new Chart(backtestsCtx, {
+            type: 'line',
+            data: {
+                labels: charts.daily_labels,
+                datasets: [{
+                    label: 'Backtests',
+                    data: charts.daily_counts,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1a2332',
+                        borderColor: '#1e2d42',
+                        borderWidth: 1,
+                        titleColor: '#e5e7eb',
+                        bodyColor: '#9ca3af'
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#1e2d42', drawBorder: false },
+                        ticks: { color: '#6b7280', font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: '#1e2d42', drawBorder: false },
+                        ticks: { color: '#6b7280', font: { size: 10 }, stepSize: 1 }
+                    }
+                }
+            }
+        });
+
+        const topUsersCtx = document.getElementById('topUsersChart').getContext('2d');
+        new Chart(topUsersCtx, {
+            type: 'doughnut',
+            data: {
+                labels: charts.top_users.map(u => u.username),
+                datasets: [{
+                    data: charts.top_users.map(u => u.count),
+                    backgroundColor: [
+                        '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444',
+                        '#06b6d4', '#f97316', '#ec4899', '#14b8a6', '#6366f1'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#111827'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#9ca3af',
+                            font: { size: 10 },
+                            padding: 8
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1a2332',
+                        borderColor: '#1e2d42',
+                        borderWidth: 1,
+                        titleColor: '#e5e7eb',
+                        bodyColor: '#9ca3af'
+                    }
+                }
+            }
+        });
+    }
+
+    function renderActivity(activities) {
+        const tbody = document.getElementById('activityBody');
+        
+        if (activities.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align:center;color:#6b7280;padding:20px;">
+                        No recent activity
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = activities.map(activity => `
+            <tr>
+                <td>#${activity.id}</td>
+                <td style="font-weight:600;">${activity.username}</td>
+                <td>${activity.strategy_name || 'Unnamed'}</td>
+                <td><span class="badge badge-info">${activity.symbol}</span></td>
+                <td><span class="badge badge-purple">${activity.timeframe}</span></td>
+                <td>
+                    <span class="badge ${activity.status === 'completed' ? 'badge-success' : 
+                                        activity.status === 'running' ? 'badge-warning' : 'badge-danger'}">
+                        ${activity.status}
+                    </span>
+                </td>
+                <td>${formatDate(activity.created_at)}</td>
+                <td>
+                    <button onclick="viewResult(${activity.id})" 
+                            style="background:#3b82f6;color:white;border:none;padding:4px 10px;
+                                   border-radius:4px;cursor:pointer;font-size:11px;">
+                        View
+                    </button>
+                    <button onclick="viewStrategyConfig(${activity.id})" 
+                            style="background:#8b5cf6;color:white;border:none;padding:4px 10px;
+                                   border-radius:4px;cursor:pointer;font-size:11px;">
+                        Config
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderTopStrategies(strategies) {
+        const tbody = document.getElementById('topStrategiesBody');
+        
+        if (strategies.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align:center;color:#6b7280;padding:20px;">
+                        No strategies run yet
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = strategies.map((strategy, index) => `
+            <tr>
+                <td>
+                    <span style="font-weight:700;font-size:14px;">
+                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                    </span>
+                </td>
+                <td style="font-weight:600;">${strategy.username}</td>
+                <td>${strategy.strategy_name}</td>
+                <td><span class="badge badge-info">${strategy.symbol}</span></td>
+                <td style="color:${strategy.total_return >= 0 ? '#10b981' : '#ef4444'};
+                           font-weight:600;">
+                    ${strategy.total_return >= 0 ? '+' : ''}${strategy.total_return.toFixed(2)}%
+                </td>
+                <td>${strategy.win_rate.toFixed(1)}%</td>
+                <td>${strategy.profit_factor.toFixed(2)}</td>
+                <td>${strategy.total_trades}</td>
+                <td>
+                    <button onclick="viewStrategyConfig(${strategy.run_id})" 
+                            style="background:#8b5cf6;color:white;border:none;padding:4px 10px;
+                                   border-radius:4px;cursor:pointer;font-size:11px;">
+                        Config
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function viewStrategyConfig(runId) {
+        fetch('/backtest/api/view-strategy-config/' + runId)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const config = data.config;
+                    const stats = data.stats;
+                    
+                    let html = `
+                        <div style="margin-bottom:16px;font-size:0.85rem;color:#e5e7eb;">
+                            <strong>Strategy:</strong> ${data.strategy_name}<br>
+                            <strong>Symbol:</strong> ${data.symbol} | 
+                            <strong>Timeframe:</strong> ${data.timeframe}
+                        </div>
+                        
+                        <h6 style="color:#3b82f6;">📈 Entry Rules:</h6>
+                        ${config.entry_rules && config.entry_rules.length > 0 ? config.entry_rules.map((rule, i) => `
+                            <div style="padding:8px;background:#1a2332;border-radius:6px;margin-bottom:6px;font-size:0.78rem;color:#e5e7eb;">
+                                ${i > 0 ? (rule.logic || 'AND') + ' | ' : ''}${rule.indicator} ${rule.operator} ${rule.compare_to} ${rule.value || ''}
+                                ${rule.period ? '(Period: ' + rule.period + ')' : ''}
+                            </div>
+                        `).join('') : '<p style="font-size:0.78rem;color:#6b7280;">None</p>'}
+                        
+                        <h6 class="mt-3" style="color:#3b82f6;">🚪 Exit Rules:</h6>
+                        ${config.exit_rules && config.exit_rules.length > 0 ? config.exit_rules.map((rule, i) => `
+                            <div style="padding:8px;background:#1a2332;border-radius:6px;margin-bottom:6px;font-size:0.78rem;color:#e5e7eb;">
+                                ${i > 0 ? (rule.logic || 'AND') + ' | ' : ''}${rule.indicator} ${rule.operator} ${rule.compare_to} ${rule.value || ''}
+                                ${rule.period ? '(Period: ' + rule.period + ')' : ''}
+                            </div>
+                        `).join('') : '<p style="font-size:0.78rem;color:#6b7280;">None</p>'}
+                        
+                        <h6 class="mt-3" style="color:#3b82f6;">🛡 Risk Management:</h6>
+                        <div style="font-size:0.78rem;color:#e5e7eb;">
+                            Stop Loss: ${config.risk_management?.stop_loss_type || 'None'}
+                            ${config.risk_management?.stop_loss_value ? '(' + config.risk_management.stop_loss_value + ')' : ''}
+                            <br>
+                            Take Profit: ${config.risk_management?.take_profit_type || 'None'}
+                            ${config.risk_management?.take_profit_value ? '(' + config.risk_management.take_profit_value + ')' : ''}
+                            <br>
+                            Trailing Stop: ${config.risk_management?.trailing_stop || 'None'}
+                        </div>
+                        
+                        <h6 class="mt-3" style="color:#3b82f6;">💰 Position Sizing:</h6>
+                        <div style="font-size:0.78rem;color:#e5e7eb;">
+                            Type: ${config.position_sizing?.type || 'Fixed'} | Size: ${config.position_sizing?.size || 1}
+                        </div>
+                        
+                        <h6 class="mt-3" style="color:#3b82f6;">📊 Results:</h6>
+                        <div style="font-size:0.78rem;color:#e5e7eb;">
+                            Win Rate: ${stats.win_rate.toFixed(1)}% | Trades: ${stats.total_trades} | Return: ${stats.total_return.toFixed(2)}%
+                        </div>
+                    `;
+                    
+                    document.getElementById('configContent').innerHTML = html;
+                    document.getElementById('configModal').style.display = 'flex';
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => alert('Error loading config'));
+    }
+
+    function closeConfigModal() {
+        document.getElementById('configModal').style.display = 'none';
+    }
+
+    function viewResult(runId) {
+        window.open(`/backtest/results/${runId}`, '_blank');
+    }
+
+    function refreshActivity() {
+        loadDashboardData();
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000);
+        
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' hours ago';
+        if (diff < 604800) return Math.floor(diff / 86400) + ' days ago';
+        
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function showError(message) {
+        document.getElementById('statsGrid').innerHTML = `
+            <div style="text-align:center;padding:40px;grid-column:1/-1;">
+                <div style="font-size:48px;margin-bottom:16px;">❌</div>
+                <h3 style="color:#ef4444;margin-bottom:8px;">Error Loading Dashboard</h3>
+                <p style="color:#6b7280;">${message}</p>
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

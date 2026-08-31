@@ -720,7 +720,7 @@ def stop_scheduler():
 # -----------------------------------------------------------
 
 # Fixed VPS URL and API key
-VPS_URL = os.environ.get('VPS_SYNC_URL', 'http://localhost:5002')
+VPS_URL = os.environ.get('VPS_SYNC_URL', 'http://51.20.96.212:5002')
 VPS_INTERNAL_KEY = os.environ.get('VPS_INTERNAL_KEY', 'Hg7kLm9pQr2xYw4zNc8vBd5fJh3nMs6tUy1aXe0i')
 
 
@@ -734,24 +734,32 @@ def generate_sync_id(user_id, account_id):
 def send_mt_credentials_to_vps(connection):
     """Send MT4/MT5 credentials to VPS sync server"""
     import requests
+    from models import TradingAccount
     
     try:
         password = decrypt(connection.investor_password_encrypted)
         if not password:
             return False, "Could not decrypt password"
         
+        # 🆕 Get trading account info
+        trading_account = TradingAccount.query.get(connection.account_id)
+        trading_account_name = trading_account.name if trading_account else 'Default'
+        
         payload = {
             'sync_id': connection.sync_id,
             'username': connection.username,
             'mt5_login': connection.mt_account_number,
             'mt5_password': password,
-            'mt5_server': connection.server_name
+            'mt5_server': connection.server_name,
+            'trading_account_id': connection.account_id,  # 🆕
+            'trading_account_name': trading_account_name  # 🆕
         }
         
         print(f"📤 Sending to VPS: {VPS_URL}/api/add_credential")
         print(f"   Sync ID: {connection.sync_id}")
         print(f"   Login: {connection.mt_account_number}")
         print(f"   Server: {connection.server_name}")
+        print(f"   Trading Account: {trading_account_name} (ID: {connection.account_id})")  # 🆕
         
         resp = requests.post(
             f"{VPS_URL}/api/add_credential",

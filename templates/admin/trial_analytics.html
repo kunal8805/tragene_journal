@@ -1,0 +1,816 @@
+<!-- templates/admin/trial_analytics.html -->
+
+{% extends "base_admin.html" %}
+{% block title %}Trial Analytics - Admin{% endblock %}
+{% block page_title %}🎯 Trial Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* === TRIAL ANALYTICS STYLES === */
+    .analytics-container {
+        padding: 24px;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    /* Summary Cards */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .summary-card {
+        background: linear-gradient(145deg, #1a2332 0%, #111827 100%);
+        border: 1px solid #1e2d42;
+        border-radius: 16px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-color: #3b82f6;
+    }
+
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .summary-card.blue::before { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+    .summary-card.green::before { background: linear-gradient(90deg, #10b981, #84cc16); }
+    .summary-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+    .summary-card.orange::before { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+    .summary-card.pink::before { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+    .summary-card.cyan::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+
+    .summary-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+
+    .summary-card.blue .summary-icon { background: rgba(59, 130, 246, 0.15); }
+    .summary-card.green .summary-icon { background: rgba(16, 185, 129, 0.15); }
+    .summary-card.purple .summary-icon { background: rgba(139, 92, 246, 0.15); }
+    .summary-card.orange .summary-icon { background: rgba(245, 158, 11, 0.15); }
+    .summary-card.pink .summary-icon { background: rgba(236, 72, 153, 0.15); }
+    .summary-card.cyan .summary-icon { background: rgba(6, 182, 212, 0.15); }
+
+    .summary-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #e5e7eb;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .summary-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #9ca3af;
+        font-weight: 600;
+    }
+
+    .summary-change {
+        font-size: 11px;
+        margin-top: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .summary-change.up { color: #10b981; }
+    .summary-change.down { color: #ef4444; }
+
+    /* Charts Grid */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .chart-card {
+        background: linear-gradient(145deg, #1a2332 0%, #111827 100%);
+        border: 1px solid #1e2d42;
+        border-radius: 16px;
+        padding: 20px;
+    }
+
+    .chart-card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #e5e7eb;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 280px;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: linear-gradient(145deg, #1a2332 0%, #111827 100%);
+        border: 1px solid #1e2d42;
+        border-radius: 12px;
+    }
+
+    .filter-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #9ca3af;
+        margin-right: 4px;
+    }
+
+    .filter-select, .filter-input {
+        padding: 8px 14px;
+        background: #0a0e17;
+        border: 1px solid #1e2d42;
+        border-radius: 8px;
+        color: #e5e7eb;
+        font-size: 12px;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .filter-select:focus, .filter-input:focus {
+        border-color: #3b82f6;
+    }
+
+    .filter-input {
+        cursor: text;
+        width: 200px;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .filter-btn:hover {
+        background: #2563eb;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .export-btn {
+        padding: 8px 16px;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-left: auto;
+    }
+
+    .export-btn:hover {
+        background: #059669;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Users Table */
+    .table-card {
+        background: linear-gradient(145deg, #1a2332 0%, #111827 100%);
+        border: 1px solid #1e2d42;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .table-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #e5e7eb;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        border-radius: 8px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    thead {
+        background: #0a0e17;
+    }
+
+    th {
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #1e2d42;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #1e2d42;
+        color: #d1d5db;
+        white-space: nowrap;
+    }
+
+    tbody tr {
+        transition: all 0.2s;
+    }
+
+    tbody tr:hover {
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        display: inline-block;
+    }
+
+    .status-active {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+
+    .status-expired {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+    }
+
+    .status-converted {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8b5cf6;
+    }
+
+    .status-notclaimed {
+        background: rgba(107, 114, 128, 0.15);
+        color: #9ca3af;
+    }
+
+    .status-verified {
+        background: rgba(6, 182, 212, 0.15);
+        color: #06b6d4;
+    }
+
+    .status-unverified {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+
+    /* Progress Bar */
+    .progress-bar-mini {
+        width: 60px;
+        height: 4px;
+        background: #1e2d42;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.5s;
+    }
+
+    /* Action Buttons */
+    .action-btn {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s;
+    }
+
+    .action-btn.extend {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+    }
+
+    .action-btn.extend:hover {
+        background: rgba(59, 130, 246, 0.25);
+    }
+
+    .action-btn.revoke {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+
+    .action-btn.revoke:hover {
+        background: rgba(239, 68, 68, 0.25);
+    }
+
+    /* Loading */
+    .loading-overlay {
+        text-align: center;
+        padding: 40px;
+        color: #9ca3af;
+    }
+
+    .spinner-large {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #1e2d42;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 1024px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .analytics-container {
+            padding: 16px;
+        }
+        .summary-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="analytics-container">
+    
+    <!-- Summary Cards -->
+    <div class="summary-grid" id="summaryGrid">
+        <div class="loading-overlay">
+            <div class="spinner-large"></div>
+            <p>Loading analytics...</p>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-card-title">📈 Trial Claims Over Time</div>
+            <div class="chart-container">
+                <canvas id="claimsChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-card-title">🎯 Conversion Funnel</div>
+            <div class="chart-container">
+                <canvas id="funnelChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-card-title">📊 Trial Status Distribution</div>
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-card-title">💰 Conversion by Plan</div>
+            <div class="chart-container">
+                <canvas id="conversionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <span class="filter-label">Filter:</span>
+        <select class="filter-select" id="statusFilter">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="converted">Converted</option>
+            <option value="not_claimed">Not Claimed</option>
+            <option value="verified">Email Verified</option>
+            <option value="unverified">Email Unverified</option>
+        </select>
+        
+        <select class="filter-select" id="dateFilter">
+            <option value="all">All Time</option>
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+        </select>
+        
+        <input type="text" class="filter-input" id="searchInput" placeholder="Search user/email...">
+        
+        <button class="filter-btn" onclick="applyFilters()">🔍 Apply</button>
+        <button class="export-btn" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <span class="table-title">👥 Trial Users</span>
+            <span id="resultCount" style="font-size:11px;color:#9ca3af;"></span>
+        </div>
+        <div class="table-wrapper">
+            <table id="trialTable">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Verified</th>
+                        <th>Trial Status</th>
+                        <th>Claimed Date</th>
+                        <th>Trial End</th>
+                        <th>Days Left</th>
+                        <th>Converted</th>
+                        <th>Plan</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="trialTableBody">
+                    <tr>
+                        <td colspan="10" style="text-align:center;color:#9ca3af;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    let analyticsData = null;
+    let charts = {};
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAnalytics();
+    });
+
+    function loadAnalytics() {
+        fetch('/trial/api/admin/analytics')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    analyticsData = data;
+                    renderSummaryCards(data.summary);
+                    renderCharts(data.charts);
+                    renderUsersTable(data.users);
+                }
+            })
+            .catch(err => {
+                document.getElementById('summaryGrid').innerHTML = `
+                    <div class="loading-overlay">
+                        <p style="color:#ef4444;">Error loading analytics</p>
+                    </div>
+                `;
+            });
+    }
+
+    function renderSummaryCards(summary) {
+        const grid = document.getElementById('summaryGrid');
+        
+        grid.innerHTML = `
+            <div class="summary-card blue">
+                <div class="summary-icon">👥</div>
+                <div class="summary-value">${summary.total_users}</div>
+                <div class="summary-label">Total Users</div>
+            </div>
+            <div class="summary-card cyan">
+                <div class="summary-icon">✅</div>
+                <div class="summary-value">${summary.verified_users}</div>
+                <div class="summary-label">Email Verified</div>
+            </div>
+            <div class="summary-card green">
+                <div class="summary-icon">🎁</div>
+                <div class="summary-value">${summary.total_claims}</div>
+                <div class="summary-label">Trial Claimed</div>
+            </div>
+            <div class="summary-card purple">
+                <div class="summary-icon">⏰</div>
+                <div class="summary-value">${summary.active_trials}</div>
+                <div class="summary-label">Active Trials</div>
+            </div>
+            <div class="summary-card orange">
+                <div class="summary-icon">⏳</div>
+                <div class="summary-value">${summary.expired_trials}</div>
+                <div class="summary-label">Expired</div>
+            </div>
+            <div class="summary-card pink">
+                <div class="summary-icon">💰</div>
+                <div class="summary-value">${summary.converted_count}</div>
+                <div class="summary-label">Converted</div>
+            </div>
+            <div class="summary-card green">
+                <div class="summary-icon">📊</div>
+                <div class="summary-value">${summary.conversion_rate}%</div>
+                <div class="summary-label">Conversion Rate</div>
+            </div>
+            <div class="summary-card purple">
+                <div class="summary-icon">💎</div>
+                <div class="summary-value">₹${summary.revenue}</div>
+                <div class="summary-label">Revenue</div>
+            </div>
+        `;
+    }
+
+    function renderCharts(chartData) {
+        // Claims Chart
+        const claimsCtx = document.getElementById('claimsChart').getContext('2d');
+        charts.claims = new Chart(claimsCtx, {
+            type: 'line',
+            data: {
+                labels: chartData.claims_labels,
+                datasets: [{
+                    label: 'Claims',
+                    data: chartData.claims_data,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#3b82f6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#1e2d42' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+                    y: { grid: { color: '#1e2d42' }, ticks: { color: '#9ca3af', font: { size: 10 }, stepSize: 1 } }
+                }
+            }
+        });
+
+        // Funnel Chart
+        const funnelCtx = document.getElementById('funnelChart').getContext('2d');
+        charts.funnel = new Chart(funnelCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Registered', 'Verified', 'Claimed', 'Active', 'Converted'],
+                datasets: [{
+                    data: [
+                        chartData.funnel_registered,
+                        chartData.funnel_verified,
+                        chartData.funnel_claimed,
+                        chartData.funnel_active,
+                        chartData.funnel_converted
+                    ],
+                    backgroundColor: [
+                        'rgba(107, 114, 128, 0.7)',
+                        'rgba(6, 182, 212, 0.7)',
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(16, 185, 129, 0.7)',
+                        'rgba(139, 92, 246, 0.7)'
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#1e2d42' }, ticks: { color: '#9ca3af', font: { size: 10 }, stepSize: 1 } },
+                    y: { grid: { color: '#1e2d42' }, ticks: { color: '#e5e7eb', font: { size: 11 } } }
+                }
+            }
+        });
+
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        charts.status = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Active', 'Expired', 'Converted', 'Not Claimed'],
+                datasets: [{
+                    data: [
+                        chartData.status_active,
+                        chartData.status_expired,
+                        chartData.status_converted,
+                        chartData.status_not_claimed
+                    ],
+                    backgroundColor: ['#10b981', '#f59e0b', '#8b5cf6', '#6b7280'],
+                    borderWidth: 2,
+                    borderColor: '#111827'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#9ca3af', font: { size: 10 }, padding: 12 }
+                    }
+                }
+            }
+        });
+
+        // Conversion Chart
+        const conversionCtx = document.getElementById('conversionChart').getContext('2d');
+        charts.conversion = new Chart(conversionCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.conversion_labels,
+                datasets: [{
+                    label: 'Conversions',
+                    data: chartData.conversion_data,
+                    backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#1e2d42' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+                    y: { grid: { color: '#1e2d42' }, ticks: { color: '#9ca3af', font: { size: 10 }, stepSize: 1 } }
+                }
+            }
+        });
+    }
+
+    function renderUsersTable(users) {
+        const tbody = document.getElementById('trialTableBody');
+        document.getElementById('resultCount').textContent = users.length + ' users';
+        
+        if (users.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#9ca3af;">No users found</td></tr>`;
+            return;
+        }
+        
+        tbody.innerHTML = users.map(user => {
+            const statusClass = user.status === 'active' ? 'status-active' : 
+                               user.status === 'expired' ? 'status-expired' : 
+                               user.status === 'converted' ? 'status-converted' : 'status-notclaimed';
+            
+            const verifiedClass = user.email_verified ? 'status-verified' : 'status-unverified';
+            
+            const daysLeft = user.days_left !== null ? user.days_left : '-';
+            
+            const progressColor = user.days_left > 3 ? '#10b981' : user.days_left > 1 ? '#f59e0b' : '#ef4444';
+            const progressWidth = user.days_left !== null ? Math.max(0, Math.min(100, (user.days_left / 7) * 100)) : 0;
+            
+            return `
+                <tr>
+                    <td style="font-weight:700;color:#e5e7eb;">${user.username}</td>
+                    <td style="color:#9ca3af;">${user.email}</td>
+                    <td><span class="status-badge ${verifiedClass}">${user.email_verified ? '✓ Yes' : '✕ No'}</span></td>
+                    <td><span class="status-badge ${statusClass}">${user.status_display}</span></td>
+                    <td>${user.claimed_date || '-'}</td>
+                    <td>${user.trial_end || '-'}</td>
+                    <td>
+                        ${user.days_left !== null ? `
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-weight:700;color:${progressColor};">${daysLeft}</span>
+                                <div class="progress-bar-mini">
+                                    <div class="progress-bar-fill" style="width:${progressWidth}%;background:${progressColor};"></div>
+                                </div>
+                            </div>
+                        ` : '-'}
+                    </td>
+                    <td><span class="status-badge ${user.converted ? 'status-converted' : 'status-notclaimed'}">${user.converted ? '✓ Yes' : '✕ No'}</span></td>
+                    <td>${user.converted_plan || '-'}</td>
+                    <td>
+                        <div style="display:flex;gap:4px;">
+                            ${user.status === 'active' ? `
+                                <button class="action-btn extend" onclick="extendTrial(${user.user_id})">+7d</button>
+                                <button class="action-btn revoke" onclick="revokeTrial(${user.user_id})">Revoke</button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function extendTrial(userId) {
+        if (!confirm('Extend trial by 7 days for this user?')) return;
+        
+        fetch('/trial/api/admin/extend', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, days: 7 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadAnalytics();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    function revokeTrial(userId) {
+        if (!confirm('Revoke trial for this user?')) return;
+        
+        fetch('/trial/api/admin/revoke', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadAnalytics();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    function applyFilters() {
+        const status = document.getElementById('statusFilter').value;
+        const dateRange = document.getElementById('dateFilter').value;
+        const search = document.getElementById('searchInput').value;
+        
+        fetch(`/trial/api/admin/analytics?status=${status}&date_range=${dateRange}&search=${encodeURIComponent(search)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderUsersTable(data.users);
+                }
+            });
+    }
+
+    function exportCSV() {
+        fetch('/trial/api/admin/export')
+            .then(res => res.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'trial_analytics.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            });
+    }
+</script>
+{% endblock %}

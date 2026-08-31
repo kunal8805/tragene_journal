@@ -615,6 +615,8 @@
     <a href="{{ url_for('user.journal') }}" class="nav-link {% if request.endpoint == 'user.journal' %}active{% endif %}"><i class="bi bi-journal-text"></i> Trade Journal</a>
     <a href="{{ url_for('user.sync_center') }}" class="nav-link {% if request.endpoint and 'sync' in request.endpoint %}active{% endif %}"><i class="bi bi-arrow-repeat"></i> Sync Center</a>
     <a href="{{ url_for('user.analytics') }}" class="nav-link {% if request.endpoint == 'user.analytics' %}active{% endif %}"><i class="bi bi-graph-up"></i> Analytics</a>
+    <a href="{{ url_for('backtest.builder') }}" class="nav-link {% if 'backtest' in request.endpoint %}active{% endif %}"><i class="bi bi-cpu"></i> Strategy Builder</a>
+    
     <a href="{{ url_for('tools.risk_analytics') }}" class="nav-link {% if request.endpoint == 'tools.risk_analytics' %}active{% endif %}"><i class="bi bi-shield-check"></i> Risk Management</a>
     <a href="{{ url_for('user.calendar') }}" class="nav-link {% if request.endpoint == 'user.calendar' %}active{% endif %}"><i class="bi bi-calendar3"></i> Calendar</a>
     <a href="{{ url_for('ai.ai_reports') }}" class="nav-link {% if 'ai.' in request.endpoint %}active{% endif %}"><i class="bi bi-robot"></i> AI Reports</a>
@@ -703,6 +705,12 @@
 
 <!-- History Modal -->
 <div class="history-modal-overlay" id="historyModal"><div class="history-modal"><div class="history-modal-header"><h5>📜 Chat History</h5><button class="history-modal-close" onclick="closeHistoryModal()">&times;</button></div><div id="historyList"><div class="history-empty">Loading...</div></div></div></div>
+
+<!-- Trial Popup Modal -->
+{% include 'user/trial/trial_popup.html' %}
+
+<!-- Trial Banner -->
+{% include 'user/trial/trial_banner.html' %}
 
 <script>
     let currentSessionId = null;
@@ -1011,6 +1019,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         loadAccounts();
         loadTokens();
+        
+        // Check trial popup
+        checkTrialPopup();
+        
+        // Check trial banner
+        checkTrialBanner();
+        
         const flashes = document.getElementById('flashContainer');
         if (flashes) {
             setTimeout(() => {
@@ -1020,6 +1035,29 @@
             }, 4000);
         }
     });
+    
+    // ========== TRIAL SYSTEM ==========
+    function checkTrialPopup() {
+        fetch('/trial/api/should-show-popup')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.should_show) {
+                    showTrialPopup();
+                }
+            })
+            .catch(() => {});
+    }
+    
+    function checkTrialBanner() {
+        fetch('/trial/api/status')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    initTrialBanner(data);
+                }
+            })
+            .catch(() => {});
+    }
     
     document.getElementById('historyModal').addEventListener('click', function(e) {
         if (e.target === this) closeHistoryModal();
